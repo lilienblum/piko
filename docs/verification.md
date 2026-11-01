@@ -106,3 +106,20 @@ Reviewed eight rendered combinations across Overview, Explore, and Settings: web
 The finish review requested denser desktop Explore results. The final 1440×960px website view places the event stream at y=573.83px, with 56px rows and five complete events visible. Mobile retains stacked context and larger touch controls. Refresh geometry remains stable. The initial Explore placeholder now uses three breakdown rows to match the compact chart region; the loading regression asserts that the stream's initial and loaded desktop positions differ by at most 12px.
 
 The full browser run passed **55 checks in 3.0 minutes**: all **54 committed behavior tests**, including durable channels and refresh regressions, plus one temporary eight-view capture harness. After the final placeholder adjustment, all seven loading tests and the loaded-preview capture passed again. The temporary harness was removed. `bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, nine Bun tests, and the production build passed. Impeccable's manual detector returned no findings. The existing large-client-chunk warning remains (950.26 kB, 294.19 kB gzip). This iteration changes the dashboard and its documentation; Rust behavior and prior benchmark measurements are unchanged.
+
+
+## Ponytail code review
+
+Reviewed API storage/ingestion/query paths, collectors, gateway/realtime handling, dashboard state, and local tooling. Changes address concrete failure cases without schema migrations or additional dependencies:
+
+- Writer shutdown waits for a full queue to drain; query ranges enforce exact 366-day/31-day boundaries.
+- The gateway caps pending ingestion uploads at 64 and includes body reading in its 13-second deadline. Stalled streams cancel without waiting for their cleanup; overload returns 503 with retry/CORS headers. Cross-origin collectors can read `Retry-After`.
+- SDK cancellation interrupts backoff, invalid delivery limits fail early, and permanent errors with a null JSON body are not retried. Browser shutdown drains accepted batches within one total deadline. Automatic batches also respect a byte budget so large valid events do not exceed the API body limit. Bodies above the browser's 64 KiB keepalive limit use ordinary fetch while the page is open.
+- Blocked browser storage no longer prevents loading, product creation, selection, date changes, themes, or sidebar use. Removed an unread sidebar cookie and the duplicate `cn` dependency in favor of the existing helper.
+- The benchmark refuses an occupied port before making requests and bounds startup probes.
+
+`bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, all **16 Bun tests**, the production dashboard build, all **19 Rust tests**, strict Clippy, and the locked release API build passed. All **58 Chromium tests passed in 2.9 minutes**, including four new browser regressions. After the final byte-budget adjustment, all 14 collector browser tests passed again. After restarting both local Tako applications with the new code, the website/tool query flow and both website/CLI live-update flows passed again; the running API exposes the retry header.
+
+A separate two-second benchmark smoke run with 1,000 preloaded events committed 34,200 new events, acknowledged 3,200 duplicates, verified 35,200 stored rows, completed 222 queries, and reported no request errors. This only verifies the runner; the existing longer benchmark measurements remain unchanged. The client chunk is now 924.06 kB (283.27 kB gzip); Vite's size warning remains.
+
+Production deployment, Cloudflare policy enforcement, and Docker startup were not re-tested. Browser delivery remains best effort; ordinary fetch cannot outlive page unload. No long-running performance claim is added by this review.

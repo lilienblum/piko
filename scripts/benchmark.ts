@@ -5,6 +5,13 @@ import { Piko, type Event } from "../sdk/typescript/client";
 const duration = Number(process.env.BENCH_SECONDS ?? 15);
 const preload = Number(process.env.BENCH_PRELOAD ?? 10000);
 const port = Number(process.env.BENCH_PORT ?? 3199);
+// Fail before spawning or writing fixtures if another service owns the requested port.
+const reservation = Bun.serve({
+  hostname: "127.0.0.1",
+  port,
+  fetch: () => new Response(null, { status: 503 }),
+});
+await reservation.stop(true);
 const dir = await mkdtemp(join(tmpdir(), "piko-bench-"));
 const endpoint = `http://127.0.0.1:${port}`;
 const log = Bun.file(join(dir, "server.log"));
@@ -71,9 +78,12 @@ function batch(product: number, sequence: number, size = 100): Event[] {
 let sampler: ReturnType<typeof setInterval> | undefined;
 try {
   let ready = false;
-  for (let i = 0; i < 200; i++) {
+  const startupDeadline = Date.now() + 10_000;
+  while (Date.now() < startupDeadline) {
+    if (processHandle.exitCode !== null)
+      throw new Error(`API exited during startup: ${await log.text()}`);
     try {
-      if ((await fetch(`${endpoint}/health`)).ok) {
+      if ((await fetch(`${endpoint}/health`, { signal: AbortSignal.timeout(500) })).ok) {
         ready = true;
         break;
       }

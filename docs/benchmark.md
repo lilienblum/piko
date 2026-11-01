@@ -12,7 +12,7 @@ bun benchmark
 BENCH_SECONDS=60 BENCH_PRELOAD=100000 BENCH_OUTPUT=docs/my-benchmark.json bun benchmark
 ```
 
-The script starts a release API on loopback port 3199 (`BENCH_PORT` overrides it), creates a temporary data directory and two products, and cleans up that temporary directory afterward. No running workspace is mutated. It requires a host with `ps` for RSS sampling. Run it after builds and other load tests finish for comparable results.
+The script starts a release API on loopback port 3199 (`BENCH_PORT` overrides it), creates a temporary data directory and two products, and cleans up that temporary directory afterward. An occupied port fails before any HTTP requests; choose another `BENCH_PORT` if needed. No running workspace is mutated. It requires a host with `ps` for RSS sampling. Run it after builds and other load tests finish for comparable results.
 
 ## Hardware and workload
 
