@@ -14,7 +14,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: styles },
-      { rel: "icon", href: "/favicon.svg?v=2", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.svg?v=3", type: "image/svg+xml" },
     ],
   }),
   component: AppShell,
@@ -34,6 +34,19 @@ function Shell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <template
+          data-design-contract="field-workbench"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: static build-time design provenance; no dynamic or user content.
+          dangerouslySetInnerHTML={{
+            __html: `<!--
+THESIS: A small measurement workbench; the query and evidence lead, replacing the blue card grid.
+OWN-WORLD: Stone working ground, pine action and data, citron navigation, Public Sans, flat measurements and contained forms.
+STORY: Select product and dates, query activity, read the pattern, inspect an event. Identity stays explicit.
+FIRST VIEWPORT: A 13rem navigation rail and 64px context toolbar; compact title and query rail; two-thirds plot with one-third breakdown; event stream follows. Run query sits at the rail's right.
+FORM: Field-station labels, candidate 5, registered shared measurements. Seed 1c47a4fc. Compact composition A, preserving actual controls and privacy semantics.
+-->`,
+          }}
+        />
         <ThemeProvider>{children}</ThemeProvider>
         <Scripts />
       </body>

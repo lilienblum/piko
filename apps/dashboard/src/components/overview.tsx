@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowRight02Icon,
-  Clock01Icon,
-  CommandLineIcon,
-  Cursor01Icon,
-  FingerPrintIcon,
-  FlashIcon,
-  UserGroupIcon,
-  ViewIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,26 +133,22 @@ function ProductOverview() {
           label: "Page views",
           value: number(s?.total),
           detail: "Every visit to a page",
-          icon: ViewIcon,
         },
         {
           label: "Unique visitors",
           value: s?.total && !s.visitors ? "—" : number(s?.visitors),
           detail:
             s?.total && !s.visitors ? "No visitor IDs received" : "With an explicit visitor ID",
-          icon: UserGroupIcon,
         },
         {
           label: "Sessions",
           value: s?.total && !s.sessions ? "—" : number(s?.sessions),
           detail: "Distinct visitor + session pairs",
-          icon: Cursor01Icon,
         },
         {
           label: "Views per session",
           value: s?.sessions ? number((s?.session_views ?? 0) / s.sessions, 1) : "—",
           detail: "Views with an explicit session ID",
-          icon: FlashIcon,
         },
       ]
     : tool
@@ -170,25 +157,21 @@ function ProductOverview() {
             label: "Command executions",
             value: number(s?.total),
             detail: "Across all commands",
-            icon: CommandLineIcon,
           },
           {
             label: "Active installations",
             value: s?.total && !s.installations ? "—" : number(s?.installations),
             detail: "With an explicit installation ID",
-            icon: FingerPrintIcon,
           },
           {
             label: "Success rate",
             value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
             detail: "Commands reporting success",
-            icon: FlashIcon,
           },
           {
             label: "Average duration",
             value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
             detail: `p95 · ${number(s?.p95_duration)} ms`,
-            icon: Clock01Icon,
           },
         ]
       : [
@@ -196,25 +179,21 @@ function ProductOverview() {
             label: "Events",
             value: number(s?.total),
             detail: "All sources, one product",
-            icon: FlashIcon,
           },
           {
             label: "Identified actors",
             value: number(s?.actors),
             detail: "Identity kinds counted separately",
-            icon: UserGroupIcon,
           },
           {
             label: "Website visitors",
             value: number(s?.visitors),
             detail: "Explicit visitor identities",
-            icon: ViewIcon,
           },
           {
             label: "Installations",
             value: number(s?.installations),
             detail: "Explicit installation identities",
-            icon: CommandLineIcon,
           },
         ];
   const chart = (
@@ -279,10 +258,10 @@ function ProductOverview() {
         title={product.name}
         description={
           web
-            ? "Understand where people go, and what brings them back."
+            ? "Page views, visitors, and how people find your website."
             : tool
               ? "See how your tool performs in the hands of developers."
-              : "Every interaction, brought into focus."
+              : "Event activity across your product."
         }
       >
         <div className="heading-actions">
@@ -315,10 +294,7 @@ function ProductOverview() {
               {metrics.map((m) => (
                 <Card key={m.label} className="metric-card">
                   <CardContent>
-                    <div className="metric-label">
-                      {m.label}
-                      <HugeiconsIcon icon={m.icon} strokeWidth={2} aria-hidden="true" />
-                    </div>
+                    <div className="metric-label">{m.label}</div>
                     <div className="metric-value">{m.value}</div>
                     <p>{m.detail}</p>
                   </CardContent>
@@ -335,10 +311,10 @@ function ProductOverview() {
                     title={web ? "Top pages" : tool ? "Top commands" : "Top events"}
                     description={
                       web
-                        ? "The places people spend their time"
+                        ? "Page views by path"
                         : tool
                           ? "What developers reach for most"
-                          : "The interactions that matter"
+                          : "Events ranked by count"
                     }
                     groups={query.data.groups}
                     total={s?.total}
@@ -358,6 +334,7 @@ function ProductOverview() {
                               : "Where events are collected"}
                         </CardDescription>
                         <TabsList
+                          variant="line"
                           aria-label={
                             web
                               ? "Acquisition breakdown"

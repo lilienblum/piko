@@ -10,7 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ValueSelect } from "./value-select";
@@ -135,8 +135,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
   return (
     <>
       <PageHeader
-        title="Follow your curiosity"
-        description={`Ask a question of ${product?.name}. Start with an event, then look a little closer.`}
+        title="Explore events"
+        description={`Query and inspect activity from ${product?.name}.`}
       />
       {drilldown && (
         <section className="drilldown-context" aria-label="Overview selection">
@@ -205,36 +205,9 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
         </section>
       )}
       <Card className="query-builder">
-        <CardHeader>
-          <div className="card-heading">
-            <CardTitle>Build a query</CardTitle>
-            <Button
-              variant={hasUpdates ? "secondary" : "outline"}
-              size="sm"
-              className="w-40 text-xs"
-              aria-label="Refresh results"
-              aria-busy={query.refreshing}
-              disabled={query.refreshing}
-              onClick={refresh}
-            >
-              {query.refreshing ? (
-                <Spinner data-icon="inline-start" aria-hidden="true" />
-              ) : hasUpdates ? (
-                <span className="live-dot" aria-hidden="true" />
-              ) : (
-                <HugeiconsIcon
-                  icon={RefreshIcon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                  aria-hidden="true"
-                />
-              )}
-              <span role="status">{hasUpdates ? "New data available" : "Refresh results"}</span>
-            </Button>
-          </div>
-        </CardHeader>
         <CardContent>
           <form
+            aria-label="Build a query"
             onSubmit={(e) => {
               e.preventDefault();
               setValidation("");
@@ -413,15 +386,40 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
           <>
             {query.error && query.data && <ErrorState message={query.error} retry={retry} />}
             <div className="explore-summary">
-              <span>{measureLabels[applied.measure]}</span>
-              <strong>
-                {number(data.summary.value, 2)}
-                {applied.property === "duration_ms" &&
-                !["count", "actors"].includes(applied.measure)
-                  ? " ms"
-                  : ""}
-              </strong>
-              <span>across {number(data.summary.total)} matching events</span>
+              <div className="explore-summary-value">
+                <span>{measureLabels[applied.measure]}</span>
+                <strong>
+                  {number(data.summary.value, 2)}
+                  {applied.property === "duration_ms" &&
+                  !["count", "actors"].includes(applied.measure)
+                    ? " ms"
+                    : ""}
+                </strong>
+                <span>across {number(data.summary.total)} matching events</span>
+              </div>
+              <Button
+                variant={hasUpdates ? "secondary" : "outline"}
+                size="sm"
+                className="w-40 text-xs"
+                aria-label="Refresh results"
+                aria-busy={query.refreshing}
+                disabled={query.refreshing}
+                onClick={refresh}
+              >
+                {query.refreshing ? (
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
+                ) : hasUpdates ? (
+                  <span className="live-dot" aria-hidden="true" />
+                ) : (
+                  <HugeiconsIcon
+                    icon={RefreshIcon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                    aria-hidden="true"
+                  />
+                )}
+                <span role="status">{hasUpdates ? "New data available" : "Refresh results"}</span>
+              </Button>
             </div>
             {data.summary.total === 0 ? (
               <NoEvents />
@@ -431,7 +429,11 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <SeriesChart
                     data={data}
                     title="Results over time"
-                    description="UTC daily buckets · missing numeric values are excluded"
+                    description={
+                      ["count", "actors"].includes(applied.measure)
+                        ? "UTC daily buckets"
+                        : "UTC daily buckets · missing numeric values are excluded"
+                    }
                     label={measureLabels[applied.measure]}
                   />
                   <Breakdown

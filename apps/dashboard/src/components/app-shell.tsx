@@ -24,7 +24,6 @@ import {
   RefreshIcon,
   Search01Icon,
   Settings02Icon,
-  SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
@@ -185,16 +184,19 @@ export function AppShell() {
         setAnalyticsPending,
       }}
     >
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <SidebarProvider
         open={sidebarOpen}
         onOpenChange={(open) => {
           setSidebarOpen(open);
           localStorage.setItem("piko:sidebar", open ? "expanded" : "collapsed");
         }}
-        style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
+        style={{ "--sidebar-width": "13rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
       >
         <Navigation path={path} />
-        <SidebarInset className="min-w-0">
+        <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
           <header className="topbar">
             <div className="topbar-left">
               <SidebarTrigger />
@@ -275,10 +277,7 @@ export function AppShell() {
             {loading ? <PageLoading label="Loading workspace" /> : <Outlet />}
           </div>
           <footer className="page-footer">
-            <span>
-              <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} aria-hidden="true" />A little data.
-              A clearer picture.
-            </span>
+            <span>Piko · Privacy-first analytics</span>
             <span>All times in UTC · Identity is optional</span>
           </footer>
         </SidebarInset>
@@ -290,7 +289,7 @@ function Navigation({ path }: { path: string }) {
   const { isMobile, setOpenMobile } = useSidebar();
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="flex-row items-center justify-between py-7">
+      <SidebarHeader className="h-16 flex-row items-center justify-between py-0">
         <Link
           to="/"
           aria-label="Piko overview"
@@ -340,7 +339,7 @@ function Navigation({ path }: { path: string }) {
       <SidebarFooter className="pb-5">
         <div className="local-note group-data-[collapsible=icon]:hidden">
           <span className="status-dot" />
-          Self-hosted workspace
+          Self-hosted analytics
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -378,7 +377,6 @@ export function PageHeader({
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">PRODUCT ANALYTICS</div>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -390,7 +388,7 @@ export function NoProduct() {
   return (
     <>
       <PageHeader
-        title="Make room for your first product"
+        title="Create your first product"
         description="Websites, CLIs, and everything you’re building."
       />
       <Empty>

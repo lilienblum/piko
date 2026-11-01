@@ -153,7 +153,7 @@ test("create product, edit retention, create and revoke a key", async ({ page })
   await page.getByRole("tab", { name: "TypeScript" }).click();
   await expect(page.getByRole("tabpanel")).toContainText("await piko.send");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.getByText("Your next insight starts with an event")).toBeVisible();
+  await expect(page.getByText("No events in this range")).toBeVisible();
 });
 test("mobile website and tool layouts do not overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -234,7 +234,7 @@ test("sidebar collapses, persists and keeps navigation keyboard accessible", asy
   await page.reload();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Follow your curiosity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Explore events" })).toBeVisible();
   const measure = page.getByRole("combobox", { name: "Measure", exact: true });
   await measure.focus();
   await page.keyboard.press("ArrowDown");
@@ -264,7 +264,7 @@ test("light, dark and auto themes persist and follow system changes", async ({ p
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(
     await page.getByRole("dialog").evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe("rgb(17, 21, 31)");
+  ).toBe("rgb(23, 30, 25)");
   await page.keyboard.press("Escape");
   await appearance(page, "Auto");
   await expect(page.locator("html")).toHaveClass("light");
@@ -289,7 +289,7 @@ test("saved appearance is applied before the application JavaScript loads", asyn
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass("dark");
   expect(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-    "rgb(17, 21, 31)",
+    "rgb(23, 30, 25)",
   );
 });
 
@@ -301,7 +301,7 @@ test("mobile drawer navigates and dark selects fit the screen", async ({ page })
   await expect(page.getByRole("dialog", { name: "Sidebar", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Follow your curiosity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Explore events" })).toBeVisible();
   await select(page, "Select product", tool.name);
   await select(page, "Measure", "Numeric average");
   await page.getByRole("button", { name: "Run query" }).click();

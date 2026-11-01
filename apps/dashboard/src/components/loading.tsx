@@ -76,10 +76,7 @@ export function OverviewLoading({ labels, chart }: { labels: string[]; chart: Re
         {labels.map((label) => (
           <Card className="metric-card" key={label}>
             <CardContent>
-              <div className="metric-label">
-                {label}
-                <Skeleton className="size-3.5" />
-              </div>
+              <div className="metric-label">{label}</div>
               <div className="metric-value flex h-[1.4em] items-center">
                 <Skeleton className="h-[1em] w-24 max-w-full" />
               </div>
@@ -103,9 +100,12 @@ export function ExploreLoading() {
     <section role="status" aria-label="Loading query results" aria-busy="true">
       <span className="sr-only">Loading query results…</span>
       <div className="explore-summary" aria-hidden="true">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-3 w-44" />
+        <div className="explore-summary-value">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-3 w-44 max-w-full" />
+        </div>
+        <Skeleton className="h-8 w-40 shrink-0 max-sm:h-10" />
       </div>
       <div className="explore-charts">
         <ChartLoading title="Results over time" />

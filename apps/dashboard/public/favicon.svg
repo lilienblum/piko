@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
   <title>Piko</title>
-  <style>g{fill:#526bd5}@media(prefers-color-scheme:dark){g{fill:#91a4ff}}</style>
+  <style>g{fill:#286449}@media(prefers-color-scheme:dark){g{fill:#c1d791}}</style>
   <g transform="rotate(-10 20 20)">
     <rect x="7" y="19" width="7" height="17" rx="3.5"/>
     <rect x="17" y="5" width="7" height="30" rx="3.5"/>

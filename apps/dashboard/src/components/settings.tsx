@@ -135,8 +135,8 @@ export function Settings() {
   return (
     <>
       <PageHeader
-        title="A home for your products"
-        description="Manage what you measure, how you collect it, and how long it stays."
+        title="Product settings"
+        description="Manage collection, ingestion keys, and retention."
       >
         <Dialog
           open={open}
@@ -472,7 +472,11 @@ function ProductSettings({ product }: { product: Product }) {
             </div>
           </CardHeader>
           <CardContent>
-            <TabsList aria-label="Integration language" className="mb-4 w-full sm:w-auto">
+            <TabsList
+              variant="line"
+              aria-label="Integration language"
+              className="mb-4 w-full sm:w-auto"
+            >
               <TabsTrigger value="browser">Browser</TabsTrigger>
               <TabsTrigger value="typescript">TypeScript</TabsTrigger>
               <TabsTrigger value="rust">Rust CLI</TabsTrigger>

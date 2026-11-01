@@ -9,3 +9,7 @@
 /playwright-report/
 **/.tanstack/
 /.tako/
+
+# Local visual studies and review captures
+**/.impeccable/mocks/
+**/.impeccable/screenshots/

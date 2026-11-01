@@ -50,7 +50,7 @@ export function NoEvents() {
         <EmptyMedia variant="icon">
           <HugeiconsIcon icon={AnalyticsUpIcon} strokeWidth={2} aria-hidden="true" />
         </EmptyMedia>
-        <EmptyTitle>Your next insight starts with an event</EmptyTitle>
+        <EmptyTitle>No events in this range</EmptyTitle>
         <EmptyDescription>
           No events match this date range. Try a wider range or connect your product in Settings.
         </EmptyDescription>
@@ -154,11 +154,11 @@ export function SeriesChart({
               >
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.14} />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.08} />
                     <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.01} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 4" />
+                <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="2 5" />
                 <XAxis
                   dataKey="time"
                   tickFormatter={(time: number) =>
@@ -211,7 +211,7 @@ export function SeriesChart({
                   dataKey="value"
                   stroke="var(--primary)"
                   fill={`url(#${gradientId})`}
-                  strokeWidth={2.2}
+                  strokeWidth={2}
                   dot={unit ? { r: 2, fill: "var(--primary)", strokeWidth: 0 } : false}
                   isAnimationActive={false}
                   connectNulls={false}
