@@ -423,26 +423,28 @@ export function EventStream({
         <SheetContent
           className="event-sheet w-full sm:max-w-[600px]"
           showCloseButton={false}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            if (restoreFocus.current && focusId.current)
-              buttons.current.get(focusId.current)?.focus();
-          }}
+          finalFocus={() =>
+            restoreFocus.current && focusId.current
+              ? (buttons.current.get(focusId.current) ?? false)
+              : false
+          }
         >
           <SheetHeader className="pr-16">
             <SheetTitle>{selected?.name ?? "Event details"}</SheetTitle>
             <SheetDescription>
               Inspect the captured values and collection metadata.
             </SheetDescription>
-            <SheetClose asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Close event"
-                className="absolute right-4 top-4"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
-              </Button>
+            <SheetClose
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close event"
+                  className="absolute right-4 top-4"
+                />
+              }
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
             </SheetClose>
           </SheetHeader>
           {selected && (

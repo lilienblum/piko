@@ -56,10 +56,13 @@ export function Explore() {
               : "The project or source in this link is not available in this workspace."
           }
         />
-        <Button asChild variant="outline">
-          <Link to="/explore" search={{}}>
-            Clear selection
-          </Link>
+        <Button
+          variant="outline"
+          nativeButton={false}
+          role="link"
+          render={<Link to="/explore" search={{}} />}
+        >
+          Clear selection
         </Button>
       </>
     );
@@ -195,16 +198,20 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
               )}
             </div>
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/explore" search={{}}>
-              <HugeiconsIcon
-                icon={Cancel01Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-                data-icon="inline-start"
-              />
-              Clear selection
-            </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            role="link"
+            render={<Link to="/explore" search={{}} />}
+          >
+            <HugeiconsIcon
+              icon={Cancel01Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
+            Clear selection
           </Button>
         </section>
       )}
@@ -290,16 +297,14 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   />
                 </Field>
                 <div className="query-actions">
-                  <CollapsibleTrigger asChild>
-                    <Button type="button" variant="outline">
-                      <HugeiconsIcon
-                        icon={FilterHorizontalIcon}
-                        strokeWidth={2}
-                        aria-hidden="true"
-                        data-icon="inline-start"
-                      />
-                      Filter{applied.filterProperty ? " · 1" : ""}
-                    </Button>
+                  <CollapsibleTrigger render={<Button type="button" variant="outline" />}>
+                    <HugeiconsIcon
+                      icon={FilterHorizontalIcon}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      data-icon="inline-start"
+                    />
+                    Filter{applied.filterProperty ? " · 1" : ""}
                   </CollapsibleTrigger>
                   <Button
                     type="submit"

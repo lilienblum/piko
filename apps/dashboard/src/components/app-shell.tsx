@@ -369,11 +369,14 @@ function Navigation({ path }: { path: string }) {
                   ] as const
                 ).map(([to, label, icon]) => (
                   <SidebarMenuItem key={to}>
-                    <SidebarMenuButton asChild isActive={path === to} tooltip={label} size="lg">
-                      <Link to={to} onClick={() => setOpenMobile(false)}>
-                        <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
-                        <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
-                      </Link>
+                    <SidebarMenuButton
+                      isActive={path === to}
+                      tooltip={label}
+                      size="lg"
+                      render={<Link to={to} onClick={() => setOpenMobile(false)} />}
+                    >
+                      <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
+                      <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -389,17 +392,24 @@ function Navigation({ path }: { path: string }) {
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Documentation">
-              <a href="https://github.com/lilienblum/piko#readme" target="_blank" rel="noreferrer">
-                <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} aria-hidden="true" />
-                <span className="group-data-[collapsible=icon]:sr-only">Documentation</span>
-                <HugeiconsIcon
-                  icon={ArrowUpRight01Icon}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                  className="ml-auto group-data-[collapsible=icon]:hidden"
+            <SidebarMenuButton
+              tooltip="Documentation"
+              render={
+                <a
+                  href="https://github.com/lilienblum/piko#readme"
+                  target="_blank"
+                  rel="noreferrer"
                 />
-              </a>
+              }
+            >
+              <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} aria-hidden="true" />
+              <span className="group-data-[collapsible=icon]:sr-only">Documentation</span>
+              <HugeiconsIcon
+                icon={ArrowUpRight01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                className="ml-auto group-data-[collapsible=icon]:hidden"
+              />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -444,16 +454,14 @@ export function NoProduct() {
             Create a project to get its own analytics and ingestion keys.
           </EmptyDescription>
         </EmptyHeader>
-        <Button asChild>
-          <Link to="/settings">
-            <HugeiconsIcon
-              icon={Add01Icon}
-              strokeWidth={2}
-              aria-hidden="true"
-              data-icon="inline-start"
-            />
-            Create a project
-          </Link>
+        <Button nativeButton={false} role="link" render={<Link to="/settings" />}>
+          <HugeiconsIcon
+            icon={Add01Icon}
+            strokeWidth={2}
+            aria-hidden="true"
+            data-icon="inline-start"
+          />
+          Create a project
         </Button>
       </Empty>
     </>

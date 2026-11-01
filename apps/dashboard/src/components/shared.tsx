@@ -54,16 +54,14 @@ export function NoEvents() {
           No events match this date range. Try a wider range or connect your project in Settings.
         </EmptyDescription>
       </EmptyHeader>
-      <Button variant="outline" asChild>
-        <Link to="/settings">
-          Connect a product
-          <HugeiconsIcon
-            icon={ArrowRight02Icon}
-            strokeWidth={2}
-            aria-hidden="true"
-            data-icon="inline-end"
-          />
-        </Link>
+      <Button variant="outline" nativeButton={false} role="link" render={<Link to="/settings" />}>
+        Connect a product
+        <HugeiconsIcon
+          icon={ArrowRight02Icon}
+          strokeWidth={2}
+          aria-hidden="true"
+          data-icon="inline-end"
+        />
       </Button>
     </Empty>
   );

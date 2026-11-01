@@ -162,12 +162,14 @@ function ProductOverview() {
         <div className="chart-controls">
           <ValueSelect
             label="Chart metric"
+            disabled={query.loading}
             value={choice.id}
             onValueChange={setChartMetric}
             options={choices.map((option) => [option.id, option.label])}
           />
           <ValueSelect
             label="Chart interval"
+            disabled={query.loading}
             value={bucket}
             onValueChange={setChartInterval}
             options={
@@ -190,16 +192,19 @@ function ProductOverview() {
         description="Events, identities, and performance across your project."
       >
         <div className="heading-actions">
-          <Button variant="outline" asChild>
-            <Link to="/explore">
-              Explore events
-              <HugeiconsIcon
-                icon={ArrowRight02Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-                data-icon="inline-end"
-              />
-            </Link>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            role="link"
+            render={<Link to="/explore" />}
+          >
+            Explore events
+            <HugeiconsIcon
+              icon={ArrowRight02Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-end"
+            />
           </Button>
         </div>
       </PageHeader>

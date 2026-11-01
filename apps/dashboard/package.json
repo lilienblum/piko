@@ -8,6 +8,7 @@
     "start": "bun server.ts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@hugeicons/core-free-icons": "^4.4.0",
     "@hugeicons/react": "^1.1.10",
@@ -21,7 +22,6 @@
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
     "motion": "^14.9.0",
-    "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.3.1"

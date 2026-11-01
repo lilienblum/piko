@@ -263,7 +263,7 @@ h3,
 [data-slot="tabs-trigger"] {
   color: var(--muted-foreground);
 }
-[data-slot="tabs-trigger"][data-state="active"] {
+[data-slot="tabs-trigger"][data-active] {
   color: var(--foreground);
 }
 
@@ -295,11 +295,11 @@ h3,
 [data-slot="sidebar-menu-button"] {
   border-radius: 3px;
 }
-[data-slot="sidebar-menu-button"][data-active="true"] {
+[data-slot="sidebar-menu-button"][data-active] {
   background: var(--primary);
   color: var(--primary-foreground);
 }
-[data-slot="sidebar-menu-button"][data-active="true"]:hover {
+[data-slot="sidebar-menu-button"][data-active]:hover {
   background: var(--primary);
 }
 [data-slot="sidebar-group-label"] {
@@ -329,7 +329,7 @@ h3,
 [data-slot="dropdown-menu-radio-item"] {
   border-radius: 3px;
 }
-[data-slot="select-item"][data-state="checked"] {
+[data-slot="select-item"][data-selected] {
   background: var(--accent);
   color: var(--foreground);
 }
@@ -1596,7 +1596,7 @@ h1 {
 .metric-card:first-child [data-slot="card-content"] {
   padding-left: 0;
 }
-[data-slot="sidebar-menu-button"][data-active="true"] {
+[data-slot="sidebar-menu-button"][data-active] {
   font-weight: 650;
 }
 .skip-link {
@@ -1830,6 +1830,8 @@ html {
 /* Keep the plot's SSR/loading geometry while Bklit measures its container. */
 .series-chart > .bklit-plot {
   height: 100%;
+  /* Contain the previous SVG width until ResizeObserver measures a narrower viewport. */
+  overflow-x: clip;
 }
 .chart-tooltip-content {
   display: grid;

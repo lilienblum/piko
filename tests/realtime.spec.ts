@@ -117,6 +117,7 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   expect(await details.textContent()).toBe(original);
   expect(await page.locator(".query-builder").boundingBox()).toEqual(queryBox);
   await page.keyboard.press("Escape");
+  await expect(details).toBeHidden();
   await expect(page.getByLabel("Typed value")).toHaveValue("true");
   await page.getByRole("button", { name: "Refresh results" }).scrollIntoViewIfNeeded();
   const refreshBox = await page.locator(".query-builder").boundingBox();

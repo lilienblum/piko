@@ -55,8 +55,8 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await select(page, "Key source", "iOS app");
   await expect(page.locator(".new-key")).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "Browser", exact: true })).toHaveAttribute(
-    "data-state",
-    "active",
+    "aria-selected",
+    "true",
   );
   await page.getByRole("tab", { name: "HTTP / Mobile" }).click();
   await page.getByLabel("New key label").fill("iOS key");

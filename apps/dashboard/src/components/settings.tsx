@@ -136,16 +136,14 @@ export function Settings() {
             if (!busy) setOpen(value);
           }}
         >
-          <DialogTrigger asChild>
-            <Button>
-              <HugeiconsIcon
-                icon={Add01Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-                data-icon="inline-start"
-              />
-              New project
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <HugeiconsIcon
+              icon={Add01Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
+            New project
           </DialogTrigger>
           <DialogContent showCloseButton={!busy}>
             <DialogHeader>

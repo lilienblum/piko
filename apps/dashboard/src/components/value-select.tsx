@@ -32,14 +32,21 @@ export function ValueSelect({
   icon?: ReactNode;
 }) {
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select
+      items={options.map(([value, label]) => ({ value, label }))}
+      value={options.some(([key]) => key === value) ? value : null}
+      onValueChange={(next) => {
+        if (next !== null) onValueChange(next);
+      }}
+      disabled={disabled}
+    >
       <SelectTrigger id={id} aria-label={label} className={cn("w-full min-w-0", className)}>
         <SelectValue placeholder={placeholder}>
           {icon}
-          {options.find(([key]) => key === value)?.[1]}
+          {options.find(([key]) => key === value)?.[1] ?? placeholder}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent position="popper" align="start">
+      <SelectContent alignItemWithTrigger={false} align="start">
         <SelectGroup>
           {options.map(([key, text, optionIcon]) => (
             <SelectItem key={key} value={key}>

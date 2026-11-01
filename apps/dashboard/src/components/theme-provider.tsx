@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuGroup,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -76,39 +77,43 @@ export function ThemeMenu() {
   const icon = theme === "auto" ? ComputerIcon : theme === "dark" ? Moon02Icon : Sun03Icon;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Appearance"
-          title={`Appearance: ${theme}`}
-          disabled={!mounted}
-        >
-          <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Appearance"
+            title={`Appearance: ${theme}`}
+            disabled={!mounted}
+          />
+        }
+      >
+        <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(value) => {
-            if (isTheme(value)) setTheme(value);
-          }}
-        >
-          <DropdownMenuRadioItem value="light">
-            <HugeiconsIcon icon={Sun03Icon} strokeWidth={2} aria-hidden="true" />
-            Light
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">
-            <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} aria-hidden="true" />
-            Dark
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="auto">
-            <HugeiconsIcon icon={ComputerIcon} strokeWidth={2} aria-hidden="true" />
-            Auto
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={theme}
+            onValueChange={(value) => {
+              if (isTheme(value)) setTheme(value);
+            }}
+          >
+            <DropdownMenuRadioItem closeOnClick value="light">
+              <HugeiconsIcon icon={Sun03Icon} strokeWidth={2} aria-hidden="true" />
+              Light
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem closeOnClick value="dark">
+              <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} aria-hidden="true" />
+              Dark
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem closeOnClick value="auto">
+              <HugeiconsIcon icon={ComputerIcon} strokeWidth={2} aria-hidden="true" />
+              Auto
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
