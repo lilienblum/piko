@@ -9,65 +9,55 @@ Piko has two independent applications, deployed together:
 
 This two-process layout supersedes the original single-process concept. There is still one deployment, one persistent data volume, and no external database. You can run the API on its own.
 
-## Run locally
+## Run locally with Tako
 
-Requires Bun 1.4+, a current stable Rust toolchain (tested with 1.99.1), a C++17 compiler, and local disk. DuckDB is compiled and linked into the Rust binary; the first build takes several minutes. No npm or Node runtime is required.
+Requires [Tako](https://tako.sh/), Bun 1.4+, a current stable Rust toolchain (tested with 1.95.0), a C++17 compiler, and local disk. DuckDB is compiled into the API; the first build takes several minutes. No npm or Node runtime is required.
 
 ```sh
 git clone git@github.com:lilienblum/piko.git
 cd piko
 bun install --frozen-lockfile
-cp .env.example .env # optional development overrides
 bun dev
 ```
 
-Open **http://127.0.0.1:3000**. There is no application login. The API listens on **127.0.0.1:3001**. `bun dev` passes the `.env` configuration to both child processes. In a second terminal:
+Open **https://piko.test**. The independent API runs at **https://piko-api.test**. `bun dev` starts both named apps through Tako and creates a shared development notification secret if absent. The secret is encrypted by Tako under the ignored `.tako/` directory. There is no application login. `bun run dev:stop` stops these two apps.
 
 ```sh
-bun seed
+SSL_CERT_FILE=.tako/dev-ca.pem PIKO_API_URL=https://piko-api.test bun seed
 ```
 
-This creates **Orbit website** and **Orbit CLI**, with 30 days of sample page views, signups, commands, and configuration events. Reload the dashboard after seeding. Stable event IDs make seeding the same UTC dates idempotent; it creates a fresh sample ingestion key on each run. Sample data is opt-in and never loaded in production automatically.
+This creates **Orbit website** and **Orbit CLI**, with 30 days of sample page views, signups, commands, and configuration events. Overview refreshes through Tako channels after new events commit. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
 
-For independent processes:
+See [Tako setup, deployment, and realtime delivery](docs/tako.md). Development uses Tako's trusted local HTTPS proxy. If the CLI reports missing host prerequisites, complete `tako doctor` / Tako's local setup first.
 
-```sh
-# Terminal 1
-cargo run -p piko
+## Deployment
 
-# Terminal 2: Bun loads .env automatically.
-bun dev:dashboard
-```
+The primary deployment consists of **two native Tako apps** described by `tako.api.toml` and `tako.dashboard.toml`. Configure separate production hostnames, a shared notification secret, external access control, and exactly one API instance. The API uses Tako's persistent data directory. DuckDB requires a **stop-before-start API update**, including an ingress gate to prevent cold starts; see the [deployment procedure](docs/tako.md#production-and-updates).
 
-## Production
+A standalone alternative remains available, without live channels:
 
 ```sh
-# No application secrets are needed:
+bun run dev:standalone
+# Or build and run the two container services:
 docker compose up --build -d
 ```
 
-Docker builds separate API and dashboard targets from [Dockerfile](Dockerfile). Only the dashboard is published on loopback port 3000; the API is private to the Compose network. Use Cloudflare Tunnel and Access to protect the dashboard and management API before exposing them. Public collectors need narrowly scoped Access bypasses for ingestion and the tracker; see [the access boundary](docs/access.md). Piko does not validate Access JWTs or provide fallback authentication: a publicly reachable origin would expose management.
+Standalone URLs are http://127.0.0.1:3000 (dashboard) and http://127.0.0.1:3001 (API). Docker builds separate targets from [Dockerfile](Dockerfile); only the dashboard is published on loopback. Protect all management access using Cloudflare Tunnel and Access before exposing either app. See [the access boundary](docs/access.md). Piko does not validate Access JWTs or provide fallback authentication.
 
-Without Docker:
+Without Docker, build with `bun run build` and `cargo build --locked --release -p piko`, then run `./target/release/piko` and `bun run --cwd apps/dashboard start` in separate terminals.
 
-```sh
-bun run build
-cargo build --locked --release -p piko
-./target/release/piko
-# In another terminal:
-bun run --cwd apps/dashboard start
-```
+Under Tako, data lives in `$TAKO_DATA_DIR` (locally `.tako/data/app`); standalone data lives in `./data` by default (`state.sqlite`, SQLite WAL files, and `products/<product-id>.duckdb` with their WAL files). Mount `PIKO_DATA_DIR` on durable local storage. Run exactly **one API process per data directory**. Stop the API before copying the entire directory for backup; restore the whole directory together. Do not share the files over a network filesystem. Cleanup logically deletes rows; disk files need not shrink immediately. An eight-instance LRU cache bounds open product databases; active connections pin their instance against eviction. Each instance has a 64 MB DuckDB buffer limit. Query concurrency is bounded globally. Early shared-database MVP data is imported idempotently at startup; the original `events.duckdb` remains as a backup, outside active retention, and can be removed after verifying the import.
 
-Data lives in `./data` by default (`state.sqlite`, SQLite WAL files, and `products/<product-id>.duckdb` with their WAL files). Mount `PIKO_DATA_DIR` on durable local storage. Run exactly **one API process per data directory**. Stop the API before copying the entire directory for backup; restore the whole directory together. Do not share the files over a network filesystem. Cleanup logically deletes rows; disk files need not shrink immediately. An eight-instance LRU cache bounds open product databases; active connections pin their instance against eviction. Each instance has a 64 MB DuckDB buffer limit. Query concurrency is bounded globally. Early shared-database MVP data is imported idempotently at startup; the original `events.duckdb` remains as a backup, outside active retention, and can be removed after verifying the import.
-
-| Setting                  | Default                 | Purpose                               |
-| ------------------------ | ----------------------- | ------------------------------------- |
-| `PIKO_DATA_DIR`          | `data`                  | Durable database directory            |
-| `PIKO_BIND`              | `127.0.0.1:3001`        | API address                           |
-| `PIKO_QUERY_CONCURRENCY` | `4` (1–16)              | Independent DuckDB query connections  |
-| `PIKO_QUEUE_CAPACITY`    | `64` (1–1024)           | Bounded ingestion request slots/queue |
-| `PIKO_API_URL`           | `http://127.0.0.1:3001` | Dashboard-to-API origin               |
-| `HOST`, `PORT`           | `127.0.0.1`, `3000`     | Production Bun dashboard listener     |
+| Setting                  | Default                    | Purpose                                                    |
+| ------------------------ | -------------------------- | ---------------------------------------------------------- |
+| `PIKO_DATA_DIR`          | `TAKO_DATA_DIR` or `data`  | Explicit durable database override                         |
+| `PIKO_BIND`              | `127.0.0.1:3001`           | Standalone API address; Tako owns its listener             |
+| `PIKO_QUERY_CONCURRENCY` | `4` (1–16)                 | Independent DuckDB query connections                       |
+| `PIKO_QUEUE_CAPACITY`    | `64` (1–1024)              | Bounded ingestion request slots/queue                      |
+| `PIKO_API_URL`           | `http://127.0.0.1:3001`    | Dashboard-to-API origin                                    |
+| `HOST`, `PORT`           | `127.0.0.1`, `3000`        | Standalone Bun dashboard listener                          |
+| `PIKO_CHANGE_URL`        | unset outside Tako configs | Optional post-commit notification endpoint                 |
+| `PIKO_CHANGE_TOKEN`      | Tako secret                | Shared API-to-dashboard credential; never sent to browsers |
 
 ## Use it
 
@@ -94,7 +84,7 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-`bun test` runs the dependency-free SDK tests (scoped by `bunfig.toml`). `bun test:e2e` runs real Chromium browser tests against local processes on ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun x --bun playwright install chromium`.
+`bun test` runs SDK and notification validation tests (scoped by `bunfig.toml`). `bun test:e2e` runs real Chromium tests. For Tako, run `SSL_CERT_FILE=.tako/dev-ca.pem PIKO_REALTIME=1 PIKO_DASHBOARD_URL=https://piko.test PIKO_API_URL=https://piko-api.test bun test:e2e`; without overrides it targets standalone ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun node_modules/@playwright/test/cli.js install chromium`.
 
 ```sh
 cargo build --release -p piko
@@ -107,7 +97,7 @@ See [the verification record](docs/verification.md) for measured checks and thei
 
 ## Scope and limitations
 
-- External access control, one local API process, one disk. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
+- External access control, one local API process, one disk. Tako API updates require a brief maintenance window; normal rolling overlap is unsupported. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
 - Browser ingestion keys are intentionally public and write-only. They are not anti-abuse credentials; a key holder can submit fabricated events. There is global capacity backpressure, but no per-key fairness or bot detection.
 - Identity is explicit, optional, and product-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to anonymous events and respects Do Not Track by default. Installations are distinct from website visitors and sessions.
 - All dashboard displays and bucket boundaries use UTC in v1. Date ranges are half-open; today is partial. No local-time/DST bucket selection yet.

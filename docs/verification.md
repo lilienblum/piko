@@ -1,18 +1,18 @@
 # Verification record
 
-Verified locally on 1 November 2026 against the final two-process, per-product database, externally authenticated architecture.
+Verified locally on 1 November 2026 against the two-app Tako architecture, with per-product databases and external access control. Latest toolchain: Bun 1.4.4, Rust 1.95.0, Tako CLI 0.0.0-00ac4d2, JavaScript SDK 0.0.0-9301901, Rust SDK 0.2.1.
 
 | Check                                                      | Result                                                                     |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `bun fmt` and `bun fmt:check`                              | Pass                                                                       |
 | `bun typecheck`                                            | Pass                                                                       |
 | `bun lint`                                                 | Pass, no warnings                                                          |
-| `bun test`                                                 | 3 SDK tests pass                                                           |
-| `bun run build`                                            | TanStack Start client/server and standalone tracker build                  |
-| `cargo test`                                               | 9 Rust tests pass (2 storage, 6 API, 1 delivery deadline)                  |
+| `bun test`                                                 | 5 SDK/notification tests pass                                              |
+| `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route       |
+| `cargo test`                                               | 16 Rust tests pass (6 unit, 8 API, 1 delivery, 1 process runtime)          |
 | `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                       |
 | `cargo build --release -p piko`                            | Pass                                                                       |
-| `bun test:e2e`                                             | 27 Chromium tests pass                                                     |
+| `bun test:e2e`                                             | 33 Chromium tests pass on Tako; 27 pass on compiled standalone fallback    |
 | `bun scripts/verify-cli.ts`                                | Actual Rust CLI event committed; correct installation and numeric duration |
 | `docker compose config --quiet`                            | Pass                                                                       |
 | `bun benchmark`                                            | Completed; exact persisted-count assertion passes                          |
@@ -33,4 +33,21 @@ The Event stream follow-up adds five browser tests. They verify contextual websi
 
 The loading-state follow-up adds seven browser tests. Held requests verify catalog placeholders with usable navigation, Overview card geometry within 12 px of loaded content, isolated breakdown loading, Explore-specific placeholders and pending buttons, 390 px dark layouts with reduced motion, key-list loading/error/empty separation, and local retries. Mutation checks cover pending save/create/revoke operations, key preservation after a failed list refresh, exact key-ID matching despite a shared display prefix, visible revoke errors inside the dialog, and product creation followed by a catalog failure without a duplicate POST. The initial HTML contains a placeholder before JavaScript executes. False empty-key output and the hidden revoke error were reproduced before correction. All 27 Chromium tests passed against the final production bundle in 47.9 seconds. Manual review covered the Orbit website Overview, Explore navigation, CLI Settings, and desktop/mobile loading screenshots. Router configuration now removes the default 500 ms minimum pending display; this is a UI timing change, not a new backend performance measurement.
 
-This dashboard change leaves Rust, the API contract, and the benchmark harness unchanged. The Bun formatting, type, lint, SDK test, production build, and browser checks were rerun. The Rust and benchmark results above remain the measurements from the preceding API verification.
+The loading-only iteration above left Rust and the benchmark harness unchanged. The subsequent Tako migration below reran Rust and benchmark verification.
+
+
+## Tako runtime and durable channels
+
+Two native apps were exercised at `https://piko.test` and `https://piko-api.test`, with certificate verification enabled. Existing sample data was copied while the former API was stopped, then read successfully under Tako's persistent directory. The original directory was retained. Manual browser review covered Orbit website Overview and Orbit CLI Explore/typed event inspection, with the Live indicator connected.
+
+All **33 browser tests passed in 2.0 minutes** through Tako. Six realtime tests verify committed refreshes while keeping chart DOM mounted; product-scoped notifications; duplicate retries producing no refresh; Explore preserving pagination, draft filters, and an open inspector; reconnect after an interrupted SSE stream; rejection of ingestion keys at the notification endpoint; expired replay recovery; and retry after a transient runtime-capability failure. Stream interruption and HTTP 410 are injected deterministically before continuing onto the actual channel. A fresh cursor and canonical query are checked after expiry. Local channel replay remains in the daemon's memory; production durable replay was not tested remotely.
+
+The **27 existing UI tests passed in 52.5 seconds** against the compiled standalone dashboard on port 3100, forwarding to the managed API. That mode explicitly reports live=false and retains manual refresh. Both modes passed the separate-origin real browser-tracker test. The actual Rust CLI example also committed one execution, one installation, a boolean result, and numeric duration over Tako HTTPS.
+
+The 16 Rust tests include real subprocess coverage, beyond router-level tests: standalone HTTP continues working after a forged internal-status host request; a competing process fails on the directory lock; a committed event survives SIGKILL and restart; its numeric sum remains 42; retrying its ID reports a duplicate. The managed API was separately killed and restarted through Tako against the same directory, verifying the same count/sum/dedup behavior. Notification tests cover post-commit visibility, duplicate-only silence, retention-only changes, bounded overflow, failed delivery, retries, and an 800 ms request deadline.
+
+Verification reproduced and corrected lost readiness descriptors from an indirect executable launcher, standalone SDK bootstrap interfering with Tokio's descriptors, expired replay cursors that otherwise retry forever, and one-shot capability failure. The project now invokes JavaScript tools directly with Bun. The independent review also corrected native deployment's explicit start path. Tako itself was not modified.
+
+The release benchmark was rerun after the runtime fix: **15,142 newly committed events/sec**, query p95 **105.4 ms**, sampled peak API RSS **252.5 MiB**, zero request failures, and exactly 238,300 persisted events. See [the benchmark report](benchmark.md) for hardware, workload, raw measurements, and exclusions. This is the standalone Rust path, not a production Tako/channel throughput measurement.
+
+Production deployment, Linux artifact execution, Cloudflare policies, and Docker image startup were not exercised on this host. Compose syntax and the compiled standalone runtime were verified. The documented API maintenance procedure is required because DuckDB cannot overlap old and new processes during a rolling release. No claim of power-loss durability or long-running production capacity is made.

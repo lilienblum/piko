@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-11-01T03:37:13.989Z",
+  "measured_at": "2026-11-01T05:41:19.332Z",
   "hardware": {
     "cpu": "Apple M1 Pro",
     "logical_cpus": 10,
@@ -9,7 +9,7 @@
   },
   "runtime": {
     "bun": "1.4.4",
-    "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
     "profile": "release",
     "duckdb": "2.0.0 (duckdb-rs 1.20000.1)",
     "query_connections": 4,
@@ -26,29 +26,29 @@
     "ingest_workers": 4,
     "query_workers": 2,
     "requested_seconds": 15,
-    "actual_seconds": 15.062225209000001,
+    "actual_seconds": 15.077740583,
     "dedup_retry_every_batches": 10,
     "notes": "Closed-loop localhost HTTP. 30-day dataset; query computes summary, daily buckets, top groups, count, and 25 events. Timer includes final request drain. RSS sampled every 250 ms; API process only."
   },
   "results": {
-    "accepted_events": 233000,
-    "verified_stored_events": 243000,
-    "duplicate_events": 23200,
-    "events_per_second": 15469.161877939358,
-    "successful_queries": 687,
-    "queries_per_second": 45.61079060147785,
+    "accepted_events": 228300,
+    "verified_stored_events": 238300,
+    "duplicate_events": 22800,
+    "events_per_second": 15141.525929780615,
+    "successful_queries": 676,
+    "queries_per_second": 44.834303672937786,
     "ingestion_ms": {
-      "p50": 23.12695799999983,
-      "p95": 28.287709000000177,
-      "p99": 32.54837499999849
+      "p50": 23.489125000000058,
+      "p95": 28.28479199999856,
+      "p99": 35.02395900000192
     },
     "query_ms": {
-      "p50": 37.36187500000051,
-      "p95": 105.87362500000017,
-      "p99": 137.21329100000003
+      "p50": 38.22087499999907,
+      "p95": 105.38562499999898,
+      "p99": 132.65333300000202
     },
-    "baseline_rss_bytes": 63160320,
-    "peak_rss_bytes": 247005184,
+    "baseline_rss_bytes": 66682880,
+    "peak_rss_bytes": 264732672,
     "errors": {}
   }
 }

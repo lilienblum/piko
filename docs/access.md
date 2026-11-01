@@ -25,3 +25,13 @@ Verify from a signed-out browser or unauthenticated client after configuring the
 - The origin address/port is unreachable directly from the Internet.
 
 Access configuration is deployment-specific and was not provisioned or verified against a live Cloudflare account during local development. The local tests verify API scoping, the CSRF marker, CORS, and browser tracking; they do not assert that an external Access policy is installed.
+
+## Two Tako hosts and realtime
+
+With the Tako configs, route `piko.example.com` to the dashboard and `piko-api.example.com` to the independent API. Both origins must remain private/protected. Keep the dashboard's `/_tako/channels/*` receive endpoint under the same Access user policy as the dashboard: it carries workspace-wide product identifiers, and channel parameters are not an authorization boundary.
+
+The API needs server-to-server access to **only** `POST piko.example.com/_piko/changes`. A narrow path-specific Access bypass can expose this endpoint because the application itself checks the separate `PIKO_CHANGE_TOKEN` bearer secret before publishing. Missing/wrong credentials fail; the token is never embedded in browser code. Never bypass `/_piko/*` or `/_tako/*` broadly. The public ingestion key does not authorize notifications, queries, or management.
+
+Protect the API host with a service-auth Access policy for the dashboard gateway, or keep its origin reachable only through a private route. When using service authentication, store `PIKO_API_ACCESS_CLIENT_ID` and `PIKO_API_ACCESS_CLIENT_SECRET` through Tako secrets for the dashboard. The gateway attaches those headers server-side while preserving ingestion's separate bearer key. Keep public browser/CLI collection through the dashboard's narrow `/api/ingest` route; the direct API host need not have a public ingestion bypass.
+
+Verify `/_piko/changes` without its secret returns401, `/_tako/channels/*` redirects or denies a signed-out user at Access, and the direct API host cannot be reached without its service credential. For API updates, block both the gateway's upstream path and direct ingress before scaling to zero; see [Tako maintenance](tako.md#production-and-updates).
