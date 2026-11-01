@@ -4,7 +4,7 @@
   "rsc": false,
   "tsx": true,
   "tailwind": { "config": "", "css": "src/styles.css", "baseColor": "slate", "cssVariables": true },
-  "iconLibrary": "lucide",
+  "iconLibrary": "hugeicons",
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",

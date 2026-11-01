@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ArrowRight,
-  Clock3,
-  Eye,
-  Fingerprint,
-  MousePointer2,
-  Terminal,
-  Users,
-  Zap,
-} from "lucide-react";
+  ArrowRight02Icon,
+  Clock01Icon,
+  CommandLineIcon,
+  Cursor01Icon,
+  FingerPrintIcon,
+  FlashIcon,
+  UserGroupIcon,
+  ViewIcon,
+} from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,26 +81,26 @@ function ProductOverview() {
           label: "Page views",
           value: number(s?.total),
           detail: "Every visit to a page",
-          icon: Eye,
+          icon: ViewIcon,
         },
         {
           label: "Unique visitors",
           value: s?.total && !s.visitors ? "—" : number(s?.visitors),
           detail:
             s?.total && !s.visitors ? "No visitor IDs received" : "With an explicit visitor ID",
-          icon: Users,
+          icon: UserGroupIcon,
         },
         {
           label: "Sessions",
           value: s?.total && !s.sessions ? "—" : number(s?.sessions),
           detail: "Distinct visitor + session pairs",
-          icon: MousePointer2,
+          icon: Cursor01Icon,
         },
         {
           label: "Views per session",
           value: s?.sessions ? number((s?.session_views ?? 0) / s.sessions, 1) : "—",
           detail: "Views with an explicit session ID",
-          icon: Zap,
+          icon: FlashIcon,
         },
       ]
     : tool
@@ -108,25 +109,25 @@ function ProductOverview() {
             label: "Command executions",
             value: number(s?.total),
             detail: "Across all commands",
-            icon: Terminal,
+            icon: CommandLineIcon,
           },
           {
             label: "Active installations",
             value: s?.total && !s.installations ? "—" : number(s?.installations),
             detail: "With an explicit installation ID",
-            icon: Fingerprint,
+            icon: FingerPrintIcon,
           },
           {
             label: "Success rate",
             value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
             detail: "Commands reporting success",
-            icon: Zap,
+            icon: FlashIcon,
           },
           {
             label: "Average duration",
             value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
             detail: `p95 · ${number(s?.p95_duration)} ms`,
-            icon: Clock3,
+            icon: Clock01Icon,
           },
         ]
       : [
@@ -134,25 +135,25 @@ function ProductOverview() {
             label: "Events",
             value: number(s?.total),
             detail: "All sources, one product",
-            icon: Zap,
+            icon: FlashIcon,
           },
           {
             label: "Identified actors",
             value: number(s?.actors),
             detail: "Identity kinds counted separately",
-            icon: Users,
+            icon: UserGroupIcon,
           },
           {
             label: "Website visitors",
             value: number(s?.visitors),
             detail: "Explicit visitor identities",
-            icon: Eye,
+            icon: ViewIcon,
           },
           {
             label: "Installations",
             value: number(s?.installations),
             detail: "Explicit installation identities",
-            icon: Terminal,
+            icon: CommandLineIcon,
           },
         ];
   return (
@@ -175,7 +176,12 @@ function ProductOverview() {
           <Button variant="outline" asChild>
             <Link to="/explore">
               Explore events
-              <ArrowRight data-icon="inline-end" />
+              <HugeiconsIcon
+                icon={ArrowRight02Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                data-icon="inline-end"
+              />
             </Link>
           </Button>
         </div>
@@ -197,7 +203,7 @@ function ProductOverview() {
                   <CardContent>
                     <div className="metric-label">
                       {m.label}
-                      <m.icon />
+                      <HugeiconsIcon icon={m.icon} strokeWidth={2} aria-hidden="true" />
                     </div>
                     <div className="metric-value">{m.value}</div>
                     <p>{m.detail}</p>
@@ -292,7 +298,7 @@ function ProductOverview() {
                       : "No identity is inferred from IP addresses or user agents."}
                   <Link to="/settings">
                     Manage collection
-                    <ArrowRight />
+                    <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" />
                   </Link>
                 </div>
               </>

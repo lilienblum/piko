@@ -9,22 +9,23 @@ import {
   type ReactNode,
 } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ArrowUpRight,
-  Box,
-  CalendarDays,
-  ChevronRight,
-  CircleHelp,
-  Command,
-  Globe2,
-  LayoutDashboard,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings2,
-  Sparkles,
-  X,
-} from "lucide-react";
+  Add01Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  Calendar03Icon,
+  Cancel01Icon,
+  CommandIcon,
+  CubeIcon,
+  DashboardSquare01Icon,
+  Globe02Icon,
+  HelpCircleIcon,
+  RefreshIcon,
+  Search01Icon,
+  Settings02Icon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
 import { ThemeMenu } from "./theme-provider";
@@ -76,7 +77,8 @@ export function useAnalyticsPending(pending: boolean) {
   }, [pending, setAnalyticsPending]);
 }
 export function ProductIcon({ kind }: { kind: string }) {
-  return kind === "website" ? <Globe2 /> : kind === "tool" ? <Command /> : <Box />;
+  const icon = kind === "website" ? Globe02Icon : kind === "tool" ? CommandIcon : CubeIcon;
+  return <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />;
 }
 export function Logo() {
   return (
@@ -218,7 +220,7 @@ export function AppShell() {
                 options={products.map((p) => [p.id, p.name])}
               />
               <div className="breadcrumbs">
-                <ChevronRight />
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" />
                 <strong>{label}</strong>
               </div>
             </div>
@@ -235,7 +237,7 @@ export function AppShell() {
               <ValueSelect
                 label="Date range"
                 value={drilldown ? "linked" : String(days)}
-                icon={<CalendarDays />}
+                icon={<HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />}
                 className="date-select"
                 onValueChange={(value) => {
                   if (value === "linked") return;
@@ -259,7 +261,11 @@ export function AppShell() {
                 disabled={loading || analyticsPending}
                 aria-busy={loading || analyticsPending}
               >
-                {loading || analyticsPending ? <Spinner aria-hidden="true" /> : <RefreshCw />}
+                {loading || analyticsPending ? (
+                  <Spinner aria-hidden="true" />
+                ) : (
+                  <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
+                )}
               </Button>
               <ThemeMenu />
             </div>
@@ -270,7 +276,8 @@ export function AppShell() {
           </div>
           <footer className="page-footer">
             <span>
-              <Sparkles />A little data. A clearer picture.
+              <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} aria-hidden="true" />A little data.
+              A clearer picture.
             </span>
             <span>All times in UTC · Identity is optional</span>
           </footer>
@@ -299,7 +306,7 @@ function Navigation({ path }: { path: string }) {
             aria-label="Close navigation"
             onClick={() => setOpenMobile(false)}
           >
-            <X />
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
           </Button>
         )}
       </SidebarHeader>
@@ -311,15 +318,15 @@ function Navigation({ path }: { path: string }) {
               <SidebarMenu>
                 {(
                   [
-                    ["/", "Overview", LayoutDashboard],
-                    ["/explore", "Explore", Search],
-                    ["/settings", "Settings", Settings2],
+                    ["/", "Overview", DashboardSquare01Icon],
+                    ["/explore", "Explore", Search01Icon],
+                    ["/settings", "Settings", Settings02Icon],
                   ] as const
-                ).map(([to, label, Icon]) => (
+                ).map(([to, label, icon]) => (
                   <SidebarMenuItem key={to}>
                     <SidebarMenuButton asChild isActive={path === to} tooltip={label} size="lg">
                       <Link to={to} onClick={() => setOpenMobile(false)}>
-                        <Icon />
+                        <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
                         <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -339,9 +346,14 @@ function Navigation({ path }: { path: string }) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Documentation">
               <a href="https://github.com/lilienblum/piko#readme" target="_blank" rel="noreferrer">
-                <CircleHelp />
+                <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} aria-hidden="true" />
                 <span className="group-data-[collapsible=icon]:sr-only">Documentation</span>
-                <ArrowUpRight className="ml-auto group-data-[collapsible=icon]:hidden" />
+                <HugeiconsIcon
+                  icon={ArrowUpRight01Icon}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  className="ml-auto group-data-[collapsible=icon]:hidden"
+                />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -390,7 +402,12 @@ export function NoProduct() {
         </EmptyHeader>
         <Button asChild>
           <Link to="/settings">
-            <Plus data-icon="inline-start" />
+            <HugeiconsIcon
+              icon={Add01Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
             Create a product
           </Link>
         </Button>

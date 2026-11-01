@@ -1,5 +1,11 @@
 import { useId } from "react";
-import { ArrowRight, ChartNoAxesCombined, ChevronRight, RefreshCw } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  AnalyticsUpIcon,
+  ArrowRight01Icon,
+  ArrowRight02Icon,
+  RefreshIcon,
+} from "@hugeicons/core-free-icons";
 import { Link } from "@tanstack/react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -23,7 +29,12 @@ export function ErrorState({ message, retry }: { message: string; retry?: () => 
         {message}
         {retry && (
           <Button variant="outline" size="sm" onClick={retry}>
-            <RefreshCw data-icon="inline-start" />
+            <HugeiconsIcon
+              icon={RefreshIcon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
             Try again
           </Button>
         )}
@@ -36,7 +47,7 @@ export function NoEvents() {
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <ChartNoAxesCombined />
+          <HugeiconsIcon icon={AnalyticsUpIcon} strokeWidth={2} aria-hidden="true" />
         </EmptyMedia>
         <EmptyTitle>Your next insight starts with an event</EmptyTitle>
         <EmptyDescription>
@@ -46,7 +57,12 @@ export function NoEvents() {
       <Button variant="outline" asChild>
         <Link to="/settings">
           Connect a product
-          <ArrowRight data-icon="inline-end" />
+          <HugeiconsIcon
+            icon={ArrowRight02Icon}
+            strokeWidth={2}
+            aria-hidden="true"
+            data-icon="inline-end"
+          />
         </Link>
       </Button>
     </Empty>
@@ -205,7 +221,14 @@ export function BreakdownRows({
                     {number(total ? (g.count / total) * 100 : 0, 1)}%
                   </span>
                 )}
-                {target && <ChevronRight className="breakdown-arrow" aria-hidden="true" />}
+                {target && (
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    strokeWidth={2}
+                    className="breakdown-arrow"
+                    aria-hidden="true"
+                  />
+                )}
               </span>
             </>
           );

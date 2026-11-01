@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import type { ExploreDrilldown } from "@/lib/explore-search";
-import { Filter, Play, RefreshCw, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Cancel01Icon,
+  FilterHorizontalIcon,
+  PlayIcon,
+  RefreshIcon,
+} from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +174,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                       setPage(0);
                     }}
                   >
-                    <X className="size-3" />
+                    <HugeiconsIcon
+                      icon={Cancel01Icon}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      className="size-3"
+                    />
                   </button>
                 </Badge>
               )}
@@ -182,7 +193,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
           </div>
           <Button variant="ghost" size="sm" asChild>
             <Link to="/explore" search={{}}>
-              <X data-icon="inline-start" />
+              <HugeiconsIcon
+                icon={Cancel01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
               Clear selection
             </Link>
           </Button>
@@ -206,7 +222,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
               ) : hasUpdates ? (
                 <span className="live-dot" aria-hidden="true" />
               ) : (
-                <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={RefreshIcon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                  aria-hidden="true"
+                />
               )}
               <span role="status">{hasUpdates ? "New data available" : "Refresh results"}</span>
             </Button>
@@ -293,7 +314,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                 <div className="query-actions">
                   <CollapsibleTrigger asChild>
                     <Button type="button" variant="outline">
-                      <Filter data-icon="inline-start" />
+                      <HugeiconsIcon
+                        icon={FilterHorizontalIcon}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                        data-icon="inline-start"
+                      />
                       Filter{applied.filterProperty ? " · 1" : ""}
                     </Button>
                   </CollapsibleTrigger>
@@ -306,7 +332,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                     {query.refreshing ? (
                       <Spinner data-icon="inline-start" aria-hidden="true" />
                     ) : (
-                      <Play data-icon="inline-start" />
+                      <HugeiconsIcon
+                        icon={PlayIcon}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                        data-icon="inline-start"
+                      />
                     )}
                     Run query
                   </Button>
@@ -360,7 +391,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                       setShowFilter(false);
                     }}
                   >
-                    <X />
+                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
                   </Button>
                 </FieldGroup>
               </CollapsibleContent>

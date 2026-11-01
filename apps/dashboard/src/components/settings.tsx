@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Check, Code2, Copy, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Add01Icon,
+  Copy01Icon,
+  Delete02Icon,
+  Key01Icon,
+  SecurityCheckIcon,
+  SourceCodeIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -137,7 +146,12 @@ export function Settings() {
         >
           <DialogTrigger asChild>
             <Button>
-              <Plus data-icon="inline-start" />
+              <HugeiconsIcon
+                icon={Add01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
               New product
             </Button>
           </DialogTrigger>
@@ -263,7 +277,7 @@ function ProductSettings({ product }: { product: Product }) {
       {error && !revoke && <ErrorState message={error} />}
       {notice && (
         <Alert>
-          <Check />
+          <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} aria-hidden="true" />
           <AlertTitle>{notice}</AlertTitle>
         </Alert>
       )}
@@ -308,19 +322,29 @@ function ProductSettings({ product }: { product: Product }) {
                 <CardTitle>Ingestion keys</CardTitle>
                 <CardDescription>Write-only keys, scoped to this product.</CardDescription>
               </div>
-              <KeyRound className="quiet-icon" />
+              <HugeiconsIcon
+                icon={Key01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                className="quiet-icon"
+              />
             </div>
           </CardHeader>
           <CardContent>
             {newKey && (
               <Alert className="mb-5">
-                <ShieldCheck />
+                <HugeiconsIcon icon={SecurityCheckIcon} strokeWidth={2} aria-hidden="true" />
                 <AlertTitle>Copy your new key</AlertTitle>
                 <AlertDescription>
                   This is the only time the full key is shown.
                   <code className="new-key">{newKey}</code>
                   <Button variant="outline" size="sm" onClick={() => void copy(newKey)}>
-                    <Copy data-icon="inline-start" />
+                    <HugeiconsIcon
+                      icon={Copy01Icon}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      data-icon="inline-start"
+                    />
                     {copied ? "Copied" : "Copy key"}
                   </Button>
                 </AlertDescription>
@@ -362,7 +386,7 @@ function ProductSettings({ product }: { product: Product }) {
                           setRevoke(k);
                         }}
                       >
-                        <Trash2 />
+                        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} aria-hidden="true" />
                       </Button>
                     )}
                   </div>
@@ -414,7 +438,12 @@ function ProductSettings({ product }: { product: Product }) {
                   {pending === "create-key" ? (
                     <Spinner data-icon="inline-start" aria-hidden="true" />
                   ) : (
-                    <Plus data-icon="inline-start" />
+                    <HugeiconsIcon
+                      icon={Add01Icon}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      data-icon="inline-start"
+                    />
                   )}
                   {pending === "create-key" ? "Creating key…" : "Create ingestion key"}
                 </Button>
@@ -433,7 +462,7 @@ function ProductSettings({ product }: { product: Product }) {
             <div className="card-heading">
               <div>
                 <CardTitle>
-                  <Code2 />
+                  <HugeiconsIcon icon={SourceCodeIcon} strokeWidth={2} aria-hidden="true" />
                   Connect your product
                 </CardTitle>
                 <CardDescription>A small snippet. A useful starting point.</CardDescription>
@@ -456,7 +485,12 @@ function ProductSettings({ product }: { product: Product }) {
                       : "analytics.ts"}
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => void copy(snippet)}>
-                  <Copy data-icon="inline-start" />
+                  <HugeiconsIcon
+                    icon={Copy01Icon}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                    data-icon="inline-start"
+                  />
                   {copied ? "Copied" : "Copy snippet"}
                 </Button>
               </div>

@@ -326,7 +326,6 @@ h1 {
   width: 14px;
   height: 14px;
   color: var(--muted-foreground);
-  stroke-width: 1.7;
 }
 .metric-value {
   font-family: "Manrope Variable", sans-serif;

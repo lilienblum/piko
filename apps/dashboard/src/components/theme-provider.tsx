@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -73,12 +74,12 @@ export function ThemeMenu() {
   const context = useContext(ThemeContext);
   if (!context) throw new Error("Missing theme provider");
   const { theme, setTheme } = context;
-  const Icon = theme === "auto" ? Monitor : theme === "dark" ? Moon : Sun;
+  const icon = theme === "auto" ? ComputerIcon : theme === "dark" ? Moon02Icon : Sun03Icon;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Appearance" title={`Appearance: ${theme}`}>
-          <Icon />
+          <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -91,15 +92,15 @@ export function ThemeMenu() {
           }}
         >
           <DropdownMenuRadioItem value="light">
-            <Sun />
+            <HugeiconsIcon icon={Sun03Icon} strokeWidth={2} aria-hidden="true" />
             Light
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
-            <Moon />
+            <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} aria-hidden="true" />
             Dark
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="auto">
-            <Monitor />
+            <HugeiconsIcon icon={ComputerIcon} strokeWidth={2} aria-hidden="true" />
             Auto
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

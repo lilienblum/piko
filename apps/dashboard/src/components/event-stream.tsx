@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Box,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Filter,
-  Globe2,
-  Terminal,
-  X,
-} from "lucide-react";
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Cancel01Icon,
+  CommandLineIcon,
+  Copy01Icon,
+  CubeIcon,
+  FilterHorizontalIcon,
+  Globe02Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,7 +85,11 @@ function EventContext({ event }: { event: EventRow }) {
       <div className="stream-context-details">
         {typeof p.success === "boolean" && (
           <Badge variant={p.success ? "secondary" : "destructive"}>
-            {p.success ? <Check /> : <X />}
+            <HugeiconsIcon
+              icon={p.success ? Tick01Icon : Cancel01Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             {p.success ? "Success" : "Failed"}
           </Badge>
         )}
@@ -137,8 +142,12 @@ export function EventStream({
         header: "Event",
         cell: ({ row }) => {
           const event = row.original;
-          const Icon =
-            event.name === "page_view" ? Globe2 : event.name === "command_run" ? Terminal : Box;
+          const icon =
+            event.name === "page_view"
+              ? Globe02Icon
+              : event.name === "command_run"
+                ? CommandLineIcon
+                : CubeIcon;
           return (
             <div className="stream-event">
               <Button
@@ -156,9 +165,19 @@ export function EventStream({
                   setSelectedId(event.event_id);
                 }}
               >
-                <Icon data-icon="inline-start" />
+                <HugeiconsIcon
+                  icon={icon}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  data-icon="inline-start"
+                />
                 <span>{event.name}</span>
-                <ChevronRight data-icon="inline-end" />
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  data-icon="inline-end"
+                />
               </Button>
               <div className="stream-event-meta">
                 <Badge variant="outline">{event.source}</Badge>
@@ -365,7 +384,12 @@ export function EventStream({
               disabled={loading || refreshing || page === 0}
               onClick={() => onPageChange(page - 1)}
             >
-              <ChevronLeft data-icon="inline-start" />
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
               Previous
             </Button>
             <Button
@@ -375,7 +399,12 @@ export function EventStream({
               onClick={() => onPageChange(page + 1)}
             >
               Next
-              <ChevronRight data-icon="inline-end" />
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                strokeWidth={2}
+                aria-hidden="true"
+                data-icon="inline-end"
+              />
             </Button>
           </div>
         </CardFooter>
@@ -407,7 +436,7 @@ export function EventStream({
                 aria-label="Close event"
                 className="absolute right-4 top-4"
               >
-                <X />
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
               </Button>
             </SheetClose>
           </SheetHeader>
@@ -425,7 +454,7 @@ export function EventStream({
                     disabled={selectedIndex === 0}
                     onClick={() => selectAdjacent(selectedIndex - 1)}
                   >
-                    <ChevronLeft />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" />
                   </Button>
                   <Button
                     variant="outline"
@@ -434,7 +463,7 @@ export function EventStream({
                     disabled={selectedIndex + 1 === events.length}
                     onClick={() => selectAdjacent(selectedIndex + 1)}
                   >
-                    <ChevronRight />
+                    <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -527,7 +556,7 @@ function EventInspector({
                       title="Copy JSON value"
                       onClick={() => void copy(JSON.stringify(value))}
                     >
-                      <Copy />
+                      <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} aria-hidden="true" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -536,7 +565,11 @@ function EventInspector({
                       title="Filter by this value"
                       onClick={() => onFilter(key, value)}
                     >
-                      <Filter />
+                      <HugeiconsIcon
+                        icon={FilterHorizontalIcon}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
                     </Button>
                   </div>
                 </div>
@@ -588,7 +621,12 @@ function EventInspector({
             size="sm"
             onClick={() => void copy(JSON.stringify(event, null, 2))}
           >
-            <Copy data-icon="inline-start" />
+            <HugeiconsIcon
+              icon={Copy01Icon}
+              strokeWidth={2}
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
             Copy JSON
           </Button>
         </div>
