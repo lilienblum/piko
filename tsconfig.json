@@ -1,1 +1,36 @@
-{"compilerOptions":{"target":"ES2022","lib":["ES2022","DOM","DOM.Iterable"],"module":"ESNext","moduleResolution":"Bundler","jsx":"react-jsx","strict":true,"skipLibCheck":true,"noEmit":true,"allowImportingTsExtensions":true,"resolveJsonModule":true,"baseUrl":".","paths":{"@/*":["./src/*"]},"types":["bun","vite/client"]},"include":["src/**/*.ts","src/**/*.tsx","sdk/**/*.ts","scripts/**/*.ts","tests/**/*.ts","*.ts"]}
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./apps/dashboard/src/*"
+      ]
+    },
+    "types": [
+      "bun",
+      "vite/client"
+    ]
+  },
+  "include": [
+    "apps/dashboard/**/*.ts",
+    "apps/dashboard/**/*.tsx",
+    "sdk/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "*.ts"
+  ]
+}
