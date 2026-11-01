@@ -5,6 +5,7 @@ import type { startBrowserTracker } from "../sdk/typescript/browser";
 declare global {
   interface Window {
     tracker: ReturnType<typeof startBrowserTracker>;
+    shutdownPending: Promise<void>;
     originalPush: History["pushState"];
     originalReplace: History["replaceState"];
     retained: Event;
@@ -341,3 +342,66 @@ for (const method of ["getItem", "setItem"] as const) {
     }
   });
 }
+
+test("shutdown drains events queued behind an in-flight batch", async ({ page }) => {
+  const f = await fixture("timeoutMs:5000", true);
+  try {
+    await open(page, f.server.url);
+    await page.evaluate(() => {
+      for (let i = 0; i < 45; i++) window.tracker.track("queued", { index: i });
+      window.shutdownPending = window.tracker.shutdown();
+    });
+    await expect.poll(() => f.requests.length).toBe(1);
+    f.release();
+    await page.evaluate(() => window.shutdownPending);
+    expect(f.requests.map(({ events }) => events.length)).toEqual([20, 20, 6]);
+    const events = f.requests.flatMap(({ events }) => events);
+    expect(new Set(events.map((event) => event.event_id)).size).toBe(46);
+    expect(await page.evaluate(() => window.tracker.track("after_shutdown"))).toBe(false);
+    expect(await page.evaluate(() => history.pushState === window.originalPush)).toBe(true);
+  } finally {
+    f.release();
+    await f.server.stop(true);
+  }
+});
+
+test("shutdown has one deadline for the whole queue and discards leftovers", async ({ page }) => {
+  const f = await fixture("timeoutMs:120", true);
+  try {
+    await open(page, f.server.url);
+    const elapsed = await page.evaluate(async () => {
+      for (let i = 0; i < 80; i++) window.tracker.track("queued");
+      const started = performance.now();
+      await window.tracker.shutdown();
+      return performance.now() - started;
+    });
+    expect(elapsed).toBeLessThan(400);
+    const attempts = f.requests.length;
+    await page.evaluate(() => window.tracker.flush());
+    expect(f.requests).toHaveLength(attempts);
+  } finally {
+    f.release();
+    await f.server.stop(true);
+  }
+});
+
+test("valid events above the browser keepalive body limit still deliver while the page is open", async ({
+  page,
+}) => {
+  const f = await fixture();
+  try {
+    await open(page, f.server.url);
+    await page.evaluate(async () => {
+      // 32 valid 2048-byte strings exceed keepalive's 64 KiB budget after JSON framing.
+      const properties = Object.fromEntries(
+        Array.from({ length: 32 }, (_, i) => [`field_${i}`, "é".repeat(1024)]),
+      );
+      window.tracker.track("large", properties);
+      await window.tracker.shutdown();
+    });
+    expect(f.requests).toHaveLength(1);
+    expect(f.requests[0].events[1].properties?.field_0).toBe("é".repeat(1024));
+  } finally {
+    await f.server.stop(true);
+  }
+});

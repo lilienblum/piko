@@ -20,6 +20,7 @@ export type BrowserOptions = Options & {
 /** No identity or campaign values by default. The host application owns consent. */
 export function startBrowserTracker(options: BrowserOptions) {
   const namespace = `piko:${new URL(options.endpoint, location.href).origin}:${options.identityScope ?? options.key}`;
+  const capacity = options.capacity ?? 100;
   const campaignKeys = campaignParams.filter((key) => options.campaigns?.includes(key));
   const queue: Event[] = [];
   const delivery = new AbortController();
@@ -76,7 +77,7 @@ export function startBrowserTracker(options: BrowserOptions) {
     }
   }
   function track(name: string, properties: Properties = {}) {
-    if (!canTrack() || queue.length >= (options.capacity ?? 100)) return false;
+    if (!canTrack() || queue.length >= capacity) return false;
     const event: Event = {
       event_id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
@@ -145,7 +146,19 @@ export function startBrowserTracker(options: BrowserOptions) {
     optOut,
     async shutdown() {
       stop();
-      await flush();
+      if (optedOut || (!queue.length && !running)) return;
+      // Drain accepted events without letting multiple batches extend shutdown's deadline.
+      const timer = setTimeout(() => {
+        queue.length = 0;
+        delivery.abort();
+      }, options.timeoutMs ?? 800);
+      try {
+        do {
+          await flush();
+        } while ((queue.length || running) && !delivery.signal.aborted);
+      } finally {
+        clearTimeout(timer);
+      }
     },
   };
   if (privacyBlocked()) {
@@ -153,6 +166,8 @@ export function startBrowserTracker(options: BrowserOptions) {
     optedOut = true;
     return tracker;
   }
+  if (!Number.isSafeInteger(capacity) || capacity <= 0)
+    throw new Error("capacity must be a positive finite integer");
   const client = new Piko({
     ...options,
     keepalive: true,

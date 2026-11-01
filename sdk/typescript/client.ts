@@ -29,7 +29,12 @@ export class DeliveryError extends Error {
 /** Small dependency-free client. A send's total deadline includes retries and backoff. */
 export class Piko {
   constructor(private options: Options) {
-    if ((options.timeoutMs ?? 800) <= 0) throw new Error("timeoutMs must be positive");
+    const timeout = options.timeoutMs ?? 800;
+    const retries = options.retries ?? 1;
+    if (!Number.isSafeInteger(timeout) || timeout <= 0)
+      throw new Error("timeoutMs must be a positive finite integer");
+    if (!Number.isSafeInteger(retries) || retries < 0)
+      throw new Error("retries must be a nonnegative finite integer");
   }
   send(event: Event): Promise<Ack> {
     return this.sendBatch([event]);
@@ -44,6 +49,9 @@ export class Piko {
         timestamp: event.timestamp ?? new Date().toISOString(),
       })),
     });
+    // Browsers reject larger keepalive bodies even while the page is still open.
+    const keepalive =
+      (this.options.keepalive ?? false) && new TextEncoder().encode(payload).byteLength <= 65_536;
     const timeout = this.options.timeoutMs ?? 800;
     const deadline = Date.now() + timeout;
     const timeoutSignal = AbortSignal.timeout(timeout);
@@ -63,16 +71,17 @@ export class Piko {
           },
           body: payload,
           signal,
-          keepalive: this.options.keepalive ?? false,
+          keepalive,
           credentials: "omit",
           referrerPolicy: "no-referrer",
           redirect: "error",
         });
         if (response.ok) return (await response.json()) as Ack;
         const message = await response.json().catch(() => ({ error: response.statusText }));
-        lastError = new DeliveryError(message.error ?? "Delivery failed", response.status);
+        lastError = new DeliveryError(message?.error ?? "Delivery failed", response.status);
         if (response.status < 500 && response.status !== 429) throw lastError;
-        backoff = Math.max(backoff, Number(response.headers.get("retry-after") ?? 0) * 1000);
+        const retryAfter = Number(response.headers.get("retry-after") ?? 0);
+        if (Number.isFinite(retryAfter)) backoff = Math.max(backoff, retryAfter * 1000);
       } catch (error) {
         if (
           error instanceof DeliveryError &&
@@ -89,7 +98,17 @@ export class Piko {
         Date.now() + backoff >= deadline
       )
         break;
-      await new Promise((resolve) => setTimeout(resolve, backoff));
+      await new Promise<void>((resolve, reject) => {
+        const abort = () => {
+          clearTimeout(timer);
+          reject(signal.reason);
+        };
+        const timer = setTimeout(() => {
+          signal.removeEventListener("abort", abort);
+          resolve();
+        }, backoff);
+        signal.addEventListener("abort", abort, { once: true });
+      });
     }
     throw lastError ?? new DeliveryError("Delivery deadline reached");
   }

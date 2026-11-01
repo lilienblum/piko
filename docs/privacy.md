@@ -21,7 +21,7 @@ Persistent random IDs are pseudonymous, not anonymous. Piko separates visitor/se
 
 Choose a collection policy before loading the tracker. `enabled: false` starts inert; `sanitizePath` can map private URLs to route patterns or omit the path; `collectReferrer: false` removes the referrer; and `beforeSend` can sanitize or drop any event. Exceptions from sanitizers drop the event. See [the collection guide](collection.md) for examples.
 
-Use `optOut()` for withdrawal. It stops future collection, discards the pending queue, aborts delivery, and clears that tracker's stored identity. Persist the user's choice in your application and honor it on subsequent loads. An abort cannot retract an event the collector has already received. Normal `shutdown()` flushes a bounded batch and is not an opt-out.
+Use `optOut()` for withdrawal. It stops future collection, discards the pending queue, aborts delivery, and clears that tracker's stored identity. Persist the user's choice in your application and honor it on subsequent loads. An abort cannot retract an event the collector has already received. Normal `shutdown()` attempts queued batches within one total deadline and is not an opt-out.
 
 Pathnames can contain names, emails, order IDs, or access tokens. Hostnames can identify private tenants. Even a UTM value can contain personal data. Piko deliberately avoids unreliable heuristic redaction. Use canonical routes and an allowlist of product categories, booleans, and numeric measurements that you actually need. The generic ingestion API preserves the events you explicitly submit; it cannot determine whether a string is personal information.
 

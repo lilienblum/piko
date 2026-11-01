@@ -109,3 +109,46 @@ test("307 responses cannot forward event bodies to another endpoint", async () =
     await destination.stop(true);
   }
 });
+
+test("cancellation interrupts retry backoff immediately", async () => {
+  const controller = new AbortController();
+  globalThis.fetch = (async () =>
+    new Response("{}", {
+      status: 503,
+      headers: { "retry-after": "2" },
+    })) as unknown as typeof fetch;
+  const pending = new Piko({
+    endpoint: "http://localhost",
+    key: "key",
+    timeoutMs: 5000,
+    signal: controller.signal,
+  }).send({ name: "test", source: "sdk" });
+  // Allow the first response to enter its two-second retry backoff.
+  await Bun.sleep(20);
+  const started = performance.now();
+  controller.abort();
+  await expect(pending).rejects.toThrow();
+  expect(performance.now() - started).toBeLessThan(250);
+});
+
+test("non-object error responses do not retry permanent failures", async () => {
+  let attempts = 0;
+  globalThis.fetch = (async () => {
+    attempts++;
+    return Response.json(null, { status: 400 });
+  }) as unknown as typeof fetch;
+  await expect(
+    new Piko({ endpoint: "http://localhost", key: "key" }).send({
+      name: "test",
+      source: "sdk",
+    }),
+  ).rejects.toThrow("Delivery failed");
+  expect(attempts).toBe(1);
+});
+
+test("delivery limits must be finite integers", () => {
+  for (const timeoutMs of [NaN, Infinity, 0, -1, 1.5])
+    expect(() => new Piko({ endpoint: "http://localhost", key: "key", timeoutMs })).toThrow();
+  for (const retries of [NaN, Infinity, -1, 0.5])
+    expect(() => new Piko({ endpoint: "http://localhost", key: "key", retries })).toThrow();
+});

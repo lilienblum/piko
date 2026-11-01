@@ -63,7 +63,7 @@ Identity defaults to **`none`**, with no visitor/session IDs or identifier stora
 
 On withdrawal, call `tracker.optOut()`. It stops collection, removes hooks/timers, discards queued events, aborts delivery, and removes only this tracker's stored visitor/session IDs. It cannot undo a request already received by the server. The host application must persist the user's choice and avoid starting another enabled tracker on reload. A later explicit opt-in requires a new tracker instance. Privacy signals are also checked before collecting and flushing, so a newly observed opt-out discards pending events.
 
-The pending queue holds 100 events, sends batches of 20, and flushes every two seconds. Full queues drop new events. Delivery uses keepalive fetch with a short total deadline; browser shutdown may lose events. `flush()` and `shutdown()` attempt one bounded batch and do not guarantee delivery of the entire pending queue. `shutdown()` is a normal lifecycle flush; use **`optOut()`** for privacy withdrawal. Install only one tracker instance per page.
+The pending queue holds 100 events, sends batches of 20, and flushes every two seconds. Full queues drop new events. Delivery uses keepalive fetch for bodies up to 64 KiB and ordinary fetch for larger bodies, with a short total deadline. Ordinary fetch cannot outlive page unload, and browser shutdown may lose events. `flush()` attempts one bounded batch. `shutdown()` stops collection and drains queued batches within one total `timeoutMs` deadline (800 ms by default), discarding anything still pending at the deadline. Neither guarantees delivery. `shutdown()` is a normal lifecycle flush; use **`optOut()`** for privacy withdrawal. Install only one tracker instance per page.
 
 ## Rust CLI
 
