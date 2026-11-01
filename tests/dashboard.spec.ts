@@ -768,3 +768,46 @@ test("clipboard failures are visible and inspector scope ends when the product c
     page.locator(".event-card").getByRole("button", { name: "Inspect command_run", exact: true }),
   ).toHaveCount(15);
 });
+
+test("workspace stays usable when browser storage and cookies are blocked", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get() {
+        throw new DOMException("Storage blocked", "SecurityError");
+      },
+    });
+    Object.defineProperty(document, "cookie", {
+      get() {
+        return "";
+      },
+      set() {
+        throw new DOMException("Cookies blocked", "SecurityError");
+      },
+    });
+  });
+  await openWorkspace(page);
+  await expect(page.getByRole("combobox", { name: "Select product" })).toBeEnabled({
+    timeout: 3000,
+  });
+  await select(page, "Select product", tool.name);
+  await select(page, "Date range", "Last 7 days");
+  await expect(page.locator(".metric-value").first()).toHaveText("32");
+  await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+  await expect(page.locator('[data-slot="sidebar"][data-state]')).toHaveAttribute(
+    "data-state",
+    "collapsed",
+  );
+  await appearance(page, "Dark");
+  await expect(page.locator("html")).toHaveClass("dark");
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "New product" }).click();
+  const dialog = page.getByRole("dialog");
+  const name = `Storage denied ${Date.now()}`;
+  await dialog.getByLabel("Product name").fill(name);
+  await dialog.getByRole("button", { name: "Create product", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByLabel("Product name")).toHaveValue(name);
+  expect(errors).toEqual([]);
+});

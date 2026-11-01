@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowDown01Icon, ArrowUp01Icon, Tick01Icon } from "@hugeicons/core-free-icons"
 import { Select as SelectPrimitive } from "radix-ui"

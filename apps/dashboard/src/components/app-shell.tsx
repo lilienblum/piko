@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { api, type Product } from "@/lib/api";
+import { readPreference, savePreference } from "@/lib/preferences";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
 import { Spinner } from "@/components/ui/spinner";
@@ -115,16 +116,16 @@ export function AppShell() {
   useEffect(() => {
     if (linkedProductId && products.some((p) => p.id === linkedProductId)) {
       setSelected(linkedProductId);
-      localStorage.setItem("piko:product", linkedProductId);
+      savePreference("piko:product", linkedProductId);
     }
   }, [linkedProductId, products]);
   const clearDrilldown = () => {
     if (path === "/explore") void navigate({ to: "/explore", search: {} });
   };
   useEffect(() => {
-    setSidebarOpen(localStorage.getItem("piko:sidebar") !== "collapsed");
-    setSelected(localStorage.getItem("piko:product") ?? "");
-    const saved = Number(localStorage.getItem("piko:days"));
+    setSidebarOpen(readPreference("piko:sidebar") !== "collapsed");
+    setSelected(readPreference("piko:product") ?? "");
+    const saved = Number(readPreference("piko:days"));
     if ([7, 30, 90].includes(saved)) setDays(saved);
     const controller = new AbortController();
     api<Product[]>("/products", "GET", undefined, controller.signal)
@@ -144,7 +145,7 @@ export function AppShell() {
     setProducts(result);
     if (select) {
       setSelected(select);
-      localStorage.setItem("piko:product", select);
+      savePreference("piko:product", select);
     }
     setError("");
   }
@@ -191,7 +192,7 @@ export function AppShell() {
         open={sidebarOpen}
         onOpenChange={(open) => {
           setSidebarOpen(open);
-          localStorage.setItem("piko:sidebar", open ? "expanded" : "collapsed");
+          savePreference("piko:sidebar", open ? "expanded" : "collapsed");
         }}
         style={{ "--sidebar-width": "13rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
       >
@@ -217,7 +218,7 @@ export function AppShell() {
                 onValueChange={(value) => {
                   clearDrilldown();
                   setSelected(value);
-                  localStorage.setItem("piko:product", value);
+                  savePreference("piko:product", value);
                 }}
                 options={products.map((p) => [p.id, p.name])}
               />
@@ -245,7 +246,7 @@ export function AppShell() {
                   if (value === "linked") return;
                   clearDrilldown();
                   setDays(Number(value));
-                  localStorage.setItem("piko:days", value);
+                  savePreference("piko:days", value);
                   setNow(Date.now());
                 }}
                 options={[

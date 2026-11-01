@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { readPreference, savePreference } from "@/lib/preferences";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +19,8 @@ const mediaQuery = "(prefers-color-scheme: dark)";
 const isTheme = (value: unknown): value is Theme =>
   value === "light" || value === "dark" || value === "auto";
 function readTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(storageKey);
-    return isTheme(stored) ? stored : "auto";
-  } catch {
-    return "auto";
-  }
+  const stored = readPreference(storageKey);
+  return isTheme(stored) ? stored : "auto";
 }
 function applyTheme(theme: Theme) {
   const resolved = theme === "auto" ? (matchMedia(mediaQuery).matches ? "dark" : "light") : theme;
@@ -60,11 +57,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", sync);
   }, []);
   function setTheme(next: Theme) {
-    try {
-      localStorage.setItem(storageKey, next);
-    } catch {
-      /* Keep themes usable with storage disabled. */
-    }
+    savePreference(storageKey, next);
     applyTheme(next);
     setThemeState(next);
   }
