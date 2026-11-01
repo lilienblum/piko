@@ -33,12 +33,13 @@ impl Store {
     pub fn open(path: &Path, queries: usize) -> Result<Arc<Self>> {
         std::fs::create_dir_all(path)?;
         let sqlite_path = path.join("state.sqlite");
-        let sql = rusqlite::Connection::open(&sqlite_path)?;
+        let mut sql = rusqlite::Connection::open(&sqlite_path)?;
         sql.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
           CREATE TABLE IF NOT EXISTS products(id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, retention_days INTEGER NOT NULL, created_at TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS ingestion_keys(id TEXT PRIMARY KEY, product_id TEXT NOT NULL REFERENCES products(id), label TEXT NOT NULL, prefix TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked INTEGER NOT NULL DEFAULT 0);
           DROP TABLE IF EXISTS sessions; CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
-          PRAGMA user_version=1;")?;
+          ")?;
+        crate::sources::migrate(&mut sql)?;
         let analytics = crate::product_db::ProductDatabases::new(path.join("products"))?;
         let migrated = sql
             .query_row(
@@ -112,14 +113,17 @@ impl Store {
     }
 }
 pub fn product(db: &rusqlite::Connection, id: &str) -> ApiResult<Product> {
-    db.query_row(
-        "SELECT id,name,kind,retention_days,created_at FROM products WHERE id=?",
-        [id],
-        row_product,
-    )
-    .optional()
-    .map_err(anyhow::Error::from)?
-    .ok_or_else(ApiError::missing)
+    let mut product = db
+        .query_row(
+            "SELECT id,name,kind,retention_days,created_at FROM products WHERE id=?",
+            [id],
+            row_product,
+        )
+        .optional()
+        .map_err(anyhow::Error::from)?
+        .ok_or_else(ApiError::missing)?;
+    product.sources = crate::sources::list(db, id)?;
+    Ok(product)
 }
 fn row_product(r: &rusqlite::Row<'_>) -> rusqlite::Result<Product> {
     Ok(Product {
@@ -128,6 +132,7 @@ fn row_product(r: &rusqlite::Row<'_>) -> rusqlite::Result<Product> {
         kind: r.get(2)?,
         retention_days: r.get(3)?,
         created_at: r.get(4)?,
+        sources: Vec::new(),
     })
 }
 pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
@@ -136,10 +141,15 @@ pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
             "SELECT id,name,kind,retention_days,created_at FROM products ORDER BY created_at,id",
         )
         .map_err(anyhow::Error::from)?;
-    q.query_map([], row_product)
+    let mut products = q
+        .query_map([], row_product)
         .map_err(anyhow::Error::from)?
-        .collect::<rusqlite::Result<_>>()
-        .map_err(|e| anyhow::Error::from(e).into())
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .map_err(anyhow::Error::from)?;
+    for product in &mut products {
+        product.sources = crate::sources::list(db, &product.id)?;
+    }
+    Ok(products)
 }
 pub fn save_product(
     db: &rusqlite::Connection,
@@ -154,26 +164,46 @@ pub fn save_product(
         }
         None => uuid::Uuid::new_v4().to_string(),
     };
-    db.execute("INSERT INTO products VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET name=?2,kind=?3,retention_days=?4",params![id,input.name.trim(),input.kind,input.retention_days,chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
+    let tx = db.unchecked_transaction().map_err(anyhow::Error::from)?;
+    tx.execute("INSERT INTO products VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET name=?2,kind=?3,retention_days=?4",params![id,input.name.trim(),input.kind,input.retention_days,chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
+    tx.execute(
+        "INSERT OR IGNORE INTO sources(id,product_id,name,kind,created_at) VALUES (?1,?1,?2,?3,?4)",
+        params![
+            id,
+            match input.kind.as_str() {
+                "website" => "Website",
+                "tool" => "CLI",
+                "mobile" => "Mobile app",
+                _ => "Events",
+            },
+            input.kind,
+            chrono::Utc::now().to_rfc3339()
+        ],
+    )
+    .map_err(anyhow::Error::from)?;
+    tx.commit().map_err(anyhow::Error::from)?;
     product(db, &id)
 }
 pub fn create_key(
     db: &rusqlite::Connection,
     id: &str,
     label: &str,
+    source_id: Option<&str>,
 ) -> ApiResult<serde_json::Value> {
     product(db, id)?;
+    let source_id = source_id.unwrap_or(id);
+    crate::sources::get(db, id, source_id)?;
     if label.trim().is_empty() || label.len() > 80 {
         return Err(ApiError::bad("Key label must be 1–80 bytes"));
     }
     let key = secret("pk_");
     let key_id = uuid::Uuid::new_v4().to_string();
-    db.execute("INSERT INTO ingestion_keys(id,product_id,label,prefix,hash,created_at) VALUES (?,?,?,?,?,?)",params![key_id,id,label.trim(),&key[..11],hash(&key),chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
-    Ok(serde_json::json!({"id":key_id,"key":key}))
+    db.execute("INSERT INTO ingestion_keys(id,product_id,label,prefix,hash,created_at,source_id) VALUES (?,?,?,?,?,?,?)",params![key_id,id,label.trim(),&key[..11],hash(&key),chrono::Utc::now().to_rfc3339(),source_id]).map_err(anyhow::Error::from)?;
+    Ok(serde_json::json!({"id":key_id,"key":key,"source_id":source_id}))
 }
 pub fn keys(db: &rusqlite::Connection, id: &str) -> ApiResult<Vec<KeyInfo>> {
     product(db, id)?;
-    let mut q=db.prepare("SELECT id,label,prefix,created_at,revoked FROM ingestion_keys WHERE product_id=? ORDER BY created_at").map_err(anyhow::Error::from)?;
+    let mut q=db.prepare("SELECT id,label,prefix,created_at,revoked,source_id FROM ingestion_keys WHERE product_id=? ORDER BY created_at").map_err(anyhow::Error::from)?;
     q.query_map([id], |r| {
         Ok(KeyInfo {
             id: r.get(0)?,
@@ -181,20 +211,23 @@ pub fn keys(db: &rusqlite::Connection, id: &str) -> ApiResult<Vec<KeyInfo>> {
             prefix: r.get(2)?,
             created_at: r.get(3)?,
             revoked: r.get(4)?,
+            source_id: r.get(5)?,
         })
     })
     .map_err(anyhow::Error::from)?
     .collect::<rusqlite::Result<_>>()
     .map_err(|e| anyhow::Error::from(e).into())
 }
-pub fn resolve_key(db: &rusqlite::Connection, key: &str) -> ApiResult<Product> {
-    let id: Option<String> = db
+pub fn resolve_key(db: &rusqlite::Connection, key: &str) -> ApiResult<(Product, String)> {
+    let resolved: Option<(String, String)> = db
         .query_row(
-            "SELECT product_id FROM ingestion_keys WHERE hash=? AND revoked=0",
+            "SELECT product_id,source_id FROM ingestion_keys WHERE hash=? AND revoked=0",
             [hash(key)],
-            |r| r.get(0),
+            |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .optional()
         .map_err(anyhow::Error::from)?;
-    product(db, &id.ok_or_else(ApiError::unauthorized)?)
+    let (id, source_id) = resolved.ok_or_else(ApiError::unauthorized)?;
+    crate::sources::get(db, &id, &source_id)?;
+    Ok((product(db, &id)?, source_id))
 }

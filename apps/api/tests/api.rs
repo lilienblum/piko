@@ -628,3 +628,229 @@ async fn unavailable_change_sink_does_not_change_ingestion_acknowledgments() {
     server.abort();
     f.state.writer.stop().await;
 }
+
+#[tokio::test]
+async fn multiple_sources_share_a_project_but_keys_and_filters_are_scoped() {
+    let f = Fixture::new(8);
+    let (id, original_key) = f.product("Multi-source").await;
+    let (_, mobile) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/sources"),
+        MANAGEMENT,
+        json!({"name":"iOS","kind":"mobile"}),
+    )
+    .await;
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            &format!("/api/products/{id}/sources"),
+            MANAGEMENT,
+            json!({"name":"IOS","kind":"mobile"})
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let source_id = mobile["id"].as_str().unwrap();
+    let (_, key) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/keys"),
+        MANAGEMENT,
+        json!({"label":"iOS production","source_id":source_id}),
+    )
+    .await;
+    let mobile_key = key["key"].as_str().unwrap();
+    assert_eq!(key["source_id"], source_id);
+    for (token, event_id, value) in [(&*original_key, "cli-1", 10), (mobile_key, "mobile-1", 20)] {
+        let (status, ack) = call(
+            &f.app,
+            "POST",
+            "/api/ingest",
+            token,
+            event(event_id, json!(value)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(ack["accepted"], 1);
+    }
+    let (_, retry) = call(
+        &f.app,
+        "POST",
+        "/api/ingest",
+        mobile_key,
+        event("cli-1", json!(999)),
+    )
+    .await;
+    assert_eq!(retry["duplicates"], 1); // IDs remain project-scoped across sources and key rotation.
+    let mut q = range();
+    q["measure"] = json!("sum");
+    q["property"] = json!("duration_ms");
+    q["group_by"] = json!("source_id");
+    let (_, all) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        MANAGEMENT,
+        q.clone(),
+    )
+    .await;
+    assert_eq!(all["summary"]["total"], 2);
+    assert_eq!(all["summary"]["value"], 30.0);
+    assert_eq!(all["groups"].as_array().unwrap().len(), 2);
+    q["source_id"] = json!(source_id);
+    let (_, filtered) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        MANAGEMENT,
+        q.clone(),
+    )
+    .await;
+    assert_eq!(filtered["summary"]["total"], 1);
+    assert_eq!(filtered["summary"]["value"], 20.0);
+    assert_eq!(filtered["events"][0]["source_id"], source_id);
+    assert_eq!(filtered["events"][0]["source"], "cli"); // Client hint cannot change the key's source.
+    let mut spoofed = event("spoofed", json!(1));
+    spoofed["source_id"] = json!(id);
+    assert_eq!(
+        call(&f.app, "POST", "/api/ingest", mobile_key, spoofed)
+            .await
+            .0,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    let (other, _) = f.product("Other project").await;
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            &format!("/api/products/{other}/keys"),
+            MANAGEMENT,
+            json!({"label":"wrong","source_id":source_id})
+        )
+        .await
+        .0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            &format!("/api/products/{other}/query"),
+            MANAGEMENT,
+            q.clone()
+        )
+        .await
+        .0,
+        StatusCode::NOT_FOUND
+    );
+    let (status, renamed) = call(
+        &f.app,
+        "PATCH",
+        &format!("/api/products/{id}/sources/{source_id}"),
+        MANAGEMENT,
+        json!({"name":"iOS app","kind":"mobile"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(renamed["id"], source_id);
+    let (_, filtered) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        MANAGEMENT,
+        q,
+    )
+    .await;
+    assert_eq!(filtered["summary"]["value"], 20.0);
+    assert_eq!(
+        call(
+            &f.app,
+            "DELETE",
+            &format!("/api/products/{id}/keys/{}", key["id"].as_str().unwrap()),
+            MANAGEMENT,
+            json!(null)
+        )
+        .await
+        .0,
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            "/api/ingest",
+            mobile_key,
+            event("revoked-source", json!(1))
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            "/api/ingest",
+            &original_key,
+            event("still-active", json!(1))
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    f.state.writer.stop().await;
+}
+
+#[tokio::test]
+async fn existing_keys_and_events_migrate_to_the_initial_source_without_changing_counts() {
+    let dir = tempfile::tempdir().unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+    let key = "pk_existing_key";
+    let sql = rusqlite::Connection::open(dir.path().join("state.sqlite")).unwrap();
+    sql.execute_batch("CREATE TABLE products(id TEXT PRIMARY KEY,name TEXT NOT NULL,kind TEXT NOT NULL,retention_days INTEGER NOT NULL,created_at TEXT NOT NULL);
+        CREATE TABLE ingestion_keys(id TEXT PRIMARY KEY,product_id TEXT NOT NULL,label TEXT NOT NULL,prefix TEXT NOT NULL,hash TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL,revoked INTEGER NOT NULL DEFAULT 0);").unwrap();
+    sql.execute(
+        "INSERT INTO products VALUES (?,'Legacy','website',30,'2026-01-01')",
+        [&id],
+    )
+    .unwrap();
+    sql.execute(
+        "INSERT INTO ingestion_keys VALUES ('key',?,'Existing','pk_existing',?,'2026-01-01',0)",
+        rusqlite::params![id, piko::store::hash(key)],
+    )
+    .unwrap();
+    drop(sql);
+    std::fs::create_dir_all(dir.path().join("products")).unwrap();
+    let db =
+        duckdb::Connection::open(dir.path().join("products").join(format!("{id}.duckdb"))).unwrap();
+    db.execute_batch("CREATE TABLE events(product_id VARCHAR NOT NULL,event_id VARCHAR NOT NULL,name VARCHAR NOT NULL,source VARCHAR NOT NULL,event_time BIGINT NOT NULL,received_at BIGINT NOT NULL,actor_id VARCHAR,identity_kind VARCHAR,session_id VARCHAR,properties JSON NOT NULL,PRIMARY KEY(product_id,event_id));").unwrap();
+    db.execute("INSERT INTO events VALUES (?,'old','page_view','browser',?,?,NULL,NULL,NULL,'{\"duration_ms\":12}')",duckdb::params![id,chrono::Utc::now().timestamp_millis(),chrono::Utc::now().timestamp_millis()]).unwrap();
+    drop(db);
+    for _ in 0..2 {
+        let state = AppState::open(&config(dir.path(), 8)).unwrap();
+        let app = router(state.clone());
+        let (_, products) = call(&app, "GET", "/api/products", MANAGEMENT, json!(null)).await;
+        assert_eq!(products[0]["sources"][0]["id"], id);
+        assert_eq!(products[0]["sources"].as_array().unwrap().len(), 1);
+        let mut q = range();
+        q["source_id"] = json!(id);
+        let (_, result) = call(
+            &app,
+            "POST",
+            &format!("/api/products/{id}/query"),
+            MANAGEMENT,
+            q,
+        )
+        .await;
+        assert_eq!(result["summary"]["total"], 1);
+        assert_eq!(result["events"][0]["source_id"], id);
+        let (_, ack) = call(&app, "POST", "/api/ingest", key, event("old", json!(99))).await;
+        assert_eq!(ack["duplicates"], 1);
+        state.writer.stop().await;
+        drop(app);
+        drop(state);
+    }
+}

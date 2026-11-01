@@ -17,6 +17,7 @@ use tokio::sync::oneshot;
 pub enum Write {
     Events {
         product_id: String,
+        source_id: String,
         events: Vec<Event>,
         received_at: i64,
         ack: oneshot::Sender<ApiResult<Ack>>,
@@ -96,11 +97,17 @@ impl Writer {
             .expect("start database writer");
         Self { tx }
     }
-    pub async fn ingest(&self, product_id: String, events: Vec<Event>) -> ApiResult<Ack> {
+    pub async fn ingest(
+        &self,
+        product_id: String,
+        source_id: String,
+        events: Vec<Event>,
+    ) -> ApiResult<Ack> {
         let (ack, rx) = oneshot::channel();
         self.tx
             .try_send(Write::Events {
                 product_id,
+                source_id,
                 events,
                 received_at: Utc::now().timestamp_millis(),
                 ack,
@@ -141,6 +148,7 @@ fn persist(db: &mut Connection, batch: Vec<Write>, changes: &crate::changes::Cha
             for (request_no, item) in batch.iter().enumerate() {
                 if let Write::Events {
                     product_id,
+                    source_id,
                     events,
                     received_at,
                     ..
@@ -160,6 +168,7 @@ fn persist(db: &mut Connection, batch: Vec<Write>, changes: &crate::changes::Cha
                             e.identity_kind,
                             e.session_id,
                             serde_json::to_string(&e.properties)?,
+                            source_id,
                             request_no as i64,
                             sequence
                         ])?;
@@ -178,7 +187,7 @@ fn persist(db: &mut Connection, batch: Vec<Write>, changes: &crate::changes::Cha
             SELECT b.* FROM ingest_buffer b WHERE NOT EXISTS
             (SELECT 1 FROM events e WHERE e.product_id=b.product_id AND e.event_id=b.event_id)
             QUALIFY row_number() OVER (PARTITION BY product_id,event_id ORDER BY sequence)=1;
-            INSERT INTO events SELECT product_id,event_id,name,source,event_time,received_at,actor_id,identity_kind,session_id,properties FROM accepted_events;")?;
+            INSERT INTO events SELECT product_id,event_id,name,source,event_time,received_at,actor_id,identity_kind,session_id,properties,source_id FROM accepted_events;")?;
         {
             let mut counts =
                 tx.prepare("SELECT request_no,count(*) FROM accepted_events GROUP BY request_no")?;

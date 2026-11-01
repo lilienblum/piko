@@ -103,6 +103,34 @@ pub struct Product {
     pub kind: String,
     pub retention_days: i64,
     pub created_at: String,
+    pub sources: Vec<Source>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Source {
+    pub id: String,
+    pub product_id: String,
+    pub name: String,
+    pub kind: String,
+    pub created_at: String,
+}
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceInput {
+    pub name: String,
+    pub kind: String,
+}
+impl SourceInput {
+    pub fn validate(&self) -> ApiResult<()> {
+        if self.name.trim().is_empty()
+            || self.name.len() > 80
+            || !["website", "mobile", "tool", "generic"].contains(&self.kind.as_str())
+        {
+            return Err(ApiError::bad(
+                "Use a source name of 1–80 bytes and kind website/mobile/tool/generic",
+            ));
+        }
+        Ok(())
+    }
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -115,11 +143,11 @@ impl ProductInput {
     pub fn validate(&self) -> ApiResult<()> {
         if self.name.trim().is_empty()
             || self.name.len() > 80
-            || !["website", "tool", "generic"].contains(&self.kind.as_str())
+            || !["website", "mobile", "tool", "generic"].contains(&self.kind.as_str())
             || !(1..=3650).contains(&self.retention_days)
         {
             return Err(ApiError::bad(
-                "Use a name of 1–80 bytes, kind website/tool/generic, and retention_days 1–3650",
+                "Use a name of 1–80 bytes, kind website/mobile/tool/generic, and retention_days 1–3650",
             ));
         }
         Ok(())
@@ -128,6 +156,7 @@ impl ProductInput {
 #[derive(Debug, Serialize)]
 pub struct KeyInfo {
     pub id: String,
+    pub source_id: String,
     pub label: String,
     pub prefix: String,
     pub created_at: String,

@@ -23,6 +23,7 @@ pub struct Query {
     pub bucket: String,
     pub event: Option<String>,
     pub source: Option<String>,
+    pub source_id: Option<String>,
     pub identity_kind: Option<String>,
     #[serde(default = "count")]
     pub measure: String,
@@ -93,6 +94,7 @@ impl Query {
         for (key, value) in [
             ("name", &self.event),
             ("source", &self.source),
+            ("source_id", &self.source_id),
             ("identity_kind", &self.identity_kind),
         ] {
             if let Some(value) = value {
@@ -157,11 +159,12 @@ pub fn run(db: &mut Connection, id: &str, q: Query) -> ApiResult<Value> {
     let group = match q.group_by.as_deref().unwrap_or("name") {
         "name" => "to_json(name)".to_string(),
         "source" => "to_json(source)".to_string(),
+        "source_id" => "to_json(source_id)".to_string(),
         "identity_kind" => "to_json(identity_kind)".to_string(),
         s if s.starts_with("property:") => property(&s[9..])?,
         _ => {
             return Err(ApiError::bad(
-                "Group by name, source, identity_kind or property:<key>",
+                "Group by name, source, source_id, identity_kind or property:<key>",
             ));
         }
     };
@@ -205,13 +208,19 @@ pub fn run(db: &mut Connection, id: &str, q: Query) -> ApiResult<Value> {
         stmt.query_map(params_from_iter(values.iter()),|r|{let raw:Option<String>=r.get(0)?; Ok(json!({"label":raw.and_then(|s|serde_json::from_str::<Value>(&s).ok()),"value":r.get::<_,Option<f64>>(1)?,"count":r.get::<_,i64>(2)?}))}).map_err(anyhow::Error::from)?.collect::<duckdb::Result<Vec<_>>>().map_err(anyhow::Error::from)?
     };
     let events = {
-        let mut stmt=tx.prepare(&format!("SELECT event_id,name,source,event_time,received_at,actor_id,identity_kind,session_id,cast(properties AS VARCHAR) FROM events WHERE {pred} ORDER BY event_time DESC,event_id DESC LIMIT {} OFFSET {}",q.page_size,q.page*q.page_size)).map_err(anyhow::Error::from)?;
-        stmt.query_map(params_from_iter(values.iter()),|r|{let props:String=r.get(8)?;Ok(json!({"event_id":r.get::<_,String>(0)?,"name":r.get::<_,String>(1)?,"source":r.get::<_,String>(2)?,"timestamp":r.get::<_,i64>(3)?,"received_at":r.get::<_,i64>(4)?,"actor_id":r.get::<_,Option<String>>(5)?,"identity_kind":r.get::<_,Option<String>>(6)?,"session_id":r.get::<_,Option<String>>(7)?,"properties":serde_json::from_str::<Value>(&props).unwrap_or(Value::Null)}))}).map_err(anyhow::Error::from)?.collect::<duckdb::Result<Vec<_>>>().map_err(anyhow::Error::from)?
+        let mut stmt=tx.prepare(&format!("SELECT event_id,name,source,event_time,received_at,actor_id,identity_kind,session_id,cast(properties AS VARCHAR),source_id FROM events WHERE {pred} ORDER BY event_time DESC,event_id DESC LIMIT {} OFFSET {}",q.page_size,q.page*q.page_size)).map_err(anyhow::Error::from)?;
+        stmt.query_map(params_from_iter(values.iter()),|r|{let props:String=r.get(8)?;Ok(json!({"source_id":r.get::<_,String>(9)?,"event_id":r.get::<_,String>(0)?,"name":r.get::<_,String>(1)?,"source":r.get::<_,String>(2)?,"timestamp":r.get::<_,i64>(3)?,"received_at":r.get::<_,i64>(4)?,"actor_id":r.get::<_,Option<String>>(5)?,"identity_kind":r.get::<_,Option<String>>(6)?,"session_id":r.get::<_,Option<String>>(7)?,"properties":serde_json::from_str::<Value>(&props).unwrap_or(Value::Null)}))}).map_err(anyhow::Error::from)?.collect::<duckdb::Result<Vec<_>>>().map_err(anyhow::Error::from)?
     };
     let names = {
-        let mut stmt=tx.prepare("SELECT DISTINCT name FROM events WHERE product_id=? AND event_time>=? AND event_time<? ORDER BY name LIMIT 100").map_err(anyhow::Error::from)?;
+        let mut stmt=tx.prepare("SELECT DISTINCT name FROM events WHERE product_id=? AND event_time>=? AND event_time<? AND (? IS NULL OR source_id=?) ORDER BY name LIMIT 100").map_err(anyhow::Error::from)?;
         stmt.query_map(
-            duckdb::params![id, q.from.timestamp_millis(), q.to.timestamp_millis()],
+            duckdb::params![
+                id,
+                q.from.timestamp_millis(),
+                q.to.timestamp_millis(),
+                q.source_id.as_deref(),
+                q.source_id.as_deref()
+            ],
             |r| r.get::<_, String>(0),
         )
         .map_err(anyhow::Error::from)?

@@ -60,6 +60,11 @@ impl ProductDatabases {
             )
             .map_err(anyhow::Error::from)?;
             db.execute_batch(SCHEMA).map_err(anyhow::Error::from)?;
+            // IDs are UUID-validated by path(); existing rows belong to the initial source.
+            db.execute_batch(&format!(
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS source_id VARCHAR DEFAULT '{id}';"
+            ))
+            .map_err(anyhow::Error::from)?;
             cache.insert(
                 id.into(),
                 Entry {
@@ -128,7 +133,8 @@ impl ProductDatabases {
                         r.get::<_, Option<String>>(6)?,
                         r.get::<_, Option<String>>(7)?,
                         r.get::<_, Option<String>>(8)?,
-                        r.get::<_, String>(9)?
+                        r.get::<_, String>(9)?,
+                        id
                     ])?;
                 }
                 appender.flush()?;

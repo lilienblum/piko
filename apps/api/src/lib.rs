@@ -5,6 +5,7 @@ pub mod model;
 pub mod product_db;
 pub mod query;
 pub mod runtime;
+pub mod sources;
 pub mod store;
 pub mod telemetry;
 use crate::{
@@ -59,6 +60,11 @@ pub fn router(state: AppState) -> Router {
     let admin = Router::new()
         .route("/api/products", get(list_products).post(create_product))
         .route("/api/products/{id}", patch(update_product))
+        .route(
+            "/api/products/{id}/sources",
+            get(list_sources).post(create_source),
+        )
+        .route("/api/products/{id}/sources/{source}", patch(update_source))
         .route("/api/products/{id}/keys", get(list_keys).post(create_key))
         .route("/api/products/{id}/keys/{key}", delete(revoke_key))
         .route("/api/products/{id}/query", post(query_product))
@@ -142,7 +148,7 @@ async fn ingest_events(
     let key = bearer(&headers)
         .ok_or_else(ApiError::unauthorized)?
         .to_string();
-    let p = state
+    let (p, source_id) = state
         .store
         .state(move |db| store::resolve_key(db, &key))
         .await?;
@@ -157,7 +163,7 @@ async fn ingest_events(
             .validate(now, p.retention_days)
             .map_err(|e| ApiError::bad(format!("events[{i}]: {}", e.1)))?;
     }
-    Ok(Json(state.writer.ingest(p.id, events).await?))
+    Ok(Json(state.writer.ingest(p.id, source_id, events).await?))
 }
 async fn list_products(State(s): State<AppState>) -> ApiResult<Json<Vec<Product>>> {
     Ok(Json(s.store.state(store::products).await?))
@@ -192,6 +198,7 @@ async fn list_keys(
 #[derive(Deserialize)]
 struct NewKey {
     label: String,
+    source_id: Option<String>,
 }
 async fn create_key(
     State(s): State<AppState>,
@@ -200,7 +207,7 @@ async fn create_key(
 ) -> ApiResult<Json<Value>> {
     Ok(Json(
         s.store
-            .state(move |db| store::create_key(db, &id, &input.label))
+            .state(move |db| store::create_key(db, &id, &input.label, input.source_id.as_deref()))
             .await?,
     ))
 }
@@ -231,7 +238,16 @@ async fn query_product(
 ) -> ApiResult<Json<Value>> {
     q.validate()?;
     let lookup = id.clone();
-    s.store.state(move |db| store::product(db, &lookup)).await?;
+    let source_id = q.source_id.clone();
+    s.store
+        .state(move |db| {
+            let product = store::product(db, &lookup)?;
+            if let Some(source_id) = source_id {
+                sources::get(db, &lookup, &source_id)?;
+            }
+            Ok(product)
+        })
+        .await?;
     Ok(Json(
         s.store
             .query(id.clone(), move |db| query::run(db, &id, q))
@@ -240,4 +256,37 @@ async fn query_product(
 }
 async fn run_cleanup(State(s): State<AppState>) -> ApiResult<Json<Value>> {
     Ok(Json(json!({"removed":s.writer.cleanup().await?})))
+}
+
+async fn list_sources(
+    State(s): State<AppState>,
+    Path(id): Path<String>,
+) -> ApiResult<Json<Vec<model::Source>>> {
+    Ok(Json(
+        s.store
+            .state(move |db| Ok(store::product(db, &id)?.sources))
+            .await?,
+    ))
+}
+async fn create_source(
+    State(s): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<model::SourceInput>,
+) -> ApiResult<Json<model::Source>> {
+    Ok(Json(
+        s.store
+            .state(move |db| sources::save(db, &id, None, input))
+            .await?,
+    ))
+}
+async fn update_source(
+    State(s): State<AppState>,
+    Path((id, source)): Path<(String, String)>,
+    Json(input): Json<model::SourceInput>,
+) -> ApiResult<Json<model::Source>> {
+    Ok(Json(
+        s.store
+            .state(move |db| sources::save(db, &id, Some(source), input))
+            .await?,
+    ))
 }

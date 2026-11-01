@@ -1,20 +1,35 @@
 # API and semantics
 
-The dashboard talks to this API over HTTP; the API does not serve frontend files. There is no application login, admin token, or admin session. Protect management access with Cloudflare Access and keep the origin private; see [access configuration](access.md). Ingestion still requires a product-scoped write-only ingestion key. Its key resolves the target product; its events go to `products/<product-id>.duckdb`. SQLite holds the shared product/key catalog and settings.
+The dashboard talks to this API over HTTP; the API does not serve frontend files. There is no application login, admin token, or admin session. Protect management access with Cloudflare Access and keep the origin private; see [access configuration](access.md). Ingestion still requires a source-scoped write-only ingestion key. Its key resolves the target project and source; its events go to `products/<product-id>.duckdb`. SQLite holds the shared project/source/key catalog and settings. The public API keeps its existing `/products` paths and `product_id` fields; “project” is the interface name for the same entity.
 
 ## Management
 
-| Method     | Path                            | Body/result                                              |
-| ---------- | ------------------------------- | -------------------------------------------------------- |
-| GET / POST | `/api/products`                 | List / create `{ name, kind, retention_days }`           |
-| PATCH      | `/api/products/:id`             | Edit name, kind, and retention (1–3650 days)             |
-| GET / POST | `/api/products/:id/keys`        | List metadata / create `{ label }` → full key shown once |
-| DELETE     | `/api/products/:id/keys/:keyId` | Revoke key, scoped to product                            |
-| POST       | `/api/products/:id/query`       | Parameterized analytics query below                      |
-| POST       | `/api/cleanup`                  | Run the same retention cleanup as the hourly job         |
-| GET        | `/health`                       | Process health, no credentials required                  |
+| Method     | Path                            | Body/result                                                         |
+| ---------- | ------------------------------- | ------------------------------------------------------------------- |
+| GET / POST | `/api/products`                 | List / create `{ name, kind, retention_days }`                      |
+| PATCH      | `/api/products/:id`             | Edit name and retention (1–3650 days); legacy kind is retained      |
+| GET / POST | `/api/products/:id/keys`        | List metadata / create `{ label, source_id }` → full key shown once |
+| DELETE     | `/api/products/:id/keys/:keyId` | Revoke key, scoped to product                                       |
+| POST       | `/api/products/:id/query`       | Parameterized analytics query below                                 |
+| POST       | `/api/cleanup`                  | Run the same retention cleanup as the hourly job                    |
+| GET        | `/health`                       | Process health, no credentials required                             |
 
 Management mutations require `X-Piko-Admin: 1`. This public request marker prevents cross-site form submissions; it is **not authentication**. The API grants no management CORS access. Network access to management must be controlled by Cloudflare Access (or a trusted private network). Ingestion keys grant no bypass through Access and are never used as management credentials.
+
+## Projects and sources
+
+A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. Its `kind` is `website`, `mobile`, `tool`, or `generic` and determines dashboard defaults. Source names are unique within a project (case-insensitive). Creating a project automatically creates an initial source using the requested `kind`. Project responses include `sources` with `id`, `product_id`, `name`, `kind`, and `created_at`.
+
+- `GET /api/products/:id/sources`: list sources.
+- `POST /api/products/:id/sources` with `{ "name": "iOS app", "kind": "mobile" }`: create a source.
+- `PATCH /api/products/:id/sources/:sourceId` with `{ "name", "kind" }`: edit that source without changing its ID or historical attribution.
+- `POST /api/products/:id/keys` with `{ "label": "iOS release", "source_id": "SOURCE_UUID" }`: create a write-only key for that source. Omitting `source_id` selects the initial source for existing integrations. Key metadata and creation responses include `source_id`.
+
+Keys cannot move between sources or projects. Foreign-project source IDs are rejected. Source deletion and merging are not supported; revoke a source's keys to stop new authorized intake. A project edit's legacy `kind` field does not change existing source types; use the source endpoint.
+
+### Existing data
+
+Stop the API and back up the whole data directory before updating. The SQLite migration creates one initial source per existing project and assigns its existing keys. Each DuckDB file receives an additive `source_id` column when opened; historical events belong to that initial source. The migration does not guess source attribution from the old free-form `source` label. Counts, event IDs, and key values remain unchanged. Repeated startup is idempotent. Older API binaries cannot write this expanded schema; downgrading requires restoring the complete pre-upgrade backup.
 
 ## Ingestion
 
@@ -36,7 +51,7 @@ curl http://localhost:3001/api/ingest \
   }'
 ```
 
-Send one envelope or `{ "events": [ ... ] }` with 1–100 envelopes. The body limit is 256 KiB. `event_id`, `name`, and `source` are required strings of 1–64 ASCII letters/digits or `_ - . /`. Unknown envelope fields (including `product_id` and `received_at`) are rejected. The key alone authorizes and resolves the product. The source is a label, not the product type.
+Send one envelope or `{ "events": [ ... ] }` with 1–100 envelopes. The body limit is 256 KiB. `event_id`, `name`, and `source` are required strings of 1–64 ASCII letters/digits or `_ - . /`. Unknown envelope fields (including `product_id`, `source_id`, and `received_at`) are rejected. The key alone authorizes and resolves the project and managed source. The envelope `source` remains a free-form client/transport label (for example `browser`, `ios`, or `cli`); the dashboard calls it **Client**. It cannot choose or override the managed source.
 
 - `timestamp`: optional RFC3339; normalized to UTC. Omitted timestamps use receipt time. A time older than product retention or >5 minutes in the future is rejected.
 - `actor_id`: optional 1–128 byte opaque ID. Requires `identity_kind` (`visitor`, `installation`, or `actor`), and vice versa. Distinct counts namespace actors by product and identity kind.
@@ -44,7 +59,7 @@ Send one envelope or `{ "events": [ ... ] }` with 1–100 envelopes. The body li
 - `properties`: up to 32 flat entries. Values must be strings (≤2048 bytes), JSON numbers, or booleans. Arrays, objects, and null are rejected. Keys use the same character rules as event names. Numeric-looking strings stay strings and are excluded from numeric measures.
 - `received_at`: set by the server. Both timestamps are stored as integer UTC milliseconds; queries filter by event time.
 
-Successful response: **200 `{ "accepted": 2, "duplicates": 1 }`**, only after DuckDB commits. One invalid event rejects the whole HTTP batch. Duplicate `(product_id, event_id)` values use the **first committed payload** and never overwrite it. Duplicates within the same queued transaction also use first occurrence. Two products may reuse the same event ID independently.
+Successful response: **200 `{ "accepted": 2, "duplicates": 1 }`**, only after DuckDB commits. One invalid event rejects the whole HTTP batch. Duplicate `(product_id, event_id)` values use the **first committed payload** and never overwrite it. Duplicates within the same queued transaction also use first occurrence. Two projects may reuse the same event ID independently. Sources within one project share the deduplication namespace: use globally unique event IDs, including across source keys.
 
 On network failure, timeout, or 5xx/429, retry **the exact same IDs and timestamps**, using capped backoff and `Retry-After`. Do not regenerate IDs. A 503 after the acknowledgment deadline may mean the write committed later; retrying resolves this ambiguity safely. Invalid payloads return 400/422 (or 413 for oversized bodies); invalid/revoked keys return 401. Do not retry these unchanged. No dedup tombstone remains after retention deletes an event. Explicit old timestamps are rejected, but a new current timestamp with an expired ID can count again.
 
@@ -71,7 +86,9 @@ Key authorization and retention validation occur at request acceptance. Revocati
 
 Ranges are **[from, to)**, UTC. Day/hour buckets align to UTC epoch boundaries and include partial edge buckets. Missing count/actor/sum buckets are zero; average/percentile buckets are null. `avg`, `sum`, `p50`, and `p95` require a property and include only JSON numeric values. Empty aggregate averages/sums/percentiles are null. Percentiles use DuckDB's continuous interpolation. Success rate includes only boolean `success` values. Overview duration includes numeric `duration_ms` only. Unknown identities do not count as a distinct actor.
 
-Measures: `count`, `actors`, `sum`, `avg`, `p50`, `p95`. Group by `name`, `source`, `identity_kind`, or `property:<key>`. Numeric and boolean group labels retain their JSON types. Filters use `eq`, `ne`, `gt`, `gte`, `lt`, `lte`; ordered comparisons require numeric filter values and numeric properties. Missing properties do not satisfy comparisons, including `ne`. Strings and booleans are type-sensitive.
+Measures: `count`, `actors`, `sum`, `avg`, `p50`, `p95`. Group by `name`, `source_id` (managed source), `source` (client label), `identity_kind`, or `property:<key>`. Numeric and boolean group labels retain their JSON types. Filters use `eq`, `ne`, `gt`, `gte`, `lt`, `lte`; ordered comparisons require numeric filter values and numeric properties. Missing properties do not satisfy comparisons, including `ne`. Strings and booleans are type-sensitive.
+
+Set optional `source_id` to a source in the requested project to scope summary, series, groups, event rows, and event-name discovery; omit it for the combined view. A foreign or missing source returns 404. Event rows include server-assigned `source_id`. Source-group labels are stable IDs; resolve names from the project catalog. Identity is still explicit and project-scoped by identity kind; sources do not automatically link people across apps.
 
 Response includes `summary`, zero-filled `series`, top-12 `groups`, paginated `events`, and `event_names`. All components run against one transaction snapshot. JSON values are bound; identifiers and operations are validated. No arbitrary SQL is accepted.
 
