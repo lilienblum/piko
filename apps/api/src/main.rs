@@ -1,7 +1,6 @@
 use piko::{AppState, Config, changes::ChangeDelivery, router, runtime::lock_data_directory};
 use std::{env, time::Duration};
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -11,17 +10,26 @@ async fn main() -> anyhow::Result<()> {
     let managed = ["TAKO_DATA_DIR", "TAKO_BUILD", "TAKO_BOOTSTRAP_DATA"]
         .iter()
         .any(|name| env::var_os(name).is_some());
-    tako::bootstrap()?;
+    // Bootstrap owns fd 3 in Tako. Read it before Tokio can allocate its own I/O
+    // descriptor there, and never inspect inherited descriptors in standalone mode.
+    if managed {
+        tako::bootstrap()?;
+    }
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(run(managed))
+}
+async fn run(managed: bool) -> anyhow::Result<()> {
     let delivery_config = env::var("PIKO_CHANGE_URL")
         .ok()
         .map(|url| {
-            let token = tako::secret("PIKO_CHANGE_TOKEN")
-                .or_else(|| {
-                    (!managed)
-                        .then(|| env::var("PIKO_CHANGE_TOKEN").ok())
-                        .flatten()
-                })
-                .unwrap_or_default();
+            let token = if managed {
+                tako::secret("PIKO_CHANGE_TOKEN")
+            } else {
+                env::var("PIKO_CHANGE_TOKEN").ok()
+            }
+            .unwrap_or_default();
             ChangeDelivery::new(&url, token)
         })
         .transpose()?;
@@ -59,7 +67,13 @@ async fn main() -> anyhow::Result<()> {
         tokio::net::TcpListener::bind(&address).await?
     };
     tracing::info!(address=%listener.local_addr()?, managed, "Piko is ready");
-    let result = axum::serve(listener, tako::axum::router(router(state.clone())))
+    let app = router(state.clone());
+    let app = if managed {
+        tako::axum::router(app)
+    } else {
+        app
+    };
+    let result = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await;
     cleanup.abort();
