@@ -16,7 +16,7 @@ import {
   ArrowUpRight01Icon,
   Calendar03Icon,
   Cancel01Icon,
-  CommandIcon,
+  CommandLineIcon,
   CubeIcon,
   DashboardSquare01Icon,
   Globe02Icon,
@@ -77,7 +77,7 @@ export function useAnalyticsPending(pending: boolean) {
   }, [pending, setAnalyticsPending]);
 }
 export function ProductIcon({ kind }: { kind: string }) {
-  const icon = kind === "website" ? Globe02Icon : kind === "tool" ? CommandIcon : CubeIcon;
+  const icon = kind === "website" ? Globe02Icon : kind === "tool" ? CommandLineIcon : CubeIcon;
   return <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />;
 }
 export function Logo() {
