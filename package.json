@@ -6,7 +6,7 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "bun scripts/dev.ts",
-    "build": "bun --cwd apps/dashboard run build && bun typecheck && bun build sdk/typescript/browser.ts --target browser --format esm --outfile apps/dashboard/dist/client/tracker.js",
+    "build": "bun run --cwd apps/dashboard build && bun typecheck && bun build sdk/typescript/browser.ts --target browser --format esm --outfile apps/dashboard/dist/client/tracker.js",
     "fmt": "biome format --write . && cargo fmt --all",
     "fmt:check": "biome format . && cargo fmt --all --check",
     "lint": "biome lint .",
@@ -15,20 +15,20 @@
     "test:e2e": "bun --bun playwright test",
     "benchmark": "bun scripts/benchmark.ts",
     "seed": "bun scripts/seed.ts",
-    "dev:dashboard": "bun --cwd apps/dashboard dev"
+    "dev:dashboard": "bun run --cwd apps/dashboard dev"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
+    "@playwright/test": "^1.58.0",
+    "@tailwindcss/vite": "^4.1.0",
     "@types/bun": "latest",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.1.0",
-    "vite": "^7.3.0",
-    "typescript": "^5.9.3",
+    "@vitejs/plugin-react": "^6.1.2",
     "tailwindcss": "^4.1.0",
-    "@tailwindcss/vite": "^4.1.0",
     "tw-animate-css": "^1.4.0",
-    "@playwright/test": "^1.58.0"
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5"
   },
   "workspaces": [
     "apps/dashboard"

@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      PIKO_ADMIN_TOKEN: ${PIKO_ADMIN_TOKEN:?Set a random PIKO_ADMIN_TOKEN in .env}
+      PIKO_SECURE_COOKIE: ${PIKO_SECURE_COOKIE:-false}
+      PIKO_QUERY_CONCURRENCY: 4
+      PIKO_QUEUE_CAPACITY: 64
+    volumes:
+      - piko-data:/data
+    expose:
+      - "3001"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    environment:
+      PIKO_API_URL: http://api:3001
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  piko-data:

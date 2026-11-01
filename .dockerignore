@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+.git
+target
+data
+.env
+**/.tanstack
+test-results
+playwright-report

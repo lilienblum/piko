@@ -113,10 +113,12 @@ impl Writer {
 fn persist(db: &mut Connection, batch: Vec<Write>) {
     let result = (|| -> anyhow::Result<Vec<Ack>> {
         let tx = db.transaction()?;
+        tx.execute_batch("CREATE TEMP TABLE IF NOT EXISTS ingest_buffer AS SELECT *, 0::BIGINT AS request_no, 0::BIGINT AS sequence FROM events WHERE false; DELETE FROM ingest_buffer;")?;
         let mut acks = Vec::new();
         {
-            let mut insert=tx.prepare("INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(product_id,event_id) DO NOTHING")?;
-            for item in &batch {
+            let mut append = tx.appender("ingest_buffer")?;
+            let mut sequence = 0_i64;
+            for (request_no, item) in batch.iter().enumerate() {
                 if let Write::Events {
                     product_id,
                     events,
@@ -124,9 +126,8 @@ fn persist(db: &mut Connection, batch: Vec<Write>) {
                     ..
                 } = item
                 {
-                    let mut accepted = 0;
                     for e in events {
-                        accepted += insert.execute(params![
+                        append.append_row(params![
                             product_id,
                             e.event_id,
                             e.name,
@@ -138,14 +139,35 @@ fn persist(db: &mut Connection, batch: Vec<Write>) {
                             e.actor_id,
                             e.identity_kind,
                             e.session_id,
-                            serde_json::to_string(&e.properties)?
+                            serde_json::to_string(&e.properties)?,
+                            request_no as i64,
+                            sequence
                         ])?;
+                        sequence += 1;
                     }
                     acks.push(Ack {
-                        accepted,
-                        duplicates: events.len() - accepted,
+                        accepted: 0,
+                        duplicates: events.len(),
                     });
                 }
+            }
+            append.flush()?;
+        }
+        // One vectorized insert, first occurrence wins within and across requests.
+        tx.execute_batch("CREATE OR REPLACE TEMP TABLE accepted_events AS
+            SELECT b.* FROM ingest_buffer b WHERE NOT EXISTS
+            (SELECT 1 FROM events e WHERE e.product_id=b.product_id AND e.event_id=b.event_id)
+            QUALIFY row_number() OVER (PARTITION BY product_id,event_id ORDER BY sequence)=1;
+            INSERT INTO events SELECT product_id,event_id,name,source,event_time,received_at,actor_id,identity_kind,session_id,properties FROM accepted_events;")?;
+        {
+            let mut counts =
+                tx.prepare("SELECT request_no,count(*) FROM accepted_events GROUP BY request_no")?;
+            let rows =
+                counts.query_map([], |r| Ok((r.get::<_, usize>(0)?, r.get::<_, usize>(1)?)))?;
+            for row in rows {
+                let (index, count) = row?;
+                acks[index].accepted = count;
+                acks[index].duplicates -= count;
             }
         }
         tx.commit()?;

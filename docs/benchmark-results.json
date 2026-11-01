@@ -1,0 +1,51 @@
+{
+  "measured_at": "2026-11-01T03:23:10.765Z",
+  "hardware": {
+    "cpu": "Apple M1 Pro",
+    "logical_cpus": 10,
+    "memory_bytes": 17179869184,
+    "os": "darwin 25.6.0",
+    "architecture": "arm64"
+  },
+  "runtime": {
+    "bun": "1.4.4",
+    "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "profile": "release",
+    "duckdb": "2.0.0 (duckdb-rs 1.20000.1)",
+    "query_connections": 4,
+    "queue_batches": 64,
+    "duckdb_threads": 2,
+    "duckdb_memory_limit": "512MB"
+  },
+  "workload": {
+    "preload_events": 10000,
+    "products": 2,
+    "batch_size": 100,
+    "ingest_workers": 4,
+    "query_workers": 2,
+    "requested_seconds": 15,
+    "actual_seconds": 15.037727000000002,
+    "dedup_retry_every_batches": 10,
+    "notes": "Closed-loop localhost HTTP. 30-day dataset; query computes summary, daily buckets, top groups, count, and 25 events. Timer includes final request drain. RSS sampled every 250 ms; API process only."
+  },
+  "results": {
+    "accepted_events": 222600,
+    "duplicate_events": 22000,
+    "events_per_second": 14802.76906210626,
+    "successful_queries": 696,
+    "queries_per_second": 46.28359059849935,
+    "ingestion_ms": {
+      "p50": 24.31774999999834,
+      "p95": 30.78008300000147,
+      "p99": 34.495750000000044
+    },
+    "query_ms": {
+      "p50": 37.85437499999898,
+      "p95": 91.98612500000127,
+      "p99": 106.41533300000083
+    },
+    "baseline_rss_bytes": 67076096,
+    "peak_rss_bytes": 289652736,
+    "errors": {}
+  }
+}
