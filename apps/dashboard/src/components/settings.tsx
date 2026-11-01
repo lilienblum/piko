@@ -14,7 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ValueSelect } from "./value-select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { api, type Product } from "@/lib/api";
 import { PageHeader, useWorkspace } from "./app-shell";
 import { ErrorState } from "./shared";
@@ -43,15 +54,16 @@ function ProductFields({
       </Field>
       <Field>
         <FieldLabel htmlFor={`${prefix}-kind`}>Product type</FieldLabel>
-        <NativeSelect
+        <ValueSelect
           id={`${prefix}-kind`}
           value={value.kind}
-          onChange={(e) => onChange({ ...value, kind: e.target.value })}
-        >
-          <NativeSelectOption value="website">Website</NativeSelectOption>
-          <NativeSelectOption value="tool">Developer tool</NativeSelectOption>
-          <NativeSelectOption value="generic">Generic product</NativeSelectOption>
-        </NativeSelect>
+          onValueChange={(kind) => onChange({ ...value, kind })}
+          options={[
+            ["website", "Website"],
+            ["tool", "Developer tool"],
+            ["generic", "Generic product"],
+          ]}
+        />
         <FieldDescription>
           Sets dashboard defaults. Every type can receive events from any source.
         </FieldDescription>
@@ -321,73 +333,72 @@ function ProductSettings({ product }: { product: Product }) {
           </CardContent>
         </Card>
       </div>
-      <Card className="integration-card">
-        <CardHeader>
-          <div className="card-heading">
-            <div>
-              <CardTitle>
-                <Code2 />
-                Connect your product
-              </CardTitle>
-              <CardDescription>A small snippet. A useful starting point.</CardDescription>
+      <Tabs value={integration} onValueChange={setIntegration}>
+        <Card className="integration-card">
+          <CardHeader>
+            <div className="card-heading">
+              <div>
+                <CardTitle>
+                  <Code2 />
+                  Connect your product
+                </CardTitle>
+                <CardDescription>A small snippet. A useful starting point.</CardDescription>
+              </div>
             </div>
-            <NativeSelect
-              aria-label="Integration language"
-              value={integration}
-              onChange={(e) => setIntegration(e.target.value)}
-            >
-              <NativeSelectOption value="browser">Browser tracker</NativeSelectOption>
-              <NativeSelectOption value="typescript">TypeScript client</NativeSelectOption>
-              <NativeSelectOption value="rust">Rust CLI</NativeSelectOption>
-            </NativeSelect>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="code-toolbar">
-            <span>
-              {integration === "browser"
-                ? "index.html"
-                : integration === "rust"
-                  ? "terminal"
-                  : "analytics.ts"}
-            </span>
-            <Button variant="ghost" size="sm" onClick={() => void copy(snippet)}>
-              <Copy data-icon="inline-start" />
-              {copied ? "Copied" : "Copy snippet"}
-            </Button>
-          </div>
-          <pre className="integration-code">
-            <code>{snippet}</code>
-          </pre>
-          <p className="quiet">
-            {integration === "browser"
-              ? "Persistent identity is opt-in: a random visitor ID per product key, plus a session that expires after 30 minutes of inactivity. Set identity to none for anonymous collection."
-              : "Identity is optional. Send an explicit anonymous installation ID to measure active installations. No IP or user-agent fingerprinting."}
-          </p>
-        </CardContent>
-      </Card>
-      <Dialog
+          </CardHeader>
+          <CardContent>
+            <TabsList aria-label="Integration language" className="mb-4 w-full sm:w-auto">
+              <TabsTrigger value="browser">Browser</TabsTrigger>
+              <TabsTrigger value="typescript">TypeScript</TabsTrigger>
+              <TabsTrigger value="rust">Rust CLI</TabsTrigger>
+            </TabsList>
+            <TabsContent value={integration} key={integration}>
+              <div className="code-toolbar">
+                <span>
+                  {integration === "browser"
+                    ? "index.html"
+                    : integration === "rust"
+                      ? "terminal"
+                      : "analytics.ts"}
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => void copy(snippet)}>
+                  <Copy data-icon="inline-start" />
+                  {copied ? "Copied" : "Copy snippet"}
+                </Button>
+              </div>
+              <pre className="integration-code">
+                <code>{snippet}</code>
+              </pre>
+              <p className="quiet">
+                {integration === "browser"
+                  ? "Persistent identity is opt-in: a random visitor ID per product key, plus a session that expires after 30 minutes of inactivity. Set identity to none for anonymous collection."
+                  : "Identity is optional. Send an explicit anonymous installation ID to measure active installations. No IP or user-agent fingerprinting."}
+              </p>
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </Tabs>
+      <AlertDialog
         open={!!revoke}
         onOpenChange={(open) => {
-          if (!open) setRevoke(null);
+          if (!open && !busy) setRevoke(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revoke {revoke?.label}?</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke {revoke?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
               Future requests with this key will be rejected. Events already accepted remain
               available.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="dialog-actions">
-            <Button variant="outline" onClick={() => setRevoke(null)}>
-              Cancel
-            </Button>
-            <Button
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               disabled={busy}
-              onClick={() =>
+              onClick={(event) => {
+                event.preventDefault();
                 void action(async () => {
                   if (!revoke) return;
                   await api(`/products/${product.id}/keys/${revoke.id}`, "DELETE");
@@ -395,14 +406,14 @@ function ProductSettings({ product }: { product: Product }) {
                   setNewKey("");
                   setRevoke(null);
                   setNotice("Ingestion key revoked.");
-                })
-              }
+                });
+              }}
             >
               Revoke key
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

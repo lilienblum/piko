@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><title>Piko</title><rect width="40" height="40" rx="12" fill="#4361d8"/><path d="M12 29V12h8a7 7 0 0 1 0 14h-3v-5h3a2 2 0 0 0 0-4h-3v12z" fill="white"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <title>Piko</title>
+  <style>g{fill:#526bd5}@media(prefers-color-scheme:dark){g{fill:#91a4ff}}</style>
+  <g transform="rotate(-10 20 20)">
+    <rect x="7" y="19" width="7" height="17" rx="3.5"/>
+    <rect x="17" y="5" width="7" height="30" rx="3.5"/>
+    <rect x="27" y="5" width="7" height="20" rx="3.5"/>
+  </g>
+</svg>

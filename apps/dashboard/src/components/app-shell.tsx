@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import {
   ArrowUpRight,
@@ -14,14 +22,32 @@ import {
   Search,
   Settings2,
   Sparkles,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Badge } from "@/components/ui/badge";
+import { ValueSelect } from "./value-select";
+import { ThemeMenu } from "./theme-provider";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { api, type Product } from "@/lib/api";
 import { ErrorState, Loading } from "./shared";
-import { cn } from "@/lib/utils";
+
 type Context = {
   products: Product[];
   product?: Product;
@@ -41,16 +67,21 @@ export function ProductIcon({ kind }: { kind: string }) {
 export function Logo() {
   return (
     <span className="brand">
-      <span className="brand-mark">
-        <span />
-        <span />
-        <span />
+      <svg className="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <g transform="rotate(-10 20 20)" fill="currentColor">
+          <rect x="7" y="19" width="7" height="17" rx="3.5" />
+          <rect x="17" y="5" width="7" height="30" rx="3.5" />
+          <rect x="27" y="5" width="7" height="20" rx="3.5" />
+        </g>
+      </svg>
+      <span className="brand-word">
+        piko<span className="brand-period">.</span>
       </span>
-      piko<span className="brand-period">.</span>
     </span>
   );
 }
 export function AppShell() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
@@ -59,6 +90,7 @@ export function AppShell() {
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
   useEffect(() => {
+    setSidebarOpen(localStorage.getItem("piko:sidebar") !== "collapsed");
     setSelected(localStorage.getItem("piko:product") ?? "");
     const saved = Number(localStorage.getItem("piko:days"));
     if ([7, 30, 90].includes(saved)) setDays(saved);
@@ -108,115 +140,150 @@ export function AppShell() {
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
     <Workspace.Provider value={{ products, product, reload, range, refresh }}>
-      <div className="app-shell">
-        <aside className="sidebar">
-          <Link to="/" aria-label="Piko overview">
-            <Logo />
-          </Link>
-          <div className="workspace-label">
-            WORKSPACE <Badge variant="outline">Personal</Badge>
-          </div>
-          <div className="product-switch">
-            <span className={cn("product-symbol", product?.kind)}>
-              <ProductIcon kind={product?.kind ?? "generic"} />
-            </span>
-            <div>
-              <span className="micro-label">Current product</span>
-              <NativeSelect
-                aria-label="Select product"
-                value={product?.id ?? ""}
-                onChange={(e) => {
-                  setSelected(e.target.value);
-                  localStorage.setItem("piko:product", e.target.value);
-                }}
-              >
-                {products.length ? (
-                  products.map((p) => (
-                    <NativeSelectOption key={p.id} value={p.id}>
-                      {p.name}
-                    </NativeSelectOption>
-                  ))
-                ) : (
-                  <NativeSelectOption value="">No products yet</NativeSelectOption>
-                )}
-              </NativeSelect>
-            </div>
-          </div>
-          <nav aria-label="Main navigation">
-            <Link to="/" className={cn("nav-item", path === "/" && "active")}>
-              <LayoutDashboard />
-              Overview
-            </Link>
-            <Link to="/explore" className={cn("nav-item", path === "/explore" && "active")}>
-              <Search />
-              Explore
-            </Link>
-            <Link to="/settings" className={cn("nav-item", path === "/settings" && "active")}>
-              <Settings2 />
-              Settings
-            </Link>
-          </nav>
-          <div className="sidebar-bottom">
-            <div className="local-note">
-              <span className="status-dot" />
-              <span>Self-hosted workspace</span>
-            </div>
-            <a
-              href="https://github.com/lilienblum/piko#readme"
-              target="_blank"
-              rel="noreferrer"
-              className="nav-item"
-            >
-              <CircleHelp />
-              Documentation
-              <ArrowUpRight />
-            </a>
-            <div className="sidebar-footer">
-              Piko <span>v0.1 · MIT</span>
-            </div>
-          </div>
-        </aside>
-        <div className="main-area">
+      <SidebarProvider
+        open={sidebarOpen}
+        onOpenChange={(open) => {
+          setSidebarOpen(open);
+          localStorage.setItem("piko:sidebar", open ? "expanded" : "collapsed");
+        }}
+        style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
+      >
+        <Navigation path={path} />
+        <SidebarInset className="min-w-0">
           <header className="topbar">
-            <div className="breadcrumbs">
-              <span>Workspace</span>
-              <ChevronRight />
-              <strong>{label}</strong>
+            <div className="topbar-left">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-5" />
+              <ValueSelect
+                label="Select product"
+                value={product?.id ?? ""}
+                disabled={!products.length}
+                placeholder="No products yet"
+                className="product-select"
+                icon={<ProductIcon kind={product?.kind ?? "generic"} />}
+                onValueChange={(value) => {
+                  setSelected(value);
+                  localStorage.setItem("piko:product", value);
+                }}
+                options={products.map((p) => [p.id, p.name])}
+              />
+              <div className="breadcrumbs">
+                <ChevronRight />
+                <strong>{label}</strong>
+              </div>
             </div>
             <div className="topbar-controls">
               <span className="timezone">UTC</span>
-              <CalendarDays />
-              <NativeSelect
-                aria-label="Date range"
-                value={days}
-                onChange={(e) => {
-                  setDays(Number(e.target.value));
-                  localStorage.setItem("piko:days", e.target.value);
+              <ValueSelect
+                label="Date range"
+                value={String(days)}
+                icon={<CalendarDays />}
+                className="date-select"
+                onValueChange={(value) => {
+                  setDays(Number(value));
+                  localStorage.setItem("piko:days", value);
                   setNow(Date.now());
                 }}
-              >
-                <NativeSelectOption value={7}>Last 7 days</NativeSelectOption>
-                <NativeSelectOption value={30}>Last 30 days</NativeSelectOption>
-                <NativeSelectOption value={90}>Last 90 days</NativeSelectOption>
-              </NativeSelect>
+                options={[
+                  ["7", "Last 7 days"],
+                  ["30", "Last 30 days"],
+                  ["90", "Last 90 days"],
+                ]}
+              />
               <Button variant="ghost" size="icon" aria-label="Refresh analytics" onClick={refresh}>
                 <RefreshCw />
               </Button>
+              <ThemeMenu />
             </div>
           </header>
-          <main className="page-content">
+          <div className="page-content">
             {error && <ErrorState message={error} retry={refresh} />}
             <Outlet />
-          </main>
+          </div>
           <footer className="page-footer">
             <span>
               <Sparkles />A little data. A clearer picture.
             </span>
             <span>All times in UTC · Identity is optional</span>
           </footer>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
     </Workspace.Provider>
+  );
+}
+function Navigation({ path }: { path: string }) {
+  const { isMobile, setOpenMobile } = useSidebar();
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="flex-row items-center justify-between py-7">
+        <Link
+          to="/"
+          aria-label="Piko overview"
+          className="brand-link"
+          onClick={() => setOpenMobile(false)}
+        >
+          <Logo />
+        </Link>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Close navigation"
+            onClick={() => setOpenMobile(false)}
+          >
+            <X />
+          </Button>
+        )}
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <nav aria-label="Main navigation">
+              <SidebarMenu>
+                {(
+                  [
+                    ["/", "Overview", LayoutDashboard],
+                    ["/explore", "Explore", Search],
+                    ["/settings", "Settings", Settings2],
+                  ] as const
+                ).map(([to, label, Icon]) => (
+                  <SidebarMenuItem key={to}>
+                    <SidebarMenuButton asChild isActive={path === to} tooltip={label} size="lg">
+                      <Link to={to} onClick={() => setOpenMobile(false)}>
+                        <Icon />
+                        <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </nav>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="pb-5">
+        <div className="local-note group-data-[collapsible=icon]:hidden">
+          <span className="status-dot" />
+          Self-hosted workspace
+        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Documentation">
+              <a href="https://github.com/lilienblum/piko#readme" target="_blank" rel="noreferrer">
+                <CircleHelp />
+                <span className="group-data-[collapsible=icon]:sr-only">Documentation</span>
+                <ArrowUpRight className="ml-auto group-data-[collapsible=icon]:hidden" />
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <Separator className="my-2" />
+        <div className="sidebar-footer group-data-[collapsible=icon]:hidden">
+          Piko <span>v0.1 · MIT</span>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
 export function PageHeader({

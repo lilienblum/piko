@@ -1,6 +1,7 @@
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
+import { ThemeProvider, themeScript } from "@/components/theme-provider";
 import styles from "../styles.css?url";
 export const Route = createRootRoute({
   ssr: false,
@@ -13,7 +14,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: styles },
-      { rel: "icon", href: "/favicon.svg" },
+      { rel: "icon", href: "/favicon.svg?v=2", type: "image/svg+xml" },
     ],
   }),
   component: AppShell,
@@ -27,12 +28,13 @@ export const Route = createRootRoute({
 });
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <ScriptOnce>{themeScript}</ScriptOnce>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
         <Scripts />
       </body>
     </html>

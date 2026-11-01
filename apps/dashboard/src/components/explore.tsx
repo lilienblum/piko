@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ValueSelect } from "./value-select";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Table,
   TableBody,
@@ -85,10 +86,16 @@ function ExploreProduct() {
         accessorKey: "name",
         header: "Event",
         cell: ({ row }) => (
-          <button type="button" className="event-name" onClick={() => setSelected(row.original)}>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto px-0"
+            onClick={() => setSelected(row.original)}
+          >
             {row.original.name}
-            <ChevronRight />
-          </button>
+            <ChevronRight data-icon="inline-end" />
+          </Button>
         ),
       },
       {
@@ -186,147 +193,133 @@ function ExploreProduct() {
               refresh();
             }}
           >
-            <FieldGroup className="query-controls">
-              <Field>
-                <FieldLabel htmlFor="event">Event</FieldLabel>
-                <NativeSelect
-                  id="event"
-                  value={draft.event}
-                  onChange={(e) => update("event", e.target.value)}
-                >
-                  <NativeSelectOption value="">All events</NativeSelectOption>
-                  {Array.from(
-                    new Set([
-                      ...(query.data?.event_names ?? []),
-                      ...(draft.event ? [draft.event] : []),
-                    ]),
-                  ).map((n) => (
-                    <NativeSelectOption key={n} value={n}>
-                      {n}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="measure">Measure</FieldLabel>
-                <NativeSelect
-                  id="measure"
-                  value={draft.measure}
-                  onChange={(e) => {
-                    update("measure", e.target.value);
-                    if (e.target.value.startsWith("p")) update("property", "duration_ms");
-                  }}
-                >
-                  {Object.entries(measureLabels).map(([v, label]) => (
-                    <NativeSelectOption key={v} value={v}>
-                      {label}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-              {!["count", "actors"].includes(draft.measure) && (
+            <Collapsible open={showFilter} onOpenChange={setShowFilter}>
+              <FieldGroup className="query-controls">
                 <Field>
-                  <FieldLabel htmlFor="measure-property">Numeric property</FieldLabel>
-                  <Input
-                    id="measure-property"
-                    value={draft.property}
-                    onChange={(e) => update("property", e.target.value)}
-                    required
-                  />
-                </Field>
-              )}
-              <Field>
-                <FieldLabel htmlFor="group">Group by</FieldLabel>
-                <NativeSelect
-                  id="group"
-                  value={draft.group}
-                  onChange={(e) => update("group", e.target.value)}
-                >
-                  {[
-                    ["name", "Event name"],
-                    ["source", "Source"],
-                    ["identity_kind", "Identity kind"],
-                    ["property:path", "Page path"],
-                    ["property:referrer", "Referrer"],
-                    ["property:command", "Command"],
-                    ["property:os", "OS"],
-                    ["property:version", "Version"],
-                    ["property:success", "Success"],
-                  ].map(([v, label]) => (
-                    <NativeSelectOption key={v} value={v}>
-                      {label}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <div className="query-actions">
-                <Button type="button" variant="outline" onClick={() => setShowFilter(!showFilter)}>
-                  <Filter data-icon="inline-start" />
-                  Filter{applied.filterProperty ? " · 1" : ""}
-                </Button>
-                <Button type="submit">
-                  <Play data-icon="inline-start" />
-                  Run query
-                </Button>
-              </div>
-            </FieldGroup>
-            {showFilter && (
-              <FieldGroup className="filter-controls">
-                <Field>
-                  <FieldLabel htmlFor="filter-property">Property</FieldLabel>
-                  <Input
-                    id="filter-property"
-                    placeholder="e.g. success"
-                    value={draft.filterProperty}
-                    onChange={(e) => update("filterProperty", e.target.value)}
+                  <FieldLabel htmlFor="event">Event</FieldLabel>
+                  <ValueSelect
+                    id="event"
+                    value={draft.event || "*"}
+                    onValueChange={(value) => update("event", value === "*" ? "" : value)}
+                    options={[
+                      ["*", "All events"],
+                      ...Array.from(
+                        new Set([
+                          ...(query.data?.event_names ?? []),
+                          ...(draft.event ? [draft.event] : []),
+                        ]),
+                      ).map((name): [string, string] => [name, name]),
+                    ]}
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="filter-op">Condition</FieldLabel>
-                  <NativeSelect
-                    id="filter-op"
-                    value={draft.filterOp}
-                    onChange={(e) => update("filterOp", e.target.value)}
-                  >
-                    {[
-                      ["eq", "equals"],
-                      ["ne", "does not equal"],
-                      ["gt", "greater than"],
-                      ["gte", "at least"],
-                      ["lt", "less than"],
-                      ["lte", "at most"],
-                    ].map(([v, l]) => (
-                      <NativeSelectOption key={v} value={v}>
-                        {l}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="filter-value">Typed value</FieldLabel>
-                  <Input
-                    id="filter-value"
-                    placeholder={'true, 42, or "build"'}
-                    value={draft.filterValue}
-                    onChange={(e) => update("filterValue", e.target.value)}
+                  <FieldLabel htmlFor="measure">Measure</FieldLabel>
+                  <ValueSelect
+                    id="measure"
+                    value={draft.measure}
+                    onValueChange={(value) => {
+                      update("measure", value);
+                      if (value.startsWith("p")) update("property", "duration_ms");
+                    }}
+                    options={Object.entries(measureLabels)}
                   />
                 </Field>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove filter"
-                  onClick={() => {
-                    setDraft((d) => ({ ...d, filterProperty: "", filterValue: "" }));
-                    setApplied((d) => ({ ...d, filterProperty: "", filterValue: "" }));
-                    setPage(0);
-                    setShowFilter(false);
-                  }}
-                >
-                  <X />
-                </Button>
+                {!["count", "actors"].includes(draft.measure) && (
+                  <Field>
+                    <FieldLabel htmlFor="measure-property">Numeric property</FieldLabel>
+                    <Input
+                      id="measure-property"
+                      value={draft.property}
+                      onChange={(e) => update("property", e.target.value)}
+                      required
+                    />
+                  </Field>
+                )}
+                <Field>
+                  <FieldLabel htmlFor="group">Group by</FieldLabel>
+                  <ValueSelect
+                    id="group"
+                    value={draft.group}
+                    onValueChange={(value) => update("group", value)}
+                    options={[
+                      ["name", "Event name"],
+                      ["source", "Source"],
+                      ["identity_kind", "Identity kind"],
+                      ["property:path", "Page path"],
+                      ["property:referrer", "Referrer"],
+                      ["property:command", "Command"],
+                      ["property:os", "OS"],
+                      ["property:version", "Version"],
+                      ["property:success", "Success"],
+                    ]}
+                  />
+                </Field>
+                <div className="query-actions">
+                  <CollapsibleTrigger asChild>
+                    <Button type="button" variant="outline">
+                      <Filter data-icon="inline-start" />
+                      Filter{applied.filterProperty ? " · 1" : ""}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <Button type="submit">
+                    <Play data-icon="inline-start" />
+                    Run query
+                  </Button>
+                </div>
               </FieldGroup>
-            )}
+              <CollapsibleContent>
+                <FieldGroup className="filter-controls">
+                  <Field>
+                    <FieldLabel htmlFor="filter-property">Property</FieldLabel>
+                    <Input
+                      id="filter-property"
+                      placeholder="e.g. success"
+                      value={draft.filterProperty}
+                      onChange={(e) => update("filterProperty", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="filter-op">Condition</FieldLabel>
+                    <ValueSelect
+                      id="filter-op"
+                      value={draft.filterOp}
+                      onValueChange={(value) => update("filterOp", value)}
+                      options={[
+                        ["eq", "equals"],
+                        ["ne", "does not equal"],
+                        ["gt", "greater than"],
+                        ["gte", "at least"],
+                        ["lt", "less than"],
+                        ["lte", "at most"],
+                      ]}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="filter-value">Typed value</FieldLabel>
+                    <Input
+                      id="filter-value"
+                      placeholder={'true, 42, or "build"'}
+                      value={draft.filterValue}
+                      onChange={(e) => update("filterValue", e.target.value)}
+                    />
+                  </Field>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Remove filter"
+                    onClick={() => {
+                      setDraft((d) => ({ ...d, filterProperty: "", filterValue: "" }));
+                      setApplied((d) => ({ ...d, filterProperty: "", filterValue: "" }));
+                      setPage(0);
+                      setShowFilter(false);
+                    }}
+                  >
+                    <X />
+                  </Button>
+                </FieldGroup>
+              </CollapsibleContent>
+            </Collapsible>
             {validation && (
               <p role="alert" className="form-error">
                 {validation}

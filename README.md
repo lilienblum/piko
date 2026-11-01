@@ -114,3 +114,9 @@ See [the verification record](docs/verification.md) for measured checks and thei
 - No logs/search, arbitrary SQL, funnels, replay, dashboard builders, or distributed storage.
 
 [Liwan](https://github.com/explodingcamera/liwan) informed the embedded-storage direction. Piko has its own implementation and product model, with equal support for websites and tools.
+
+### Dashboard appearance
+
+Use the Appearance menu in the top-right corner to choose **Light**, **Dark**, or **Auto**. Auto follows your system setting, including changes while the dashboard is open. The preference persists in this browser and synchronizes across tabs. The saved theme is applied before the application loads.
+
+The sidebar toggle collapses desktop navigation to icons and opens a navigation drawer on mobile. Product and date selectors remain available in the header. Dashboard controls use shadcn/ui Select, Sidebar/Sheet, Collapsible, Tabs, AlertDialog, and Chart alongside its buttons, forms, cards, and tables.
