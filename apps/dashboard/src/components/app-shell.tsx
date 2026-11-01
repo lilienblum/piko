@@ -81,16 +81,8 @@ export function useAnalyticsPending(pending: boolean) {
 export function Logo() {
   return (
     <span className="brand">
-      <svg className="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
-        <g transform="rotate(-10 20 20)" fill="currentColor">
-          <rect x="7" y="19" width="7" height="17" rx="3.5" />
-          <rect x="17" y="5" width="7" height="30" rx="3.5" />
-          <rect x="27" y="5" width="7" height="20" rx="3.5" />
-        </g>
-      </svg>
-      <span className="brand-word">
-        piko<span className="brand-period">.</span>
-      </span>
+      <img className="brand-mark" src="/favicon.svg?v=4" width="30" height="30" alt="" />
+      <span className="brand-word">piko</span>
     </span>
   );
 }

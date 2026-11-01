@@ -14,7 +14,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: styles },
-      { rel: "icon", href: "/favicon.svg?v=3", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.svg?v=4", type: "image/svg+xml" },
     ],
   }),
   component: Root,
@@ -43,15 +43,15 @@ function Shell({ children }: { children: ReactNode }) {
       </head>
       <body>
         <template
-          data-design-contract="field-workbench"
+          data-design-contract="yuzu"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: static build-time design provenance; no dynamic or user content.
           dangerouslySetInnerHTML={{
             __html: `<!--
-THESIS: A small measurement workbench; the query and evidence lead, replacing the blue card grid.
-OWN-WORLD: Stone working ground, pine action and data, citron navigation, Public Sans, flat measurements and contained forms.
-STORY: Select product and dates, query activity, read the pattern, inspect an event. Identity stays explicit.
-FIRST VIEWPORT: A 13rem navigation rail and 64px context toolbar; compact title and query rail; two-thirds plot with one-third breakdown; event stream follows. Run query sits at the rail's right.
-FORM: Field-station labels, candidate 5, registered shared measurements. Seed 1c47a4fc. Compact composition A, preserving actual controls and privacy semantics.
+THESIS: Piko is a compact measurement tool with a graphic identity; evidence remains the main content.
+OWN-WORLD: Yuzu's butter-yellow rail, warm ink, chart ochre, Geist, squared controls, ink navigation selections, and an upright three-bar mark.
+STORY: Choose project, source and dates; follow an event trend; inspect the evidence; manage collection. Identity stays optional.
+FIRST VIEWPORT: Preserve the 13rem rail, 64px toolbar, shallow query controls, two-thirds plot and one-third breakdown, followed by the event stream. Run query stays at the right.
+FORM: User-selected Yuzu from the eight-direction preview. Preserve the approved compact composition; sharpen its control, type, chart and brand vocabulary. No new direction roll.
 -->`,
           }}
         />

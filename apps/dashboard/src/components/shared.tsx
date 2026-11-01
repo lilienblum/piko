@@ -145,7 +145,7 @@ export function SeriesChart({
             <ChartContainer
               className="series-chart"
               aria-label={`${label} by UTC ${bucket === "hour" ? "hour" : "date"}`}
-              config={{ value: { label, color: "var(--primary)" } }}
+              config={{ value: { label, color: "var(--data)" } }}
             >
               <AreaChart
                 accessibilityLayer
@@ -154,8 +154,8 @@ export function SeriesChart({
               >
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.08} />
-                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.01} />
+                    <stop offset="0%" stopColor="var(--data)" stopOpacity={0.08} />
+                    <stop offset="95%" stopColor="var(--data)" stopOpacity={0.01} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="2 5" />
@@ -207,12 +207,12 @@ export function SeriesChart({
                   }
                 />
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="value"
-                  stroke="var(--primary)"
+                  stroke="var(--data)"
                   fill={`url(#${gradientId})`}
                   strokeWidth={2}
-                  dot={unit ? { r: 2, fill: "var(--primary)", strokeWidth: 0 } : false}
+                  dot={unit ? { r: 2, fill: "var(--data)", strokeWidth: 0 } : false}
                   isAnimationActive={false}
                   connectNulls={false}
                 />

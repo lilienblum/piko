@@ -30,7 +30,7 @@ Light, Dark, and Auto themes, Hugeicons, accessible shadcn primitives, Recharts,
 
 ## Brand Commitments
 
-Piko is the working name. Retain its three-stroke mark and matching favicon. The user rejects the current corporate blue visual style and asks for something fresh that does not look like a stock shadcn interface. Use straightforward product language and keep analytics terminology accurate.
+Piko is the working name. The user selected Yuzu: butter yellow, warm ink, and a sharper graphic feel. Carry it beyond colors through compact squared controls, Geist typography, a straight three-bar mark and matching favicon, and flat analytical surfaces. Accessible shadcn primitives remain, with a distinct Piko treatment. Use straightforward product language and keep analytics terminology accurate.
 
 ## Evidence on Hand
 

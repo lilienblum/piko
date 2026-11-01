@@ -261,7 +261,7 @@ test("light, dark and auto themes persist and follow system changes", async ({ p
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(
     await page.getByRole("dialog").evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe("rgb(23, 30, 25)");
+  ).toBe("rgb(30, 31, 25)");
   await page.keyboard.press("Escape");
   await appearance(page, "Auto");
   await expect(page.locator("html")).toHaveClass("light");
@@ -286,7 +286,7 @@ test("saved appearance is applied before the application JavaScript loads", asyn
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass("dark");
   expect(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-    "rgb(23, 30, 25)",
+    "rgb(30, 31, 25)",
   );
 });
 
