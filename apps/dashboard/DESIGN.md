@@ -282,6 +282,10 @@ The line variant uses transparent ground and an ink underline for the active tab
 
 Charts use an angular single-series line with linear interpolation, the data ochre stroke, light horizontal grid marks, muted axes, and a faint ochre area fill. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
 
+### Charts
+
+Use the official Bklit UI area chart components for Overview and Explore. Chart colors derive from the existing semantic theme; the chart registry must not introduce another palette. Preserve linear plots, subtle fills, zero baselines, missing-value gaps, UTC labels, metric units, keyboard inspection, and touch scrolling. Keep the plot mounted during refresh and preserve its region height while measuring. Reveal and scale animations are disabled so changing results stays immediate; reduced-motion also suppresses tooltip/axis transitions.
+
 ### Motion and loading
 
 Transitions clarify state rather than introducing spectacle. The rail uses a short linear size/position transition; dialogs and sheets use the existing short entry/exit treatment. Reduced-motion preference disables animations and transitions. Skeletons, chart placeholders, and pending tables preserve region dimensions; error messages and live/reconnecting/paused states remain explicit. The navigation rail and context toolbar render on the server and retain their geometry through hydration, including a saved collapsed rail. The footer also renders immediately. Only data regions use placeholders; the workspace catalog uses a quiet loading status. Retain existing results during refresh. A 150 ms visual delay prevents fast responses from flashing skeletons, following the component-level approach in [Skullet](https://skullet.lochie.me/docs#reveals); reduced-motion remains static. Controls that require JavaScript become enabled after hydration.

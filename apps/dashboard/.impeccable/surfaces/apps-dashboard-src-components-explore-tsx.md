@@ -17,3 +17,5 @@ Composition: preserve the shipped shallow query rail, two-thirds trend and one-t
 Unresolved: none. Light, Dark and Auto remain supported, with no new backend or telemetry behavior.
 
 Theme refinement: reduce glare on large Light surfaces; keep Dark surfaces and text nearly neutral. Yuzu yellow is an accent, not a tint applied to every surface. This refinement follows the user’s explicit feedback.
+
+Chart implementation: official Bklit UI area charts now power Overview and Explore. Retain Yuzu tokens, the linear analytical treatment, UTC formatting, numeric gaps, keyboard inspection, and stable refresh geometry.

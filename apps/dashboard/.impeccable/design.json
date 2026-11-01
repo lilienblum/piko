@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T13:43:58.439412+00:00",
+  "generatedAt": "2026-11-01T14:10:32.567213+00:00",
   "title": "Design System: Piko",
   "extensions": {
     "colorMeta": {
@@ -803,7 +803,8 @@
       "Do align measurements and use fine dividers to connect analytical regions.",
       "Do keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.",
       "Do preserve chart and table geometry while data loads or refreshes.",
-      "Do use the existing line chart, actual event identity kinds, and truthful empty or error states."
+      "Do use the existing line chart, actual event identity kinds, and truthful empty or error states.",
+      "Do use official Bklit UI charts with semantic colors, UTC labels, missing-value gaps, keyboard inspection, touch scrolling, and stable refresh geometry."
     ],
     "donts": [
       "Don't return to a corporate blue card grid or a black neon terminal identity.",

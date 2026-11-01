@@ -68,3 +68,7 @@ All sources share the same analytics interface. The optional icon is visual meta
 ## Source management
 
 Settings lists sources with their name and icon. Automatic chooses an icon from the name; an explicit choice stays fixed after renaming. Add or edit a source there, then choose it in **Key source** before creating an ingestion key. Each key belongs permanently to one source. Integration snippets use the selected source's key; Browser, TypeScript, Rust CLI, and HTTP / Mobile examples are available for every source. Renaming a source changes its display name without moving historical events. Sources share the project's retention policy and optional identity namespace. Revoke its keys to stop intake; source deletion and merging are outside v1.
+
+## Chart inspection
+
+Overview and Explore use official Bklit UI charts. Hover or touch the plot to inspect a bucket. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
