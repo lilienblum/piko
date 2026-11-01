@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -67,7 +68,7 @@ function BreakdownCardLoading({ title }: { title: string }) {
     </Card>
   );
 }
-export function OverviewLoading({ labels, chartTitle }: { labels: string[]; chartTitle: string }) {
+export function OverviewLoading({ labels, chart }: { labels: string[]; chart: ReactNode }) {
   return (
     <section role="status" aria-label="Loading overview" aria-busy="true">
       <span className="sr-only">Loading analytics…</span>
@@ -89,7 +90,7 @@ export function OverviewLoading({ labels, chartTitle }: { labels: string[]; char
           </Card>
         ))}
       </div>
-      <ChartLoading title={chartTitle} />
+      {chart}
       <div className="breakdowns">
         <BreakdownCardLoading title="Top activity" />
         <BreakdownCardLoading title="Breakdown" />

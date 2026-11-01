@@ -96,7 +96,9 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await expect(page.getByText("Top pages", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".metric-value").first()).toHaveText("32");
   await select(page, "Select product", tool.name);
-  await expect(page.getByText("Command executions", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".metrics").getByText("Command executions", { exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".metric-value").nth(2)).toHaveText("50%");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await select(page, "Measure", "Numeric average");

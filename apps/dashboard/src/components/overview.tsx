@@ -17,10 +17,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewLoading, BreakdownLoading } from "./loading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
-import { number, type Group } from "@/lib/api";
+import { number, type Group, type Product } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct, ProductIcon } from "./app-shell";
 import { Breakdown, BreakdownRows, ErrorState, NoEvents, SeriesChart } from "./shared";
+import { ValueSelect } from "./value-select";
+
+type ChartChoice = {
+  id: string;
+  label: string;
+  measure: "count" | "actors" | "avg" | "p95";
+  identity_kind?: "visitor" | "installation";
+  property?: "duration_ms";
+  unit?: "ms";
+};
+const chartChoices: Record<Product["kind"], ChartChoice[]> = {
+  website: [
+    { id: "count", label: "Page views", measure: "count" },
+    { id: "visitors", label: "Unique visitors", measure: "actors", identity_kind: "visitor" },
+  ],
+  tool: [
+    { id: "count", label: "Command executions", measure: "count" },
+    {
+      id: "installations",
+      label: "Active installations",
+      measure: "actors",
+      identity_kind: "installation",
+    },
+    {
+      id: "average",
+      label: "Average duration",
+      measure: "avg",
+      property: "duration_ms",
+      unit: "ms",
+    },
+    { id: "p95", label: "p95 duration", measure: "p95", property: "duration_ms", unit: "ms" },
+  ],
+  generic: [
+    { id: "count", label: "Events", measure: "count" },
+    { id: "actors", label: "Identified actors", measure: "actors" },
+  ],
+};
 export function Overview() {
   const { product } = useWorkspace();
   return product ? <ProductOverview key={product.id} /> : <NoProduct />;
@@ -61,7 +98,31 @@ function ProductOverview() {
     refreshKey,
     `${backgroundScope}:${secondaryGroup}`,
   );
-  useAnalyticsPending(query.refreshing || secondary.refreshing);
+  const choices = chartChoices[product?.kind ?? "generic"];
+  const [chartMetric, setChartMetric] = useState("count");
+  const [chartInterval, setChartInterval] = useState("day");
+  const [chartRetry, setChartRetry] = useState(0);
+  const choice = choices.find((option) => option.id === chartMetric) ?? choices[0];
+  const hourlyAvailable = Date.parse(range.to) - Date.parse(range.from) <= 31 * 86400000;
+  const bucket = chartInterval === "hour" && hourlyAvailable ? "hour" : "day";
+  const separateChart = choice.id !== "count" || bucket !== "day";
+  const chartQuery = useQuery(
+    separateChart ? product?.id : undefined,
+    {
+      ...body,
+      measure: choice.measure,
+      identity_kind: choice.identity_kind,
+      property: choice.property,
+      bucket,
+      page_size: 1,
+    },
+    `${refreshKey}:${chartRetry}`,
+    `${backgroundScope}:${choice.id}:${bucket}`,
+  );
+  const chartResult = separateChart ? chartQuery : query;
+  useAnalyticsPending(
+    query.refreshing || secondary.refreshing || (separateChart && chartQuery.refreshing),
+  );
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
@@ -156,6 +217,62 @@ function ProductOverview() {
             icon: CommandLineIcon,
           },
         ];
+  const chart = (
+    <SeriesChart
+      data={chartResult.data}
+      title="Activity over time"
+      description={
+        choice.measure === "actors"
+          ? `${choice.identity_kind === "visitor" ? "Visitors" : choice.identity_kind === "installation" ? "Installations" : "Identities"} counted once per ${bucket}.`
+          : choice.unit
+            ? `${choice.measure === "p95" ? "95th-percentile" : "Average"} execution time per ${bucket}, in milliseconds.`
+            : `${choice.label} per ${bucket}, including anonymous activity.`
+      }
+      label={choice.label}
+      bucket={bucket}
+      unit={choice.unit}
+      range={range}
+      pending={chartResult.loading}
+      error={separateChart ? chartQuery.error : undefined}
+      retry={() => setChartRetry((key) => key + 1)}
+      emptyMessage={
+        !chartResult.data
+          ? undefined
+          : choice.measure === "actors" && !chartResult.data.summary.value
+            ? choice.identity_kind === "visitor"
+              ? "No visitor IDs received in this range."
+              : choice.identity_kind === "installation"
+                ? "No installation IDs received in this range."
+                : "No actor IDs received in this range."
+            : choice.unit && chartResult.data.summary.value === null
+              ? "No numeric durations received in this range."
+              : undefined
+      }
+      controls={
+        <div className="chart-controls">
+          <ValueSelect
+            label="Chart metric"
+            value={choice.id}
+            onValueChange={setChartMetric}
+            options={choices.map((option) => [option.id, option.label])}
+          />
+          <ValueSelect
+            label="Chart interval"
+            value={bucket}
+            onValueChange={setChartInterval}
+            options={
+              hourlyAvailable
+                ? [
+                    ["day", "Daily"],
+                    ["hour", "Hourly"],
+                  ]
+                : [["day", "Daily"]]
+            }
+          />
+        </div>
+      }
+    />
+  );
   return (
     <>
       <PageHeader
@@ -189,10 +306,7 @@ function ProductOverview() {
       {query.error && !query.data ? (
         <ErrorState message={query.error} retry={refresh} />
       ) : query.loading ? (
-        <OverviewLoading
-          labels={metrics.map((metric) => metric.label)}
-          chartTitle={web ? "Page views over time" : tool ? "Command activity" : "Product activity"}
-        />
+        <OverviewLoading labels={metrics.map((metric) => metric.label)} chart={chart} />
       ) : (
         query.data && (
           <>
@@ -215,14 +329,7 @@ function ProductOverview() {
               <NoEvents />
             ) : (
               <>
-                <SeriesChart
-                  data={query.data}
-                  title={
-                    web ? "Page views over time" : tool ? "Command activity" : "Product activity"
-                  }
-                  description="Daily activity across the selected period"
-                  label={web ? "Page views" : tool ? "Executions" : "Events"}
-                />
+                {chart}
                 <div className="breakdowns">
                   <Breakdown
                     title={web ? "Top pages" : tool ? "Top commands" : "Top events"}
