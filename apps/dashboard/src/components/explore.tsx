@@ -12,8 +12,10 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { number, type QueryResult } from "@/lib/api";
 import { EventStream } from "./event-stream";
 import { useQuery } from "@/lib/use-query";
-import { useWorkspace, PageHeader, NoProduct } from "./app-shell";
-import { Breakdown, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
+import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
+import { Breakdown, ErrorState, NoEvents, SeriesChart } from "./shared";
+import { ExploreLoading } from "./loading";
+import { Spinner } from "@/components/ui/spinner";
 type Spec = {
   event: string;
   source: string;
@@ -106,6 +108,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     },
     `${refreshKey}:${retryKey}`,
   );
+  useAnalyticsPending(query.loading);
   const scopeKey = JSON.stringify([product?.id, range, applied, refreshKey]);
   const [lastResult, setLastResult] = useState<{ scope: string; data: QueryResult }>();
   useEffect(() => {
@@ -275,9 +278,18 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                       Filter{applied.filterProperty ? " · 1" : ""}
                     </Button>
                   </CollapsibleTrigger>
-                  <Button type="submit">
-                    <Play data-icon="inline-start" />
-                    Run query
+                  <Button
+                    type="submit"
+                    aria-label="Run query"
+                    aria-busy={query.loading}
+                    disabled={query.loading}
+                  >
+                    {query.loading ? (
+                      <Spinner data-icon="inline-start" aria-hidden="true" />
+                    ) : (
+                      <Play data-icon="inline-start" />
+                    )}
+                    {query.loading ? "Running…" : "Run query"}
                   </Button>
                 </div>
               </FieldGroup>
@@ -345,7 +357,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
       {query.error && !data ? (
         <ErrorState message={query.error} retry={retry} />
       ) : !data ? (
-        <Loading />
+        <ExploreLoading />
       ) : (
         data && (
           <>

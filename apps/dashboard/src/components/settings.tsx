@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Check, Code2, Copy, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -34,10 +36,12 @@ function ProductFields({
   value,
   onChange,
   prefix,
+  disabled = false,
 }: {
   value: { name: string; kind: string; retention_days: number };
   onChange: (v: typeof value) => void;
   prefix: string;
+  disabled?: boolean;
 }) {
   return (
     <FieldGroup>
@@ -45,6 +49,7 @@ function ProductFields({
         <FieldLabel htmlFor={`${prefix}-name`}>Product name</FieldLabel>
         <Input
           id={`${prefix}-name`}
+          disabled={disabled}
           value={value.name}
           maxLength={80}
           required
@@ -56,6 +61,7 @@ function ProductFields({
         <FieldLabel htmlFor={`${prefix}-kind`}>Product type</FieldLabel>
         <ValueSelect
           id={`${prefix}-kind`}
+          disabled={disabled}
           value={value.kind}
           onValueChange={(kind) => onChange({ ...value, kind })}
           options={[
@@ -72,6 +78,7 @@ function ProductFields({
         <FieldLabel htmlFor={`${prefix}-retention`}>Retention (days)</FieldLabel>
         <Input
           id={`${prefix}-retention`}
+          disabled={disabled}
           type="number"
           min={1}
           max={3650}
@@ -92,17 +99,26 @@ export function Settings() {
   const [draft, setDraft] = useState({ name: "", kind: "website", retention_days: 90 });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [createdProduct, setCreatedProduct] = useState<Product>();
   async function create(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
+    let saved = createdProduct;
     try {
-      const p = await api<Product>("/products", "POST", draft);
-      await reload(p.id);
+      saved ??= await api<Product>("/products", "POST", draft);
+      setCreatedProduct(saved);
+      await reload(saved.id);
       setOpen(false);
       setDraft({ name: "", kind: "website", retention_days: 90 });
+      setCreatedProduct(undefined);
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        saved
+          ? `Product created. Could not refresh the workspace. ${(e as Error).message}`
+          : (e as Error).message,
+      );
     } finally {
       setBusy(false);
     }
@@ -113,25 +129,42 @@ export function Settings() {
         title="A home for your products"
         description="Manage what you measure, how you collect it, and how long it stays."
       >
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(value) => {
+            if (!busy) setOpen(value);
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus data-icon="inline-start" />
               New product
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent showCloseButton={!busy}>
             <DialogHeader>
               <DialogTitle>Create a product</DialogTitle>
               <DialogDescription>
                 A separate space for events and ingestion keys. No URL required.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={create}>
-              <ProductFields value={draft} onChange={setDraft} prefix="create" />
+            <form onSubmit={create} aria-busy={busy}>
+              <ProductFields
+                value={draft}
+                onChange={setDraft}
+                prefix="create"
+                disabled={busy || !!createdProduct}
+              />
               {error && <ErrorState message={error} />}
               <Button type="submit" disabled={busy} className="mt-6">
-                {busy ? "Creating…" : "Create product"}
+                {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
+                {busy
+                  ? createdProduct
+                    ? "Loading product…"
+                    : "Creating…"
+                  : createdProduct
+                    ? "Retry loading product"
+                    : "Create product"}
               </Button>
             </form>
           </DialogContent>
@@ -157,34 +190,54 @@ function ProductSettings({ product }: { product: Product }) {
     kind: product.kind as string,
     retention_days: product.retention_days,
   });
-  const [keys, setKeys] = useState<KeyInfo[]>([]);
+  const [keyState, setKeyState] = useState<
+    | { status: "loading" }
+    | { status: "ready"; keys: KeyInfo[] }
+    | { status: "error"; message: string }
+  >({ status: "loading" });
   const [label, setLabel] = useState("");
-  const [newKey, setNewKey] = useState("");
+  const [createdKey, setCreatedKey] = useState<{ id: string; key: string } | null>(null);
+  const newKey = createdKey?.key ?? "";
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<"save" | "create-key" | "revoke" | null>(null);
+  const busy = pending !== null;
   const [integration, setIntegration] = useState(product.kind === "tool" ? "rust" : "browser");
   const [copied, setCopied] = useState(false);
   const [revoke, setRevoke] = useState<KeyInfo | null>(null);
+  const [revokeError, setRevokeError] = useState("");
+  const loadKeys = useCallback(
+    async (signal?: AbortSignal, savedMessage = "") => {
+      setKeyState({ status: "loading" });
+      try {
+        const keys = await api<KeyInfo[]>(`/products/${product.id}/keys`, "GET", undefined, signal);
+        if (!signal?.aborted) setKeyState({ status: "ready", keys });
+      } catch (e) {
+        if (!signal?.aborted) {
+          setKeyState({ status: "error", message: `${savedMessage}${(e as Error).message}` });
+        }
+      }
+    },
+    [product.id],
+  );
   useEffect(() => {
     const controller = new AbortController();
-    api<KeyInfo[]>(`/products/${product.id}/keys`, "GET", undefined, controller.signal)
-      .then(setKeys)
-      .catch((e) => {
-        if (e.name !== "AbortError") setError(e.message);
-      });
+    void loadKeys(controller.signal);
     return () => controller.abort();
-  }, [product.id]);
-  async function action(task: () => Promise<void>) {
-    setBusy(true);
+  }, [loadKeys]);
+  async function action(kind: NonNullable<typeof pending>, task: () => Promise<void>) {
+    if (busy) return;
+    setPending(kind);
+    if (kind === "revoke") setRevokeError("");
     setError("");
     setNotice("");
     try {
       await task();
     } catch (e) {
-      setError((e as Error).message);
+      if (kind === "revoke") setRevokeError((e as Error).message);
+      else setError((e as Error).message);
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
   const key = newKey || "YOUR_INGESTION_KEY";
@@ -207,7 +260,7 @@ function ProductSettings({ product }: { product: Product }) {
   }
   return (
     <>
-      {error && <ErrorState message={error} />}{" "}
+      {error && !revoke && <ErrorState message={error} />}
       {notice && (
         <Alert>
           <Check />
@@ -224,18 +277,25 @@ function ProductSettings({ product }: { product: Product }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void action(async () => {
+                void action("save", async () => {
                   await api(`/products/${product.id}`, "PATCH", draft);
-                  await reload();
                   setNotice("Product changes saved.");
+                  try {
+                    await reload();
+                  } catch (e) {
+                    setError(
+                      `Changes saved. Could not refresh the workspace. ${(e as Error).message}`,
+                    );
+                  }
                 });
               }}
             >
-              <ProductFields value={draft} onChange={setDraft} prefix="edit" />
+              <ProductFields value={draft} onChange={setDraft} prefix="edit" disabled={busy} />
               <div className="settings-save">
                 <code title={product.id}>{product.id.slice(0, 8)}…</code>
-                <Button type="submit" disabled={busy}>
-                  Save changes
+                <Button type="submit" disabled={busy} aria-busy={pending === "save"}>
+                  {pending === "save" && <Spinner data-icon="inline-start" aria-hidden="true" />}
+                  {pending === "save" ? "Saving…" : "Save changes"}
                 </Button>
               </div>
             </form>
@@ -266,9 +326,24 @@ function ProductSettings({ product }: { product: Product }) {
                 </AlertDescription>
               </Alert>
             )}
-            <div className="key-list">
-              {keys.length ? (
-                keys.map((k) => (
+            <div className="key-list" aria-busy={keyState.status === "loading"}>
+              {keyState.status === "loading" ? (
+                <div role="status" aria-label="Loading ingestion keys">
+                  <span className="sr-only">Loading ingestion keys…</span>
+                  {[1, 2].map((n) => (
+                    <div key={n} className="key-row" aria-hidden="true">
+                      <div className="flex flex-col gap-2">
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="size-8" />
+                    </div>
+                  ))}
+                </div>
+              ) : keyState.status === "error" ? (
+                <ErrorState message={keyState.message} retry={() => void loadKeys()} />
+              ) : keyState.keys.length ? (
+                keyState.keys.map((k) => (
                   <div className="key-row" key={k.id}>
                     <div>
                       <strong>{k.label}</strong>
@@ -281,7 +356,11 @@ function ProductSettings({ product }: { product: Product }) {
                         variant="ghost"
                         size="icon"
                         aria-label={`Revoke ${k.label}`}
-                        onClick={() => setRevoke(k)}
+                        disabled={busy}
+                        onClick={() => {
+                          setRevokeError("");
+                          setRevoke(k);
+                        }}
                       >
                         <Trash2 />
                       </Button>
@@ -296,15 +375,20 @@ function ProductSettings({ product }: { product: Product }) {
               className="key-form"
               onSubmit={(e) => {
                 e.preventDefault();
-                void action(async () => {
-                  const result = await api<{ key: string }>(
+                if (keyState.status !== "ready") return;
+                void action("create-key", async () => {
+                  const result = await api<{ id: string; key: string }>(
                     `/products/${product.id}/keys`,
                     "POST",
                     { label },
                   );
-                  setNewKey(result.key);
+                  setCreatedKey(result);
                   setLabel("");
-                  setKeys(await api(`/products/${product.id}/keys`));
+                  setNotice("Ingestion key created.");
+                  await loadKeys(
+                    undefined,
+                    "The key was created. Could not refresh the key list. ",
+                  );
                 });
               }}
             >
@@ -313,6 +397,7 @@ function ProductSettings({ product }: { product: Product }) {
                   <FieldLabel htmlFor="key-label">New key label</FieldLabel>
                   <Input
                     id="key-label"
+                    disabled={busy || keyState.status !== "ready"}
                     required
                     maxLength={80}
                     value={label}
@@ -320,9 +405,18 @@ function ProductSettings({ product }: { product: Product }) {
                     placeholder="e.g. Production website"
                   />
                 </Field>
-                <Button type="submit" variant="outline" disabled={busy}>
-                  <Plus data-icon="inline-start" />
-                  Create ingestion key
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={busy || keyState.status !== "ready"}
+                  aria-busy={pending === "create-key"}
+                >
+                  {pending === "create-key" ? (
+                    <Spinner data-icon="inline-start" aria-hidden="true" />
+                  ) : (
+                    <Plus data-icon="inline-start" />
+                  )}
+                  {pending === "create-key" ? "Creating key…" : "Create ingestion key"}
                 </Button>
               </FieldGroup>
             </form>
@@ -381,7 +475,10 @@ function ProductSettings({ product }: { product: Product }) {
       <AlertDialog
         open={!!revoke}
         onOpenChange={(open) => {
-          if (!open && !busy) setRevoke(null);
+          if (!open && !busy) {
+            setRevoke(null);
+            setRevokeError("");
+          }
         }}
       >
         <AlertDialogContent>
@@ -392,6 +489,12 @@ function ProductSettings({ product }: { product: Product }) {
               available.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {revokeError && (
+            <Alert variant="destructive">
+              <AlertTitle>Couldn’t revoke this key</AlertTitle>
+              <AlertDescription>{revokeError}</AlertDescription>
+            </Alert>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -399,17 +502,21 @@ function ProductSettings({ product }: { product: Product }) {
               disabled={busy}
               onClick={(event) => {
                 event.preventDefault();
-                void action(async () => {
+                void action("revoke", async () => {
                   if (!revoke) return;
                   await api(`/products/${product.id}/keys/${revoke.id}`, "DELETE");
-                  setKeys(await api(`/products/${product.id}/keys`));
-                  setNewKey("");
+                  if (createdKey?.id === revoke.id) setCreatedKey(null);
                   setRevoke(null);
                   setNotice("Ingestion key revoked.");
+                  await loadKeys(
+                    undefined,
+                    "The key was revoked. Could not refresh the key list. ",
+                  );
                 });
               }}
             >
-              Revoke key
+              {pending === "revoke" && <Spinner data-icon="inline-start" aria-hidden="true" />}
+              {pending === "revoke" ? "Revoking…" : "Revoke key"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

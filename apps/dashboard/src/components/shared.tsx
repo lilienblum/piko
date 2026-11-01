@@ -13,7 +13,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import { groupLabel, number, type Group, type QueryResult } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {
@@ -30,22 +29,6 @@ export function ErrorState({ message, retry }: { message: string; retry?: () => 
         )}
       </AlertDescription>
     </Alert>
-  );
-}
-export function Loading() {
-  return (
-    <div role="status" className="loading-grid" aria-label="Loading analytics" aria-busy="true">
-      <div className="metrics">
-        {[1, 2, 3, 4].map((n) => (
-          <Skeleton key={n} className="h-32" />
-        ))}
-      </div>
-      <Skeleton className="h-80" />
-      <div className="breakdowns">
-        <Skeleton className="h-64" />
-        <Skeleton className="h-64" />
-      </div>
-    </div>
   );
 }
 export function NoEvents() {

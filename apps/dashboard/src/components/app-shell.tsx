@@ -46,7 +46,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { api, type Product } from "@/lib/api";
-import { ErrorState, Loading } from "./shared";
+import { ErrorState } from "./shared";
+import { PageLoading } from "./loading";
+import { Spinner } from "@/components/ui/spinner";
 
 type Context = {
   products: Product[];
@@ -55,12 +57,20 @@ type Context = {
   range: { from: string; to: string };
   refresh: () => void;
   refreshKey: number;
+  setAnalyticsPending: (pending: boolean) => void;
 };
 const Workspace = createContext<Context | null>(null);
 export function useWorkspace() {
   const value = useContext(Workspace);
   if (!value) throw new Error("Missing workspace");
   return value;
+}
+export function useAnalyticsPending(pending: boolean) {
+  const { setAnalyticsPending } = useWorkspace();
+  useEffect(() => {
+    setAnalyticsPending(pending);
+    return () => setAnalyticsPending(false);
+  }, [pending, setAnalyticsPending]);
 }
 export function ProductIcon({ kind }: { kind: string }) {
   return kind === "website" ? <Globe2 /> : kind === "tool" ? <Command /> : <Box />;
@@ -84,6 +94,7 @@ export function Logo() {
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [analyticsPending, setAnalyticsPending] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
   const [days, setDays] = useState(30);
@@ -111,11 +122,15 @@ export function AppShell() {
     if ([7, 30, 90].includes(saved)) setDays(saved);
     const controller = new AbortController();
     api<Product[]>("/products", "GET", undefined, controller.signal)
-      .then(setProducts)
+      .then((result) => {
+        if (!controller.signal.aborted) setProducts(result);
+      })
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
   }, []);
   async function reload(select?: string) {
@@ -149,16 +164,11 @@ export function AppShell() {
         <ErrorState message={error} retry={() => window.location.reload()} />
       </main>
     );
-  if (loading)
-    return (
-      <main className="initial-loading">
-        <Logo />
-        <p>Opening your workspace…</p>
-      </main>
-    );
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
-    <Workspace.Provider value={{ products, product, reload, range, refresh, refreshKey }}>
+    <Workspace.Provider
+      value={{ products, product, reload, range, refresh, refreshKey, setAnalyticsPending }}
+    >
       <SidebarProvider
         open={sidebarOpen}
         onOpenChange={(open) => {
@@ -177,7 +187,13 @@ export function AppShell() {
                 label="Select product"
                 value={product?.id ?? ""}
                 disabled={!products.length}
-                placeholder={drilldown ? "Product unavailable" : "No products yet"}
+                placeholder={
+                  loading
+                    ? "Loading products…"
+                    : drilldown
+                      ? "Product unavailable"
+                      : "No products yet"
+                }
                 className="product-select"
                 icon={<ProductIcon kind={product?.kind ?? "generic"} />}
                 onValueChange={(value) => {
@@ -213,15 +229,22 @@ export function AppShell() {
                   ["90", "Last 90 days"],
                 ]}
               />
-              <Button variant="ghost" size="icon" aria-label="Refresh analytics" onClick={refresh}>
-                <RefreshCw />
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Refresh analytics"
+                onClick={refresh}
+                disabled={loading || analyticsPending}
+                aria-busy={loading || analyticsPending}
+              >
+                {loading || analyticsPending ? <Spinner aria-hidden="true" /> : <RefreshCw />}
               </Button>
               <ThemeMenu />
             </div>
           </header>
           <div className="page-content">
             {error && <ErrorState message={error} retry={refresh} />}
-            <Outlet />
+            {loading ? <PageLoading label="Loading workspace" /> : <Outlet />}
           </div>
           <footer className="page-footer">
             <span>
@@ -353,4 +376,3 @@ export function NoProduct() {
     </>
   );
 }
-export { Loading };

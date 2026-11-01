@@ -13,13 +13,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { OverviewLoading, BreakdownLoading } from "./loading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
 import { number, type Group } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
-import { useWorkspace, PageHeader, NoProduct, ProductIcon } from "./app-shell";
-import { Breakdown, BreakdownRows, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
+import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct, ProductIcon } from "./app-shell";
+import { Breakdown, BreakdownRows, ErrorState, NoEvents, SeriesChart } from "./shared";
 export function Overview() {
   const { product } = useWorkspace();
   return product ? <ProductOverview key={product.id} /> : <NoProduct />;
@@ -54,6 +54,7 @@ function ProductOverview() {
     ...body,
     group_by: secondaryGroup,
   });
+  useAnalyticsPending(query.loading || secondary.loading);
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
@@ -175,7 +176,10 @@ function ProductOverview() {
       {query.error ? (
         <ErrorState message={query.error} retry={refresh} />
       ) : query.loading ? (
-        <Loading />
+        <OverviewLoading
+          labels={metrics.map((metric) => metric.label)}
+          chartTitle={web ? "Page views over time" : tool ? "Command activity" : "Product activity"}
+        />
       ) : (
         query.data && (
           <>
@@ -254,9 +258,7 @@ function ProductOverview() {
                           {secondary.error ? (
                             <ErrorState message={secondary.error} retry={refresh} />
                           ) : secondary.loading ? (
-                            <div role="status" aria-label="Loading breakdown">
-                              <Skeleton className="h-32" />
-                            </div>
+                            <BreakdownLoading />
                           ) : (
                             <BreakdownRows
                               title={

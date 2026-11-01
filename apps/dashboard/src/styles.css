@@ -338,7 +338,8 @@ h1 {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.metric-card p {
+.metric-card p,
+.metric-placeholder-detail {
   font-size: 9px;
   color: var(--muted-foreground);
 }
@@ -467,13 +468,42 @@ h1 {
   width: 19px;
   color: var(--muted-foreground);
 }
-.loading-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
+/* Route chunks and data fetches use the same card geometry as their content. */
+.route-loading {
+  width: 100%;
+  padding: 32px;
 }
-.loading-grid .metrics {
-  margin: 0;
+.page-content > .route-loading {
+  padding: 0;
+}
+.chart-placeholder {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid var(--border);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(25% - 1px),
+    var(--border) calc(25% - 1px),
+    var(--border) 25%
+  );
+}
+.chart-placeholder-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.chart-placeholder-axis {
+  position: absolute;
+  inset: auto 0 -17px;
+  display: flex;
+  justify-content: space-between;
 }
 .query-builder {
   margin-bottom: 22px;
@@ -782,7 +812,8 @@ h1 {
   .metric-value {
     font-size: 26px;
   }
-  .metric-card p {
+  .metric-card p,
+  .metric-placeholder-detail {
     font-size: 8px;
   }
   .integration-card .card-heading {

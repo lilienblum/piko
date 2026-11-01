@@ -1,11 +1,14 @@
 import { createRouter } from "@tanstack/react-router";
+import { PageLoading } from "@/components/loading";
 import { routeTree } from "./routeTree.gen";
 export function getRouter() {
   return createRouter({
     routeTree,
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPendingComponent: () => <div className="initial-loading">Opening Piko…</div>,
+    defaultPendingComponent: PageLoading,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 0,
   });
 }
 declare module "@tanstack/react-router" {
