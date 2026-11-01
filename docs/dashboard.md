@@ -6,6 +6,20 @@ Click a page, command, event, referrer, or other breakdown row to open its match
 
 Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Those edits apply to the current view; reloading the URL restores the original clicked selection. Clear the drilldown to return to the normal date range. Selecting another product or date range also clears the linked selection. A missing product or malformed drilldown shows an error instead of querying another product.
 
+## Overview chart
+
+Use the chart's metric and interval controls to ask a different question without opening Explore. Summary cards and breakdowns continue to describe the full selected period when the chart changes.
+
+- **Websites.** Chart page views or unique visitors with an explicit visitor ID.
+- **Developer tools.** Chart command executions, active installations with an explicit installation ID, average duration, or p95 duration.
+- **Generic products.** Chart event counts or identified actors. Identity kinds remain distinct.
+
+Daily buckets are the default. Hourly buckets are available for ranges of 31 days or less; longer ranges use daily buckets. Labels and bucket boundaries use UTC. The first or last bucket is marked partial when the selected range cuts through it. A partial bucket should not be interpreted as a complete day or hour.
+
+Distinct identities are counted within each bucket. Adding daily visitor or installation counts does not give a unique count for the whole period. Duration charts include only numeric `duration_ms` values. Missing durations remain gaps; they are not zero-duration commands. When no matching identities or numeric durations are available, the chart explains what is missing.
+
+Changing a chart selection loads only the plot while its controls, summary cards, and breakdowns stay in place. Refreshing an unchanged selection keeps the plotted results visible. Chart requests use the existing product-scoped query API; the default daily count view reuses the main Overview result.
+
 ## Breakdown dimensions
 
 - **Websites.** Switch the source card between referrers, UTM sources, and campaigns. These use `referrer`, `utm_source`, and `utm_campaign` properties from the browser tracker.
@@ -21,6 +35,8 @@ All dates and buckets use UTC. A linked interval is fixed at the moment the row 
 ## Design notes
 
 The [Datafast demo](https://datafa.st/demo) and its [filter documentation](https://datafa.st/docs/datafast-filters) informed the actionable breakdown rows and dimension tabs. Piko applies these ideas to both websites and developer tools using its existing event queries.
+
+The [Plausible live dashboard](https://plausible.io/plausible.io) and its [dashboard tour](https://plausible.io/docs/guided-tour) informed chart metric selection, interval controls, and partial-period context. Piko uses chart-local controls so its existing summary metrics remain consistent across product types.
 
 Period comparisons remain a future feature. They need explicit partial-day alignment and a query shape that avoids fetching unused event pages for comparison summaries.
 

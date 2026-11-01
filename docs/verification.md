@@ -2,20 +2,20 @@
 
 Verified locally on 1 November 2026 against the two-app Tako architecture, with per-product databases and external access control. Latest toolchain: Bun 1.4.4, Rust 1.95.0, Tako CLI 0.0.0-00ac4d2, JavaScript SDK 0.0.0-9301901, Rust SDK 0.2.1.
 
-| Check                                                      | Result                                                                     |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `bun fmt` and `bun fmt:check`                              | Pass                                                                       |
-| `bun typecheck`                                            | Pass                                                                       |
-| `bun lint`                                                 | Pass, no warnings                                                          |
-| `bun test`                                                 | 5 SDK/notification tests pass                                              |
-| `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route       |
-| `cargo test`                                               | 16 Rust tests pass (6 unit, 8 API, 1 delivery, 1 process runtime)          |
-| `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                       |
-| `cargo build --release -p piko`                            | Pass                                                                       |
-| `bun test:e2e`                                             | 33 Chromium tests pass on Tako; 27 pass on compiled standalone fallback    |
-| `bun scripts/verify-cli.ts`                                | Actual Rust CLI event committed; correct installation and numeric duration |
-| `docker compose config --quiet`                            | Pass                                                                       |
-| `bun benchmark`                                            | Completed; exact persisted-count assertion passes                          |
+| Check                                                      | Result                                                                      |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `bun fmt` and `bun fmt:check`                              | Pass                                                                        |
+| `bun typecheck`                                            | Pass                                                                        |
+| `bun lint`                                                 | Pass, no warnings                                                           |
+| `bun test`                                                 | 5 SDK/notification tests pass                                               |
+| `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route        |
+| `cargo test`                                               | 16 Rust tests pass (6 unit, 8 API, 1 delivery, 1 process runtime)           |
+| `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                        |
+| `cargo build --release -p piko`                            | Pass                                                                        |
+| `bun test:e2e`                                             | 42 Chromium tests pass on Tako; 27 previously passed on compiled standalone |
+| `bun scripts/verify-cli.ts`                                | Actual Rust CLI event committed; correct installation and numeric duration  |
+| `docker compose config --quiet`                            | Pass                                                                        |
+| `bun benchmark`                                            | Completed; exact persisted-count assertion passes                           |
 
 The API tests exercise single and batch ingestion, invalid batch atomicity, deduplication, separate product credentials/files, first-class typed numeric aggregation, percentiles, boolean filtering, product-specific retention, query admission backpressure, concurrent reads/writes, and restart persistence. Storage tests verify bounded cache behavior, active-connection pins, and idempotent migration from the early shared database. The telemetry test uses a real local TCP peer that hangs, proving bounded shutdown and immediate queue-full rejection.
 
@@ -74,3 +74,14 @@ The existing **38 Chromium tests passed in 2.3 minutes**, including website/CLI 
 The reported collapsed sidebar was reproduced in the user's existing localhost tab and again after loading the current Hugeicons build. Each navigation SVG was 8 px left of its button center because the large-button variant removed padding without centering content. Two collapsed-only alignment utilities now center menu items in the rail and center icons in their existing square buttons. Browser measurements changed from `iconOffsetX: -8` to `iconOffsetX: 0` and `iconOffsetY: 0` for Overview, Explore, Settings, and Documentation.
 
 Four existing sidebar/theme/mobile Chromium checks passed in 16.5 seconds, with a temporary 894×870 dark screenshot capture matching the reported viewport. The capture instrumentation was removed afterward. Bun formatting, typecheck, lint, five unit tests, and the production build passed. Manual review also confirmed the current preview at `https://piko.test/explore`, where Tako serves live channels.
+
+
+## Overview chart metrics and intervals
+
+The Overview chart now supports product-specific metrics and daily/hourly intervals through the existing bounded query API. Daily event counts reuse the main query; selecting another metric or interval adds one request with an event page size of one. Summary cards and count breakdowns keep their original scope. Website visitors and CLI installations use distinct identity-kind predicates.
+
+Four new browser tests verify mixed identities, numeric duration types, and stable selection/refresh behavior. Six page views containing two distinct visitor IDs, one installation ID, and anonymous activity still show six total views while the visitor chart reports two. Durations of 100 and 300 ms produce a 200 ms average and 290 ms p95; string and boolean values are excluded. Generic identities with the same actor ID remain separate by kind. Additional assertions cover the 90-day fallback to daily buckets, explicit empty states, local retry after 503, unchanged chart geometry, visible isolated duration samples, and unclipped axes at 390 px.
+
+All **42 Chromium tests passed in 2.7 minutes** with `PIKO_REALTIME=1` against the two running Tako apps. One existing text assertion was scoped to the summary cards because the same metric label now also appears in the chart control. The final suite includes all six durable-channel tests and all five stable-refresh regressions. Temporary screenshot capture for the seeded website and CLI views was removed before committing. Manual browser review covered visitor, duration, and hourly selections with unchanged overview totals.
+
+`bun fmt`, `bun typecheck`, `bun lint`, five Bun unit tests, and `bun run build` passed. The existing large-client-chunk warning remains (950.13 kB, 294.10 kB gzip). This iteration changes the dashboard only; backend behavior and benchmark measurements above are unchanged.
