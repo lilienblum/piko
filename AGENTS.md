@@ -5,5 +5,6 @@
 - Keep ingestion acknowledgments after commit, bounded queues, product-scoped deduplication, and typed properties intact.
 - Run `bun fmt`, `bun typecheck`, `bun lint`, `bun test`, `bun run build`, `cargo test`, and `cargo clippy --all-targets --all-features -- -D warnings` for relevant changes.
 - MIT license. Keep documentation and collection examples aligned with API changes.
+- For dashboard UI work, read `apps/dashboard/PRODUCT.md` and `apps/dashboard/DESIGN.md`; the normative design sidecar is `apps/dashboard/.impeccable/design.json`.
 
 - Two Tako apps use root tako.api.toml / tako.dashboard.toml. Keep Tako itself unchanged. API post-commit webhook hints feed the dashboard durable channel; never place raw events or credentials in channel messages. API data belongs under TAKO_DATA_DIR, with one process owning the directory. Do not claim overlapping API rolling updates are safe.
