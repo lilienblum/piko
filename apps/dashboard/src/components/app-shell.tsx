@@ -123,6 +123,12 @@ export function AppShell() {
   const refreshBackground = useCallback(() => setNow(Date.now()), []);
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
+  const [rangePath, setRangePath] = useState(path);
+  // Mount the next view with a current rolling interval, before its queries start.
+  if (rangePath !== path) {
+    setRangePath(path);
+    setNow(Date.now());
+  }
   const navigate = useNavigate();
   const exploreSearch = useSearch({ from: "/explore", shouldThrow: false });
   const drilldown = exploreSearch?.drilldown;

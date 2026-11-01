@@ -22,6 +22,8 @@ test("one project combines website and mobile sources with scoped keys, queries,
   page,
 }) => {
   test.setTimeout(60_000);
+  // New views must see committed events even without a live-update connection.
+  await page.route("**/_piko/runtime", (route) => route.fulfill({ json: { live: false } }));
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   const name = `Connected project ${Date.now()}`;
