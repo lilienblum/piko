@@ -47,3 +47,8 @@ Refresh and Run query indicate request activity and prevent duplicate submission
 A newly created key remains available to copy if refreshing the key list fails. Retrying the list does not create another key. If product creation succeeds but refreshing the product selector fails, Retry loading product fetches the catalog without submitting another creation request.
 
 Placeholders follow the selected theme and respect reduced-motion preferences. Route placeholders have no minimum display duration, so a ready page is shown immediately.
+
+
+## Interface icons
+
+Piko uses the free Stroke Rounded set from [Hugeicons](https://hugeicons.com/), rendered with `@hugeicons/react`. Import named icon data from `@hugeicons/core-free-icons` and pass it directly to `HugeiconsIcon`. Navigation, metric cards, controls, and installed shadcn primitives share this set. `apps/dashboard/components.json` also selects `hugeicons` for future generated components.

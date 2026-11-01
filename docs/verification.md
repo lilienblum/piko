@@ -60,3 +60,10 @@ Manual refresh previously detached Overview cards/charts and Explore results whi
 All **38 Chromium tests passed in 2.1 minutes** against the two running Tako apps. Five refresh regressions hold responses to check retained DOM nodes and identical card geometry, page-two preservation, 503 recovery, and a 390 px layout. The live CLI test also checks stable query-card geometry when new data arrives and while refreshing. Existing tests continue to verify that changed dates/queries use placeholders and pagination loads the requested server rows. Manual in-app browser review covered both sample products, including CLI page-two refresh and website Explore.
 
 `bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, `bun test` (five tests), and `bun run build` passed. The build retains its existing large-client-chunk warning. This iteration changes frontend state and presentation only; the Rust backend, persistence behavior, and benchmark measurements above are unchanged.
+
+
+## Hugeicons migration
+
+All dashboard icons and installed shadcn controls now use native Hugeicons icon data and the official React renderer. Lucide was removed from the dependency graph. The shadcn CLI confirms `iconLibrary: hugeicons` with the existing Radix base. Manual browser review covered Settings, appearance-menu icons and its filled selection dot, and select chevrons/checkmarks.
+
+The existing **38 Chromium tests passed in 2.3 minutes**, including website/CLI flows, keyboard navigation, themes, narrow layouts, loading feedback, and stable refresh. No new tests were added for this visual replacement. `bun fmt`, `bun typecheck`, `bun lint`, five Bun tests, and the production build passed. The main client chunk is 948.82 kB (293.68 kB gzip); the existing chunk-size warning remains. The Rust backend and prior ingestion benchmarks are unchanged.
