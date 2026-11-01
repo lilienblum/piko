@@ -65,12 +65,23 @@ async fn call(
                 .header("content-type", "application/json")
                 .header("x-piko-admin", "1")
                 .header("authorization", format!("Bearer {token}"))
+                .header("origin", "https://website.example")
                 .body(Body::from(body.to_string()))
                 .unwrap(),
         )
         .await
         .unwrap();
     let status = response.status();
+    if path == "/api/ingest" {
+        assert_eq!(response.headers()["access-control-allow-origin"], "*");
+        assert_eq!(
+            response.headers()["access-control-expose-headers"],
+            "retry-after"
+        );
+        if status == StatusCode::SERVICE_UNAVAILABLE {
+            assert_eq!(response.headers()["retry-after"], "1");
+        }
+    }
     let bytes = response.into_body().collect().await.unwrap().to_bytes();
     (
         status,

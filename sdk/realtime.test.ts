@@ -40,3 +40,40 @@ describe("change notification validation", () => {
     }
   });
 });
+
+test("body deadline cancels a stalled upload without awaiting its cleanup", async () => {
+  let cancelled = false;
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(2));
+    },
+    cancel() {
+      cancelled = true;
+      return new Promise(() => {});
+    },
+  });
+  await expect(
+    readBoundedBody(
+      new Request("http://localhost/changes", { method: "POST", body }),
+      8,
+      AbortSignal.timeout(20),
+    ),
+  ).rejects.toThrow();
+  expect(cancelled).toBe(true);
+});
+
+test("oversized body rejection does not wait for stream cancellation", async () => {
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(9));
+    },
+    cancel() {
+      return new Promise(() => {});
+    },
+  });
+  const result = readBoundedBody(
+    new Request("http://localhost/changes", { method: "POST", body }),
+    8,
+  );
+  await expect(result).rejects.toMatchObject({ status: 413 });
+});

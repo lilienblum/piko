@@ -105,3 +105,41 @@ test("gateway preserves API semantics while stripping browser identity and cooki
     upstream.stop(true);
   }
 });
+
+test("gateway bounds pending uploads, cancels them, and releases admission slots", async () => {
+  const controllers = Array.from({ length: 64 }, () => new AbortController());
+  const pending = controllers.map((controller) =>
+    proxyApi(
+      new Request("https://dashboard.example/api/ingest", {
+        method: "POST",
+        signal: controller.signal,
+        body: new ReadableStream(),
+      }),
+    ),
+  );
+  try {
+    const overloaded = await proxyApi(
+      new Request("https://dashboard.example/api/ingest", {
+        method: "POST",
+        body: "{}",
+      }),
+    );
+    expect(overloaded.status).toBe(503);
+    expect(overloaded.headers.get("retry-after")).toBe("1");
+    expect(overloaded.headers.get("access-control-expose-headers")).toBe("Retry-After");
+    expect(overloaded.headers.get("access-control-allow-origin")).toBe("*");
+  } finally {
+    for (const controller of controllers) controller.abort();
+    expect((await Promise.all(pending)).every((response) => response.status === 503)).toBe(true);
+  }
+  // Reaching body validation proves the slots were released. No upstream request is needed.
+  const oversized = await proxyApi(
+    new Request("https://dashboard.example/api/ingest", {
+      method: "POST",
+      body: "{}",
+      headers: { "content-length": "262145" },
+    }),
+  );
+  expect(oversized.status).toBe(413);
+  expect(oversized.headers.get("access-control-allow-origin")).toBe("*");
+});

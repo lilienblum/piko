@@ -1,8 +1,32 @@
 import { tako } from "tako.sh";
 import { readBoundedBody } from "./request-body";
 
+// Bound buffered uploads before they reach the API's own admission limit.
+const maxPendingIngestions = 64;
+let pendingIngestions = 0;
+
 export async function proxyApi(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  const isIngest = url.pathname === "/api/ingest";
+  const isUpload = isIngest && request.method === "POST";
+  const unavailable = (message: string) =>
+    Response.json(
+      { error: message },
+      {
+        status: 503,
+        headers: {
+          "Retry-After": "1",
+          ...(isIngest
+            ? {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Retry-After",
+              }
+            : {}),
+        },
+      },
+    );
+  if (isUpload && pendingIngestions >= maxPendingIngestions)
+    return unavailable("Too many pending ingestion requests; retry shortly");
   const upstream = new URL(
     url.pathname + url.search,
     process.env.PIKO_API_URL ?? "http://127.0.0.1:3001",
@@ -19,7 +43,7 @@ export async function proxyApi(request: Request): Promise<Response> {
     const value = request.headers.get(name);
     if (value !== null) headers.set(name, value);
   }
-  if (url.pathname === "/api/ingest") {
+  if (isIngest) {
     const key = request.headers.get("authorization");
     if (key !== null) headers.set("authorization", key);
   }
@@ -34,19 +58,26 @@ export async function proxyApi(request: Request): Promise<Response> {
     headers.set("CF-Access-Client-Id", accessId);
     headers.set("CF-Access-Client-Secret", accessSecret);
   }
+  if (isUpload) pendingIngestions++;
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(13_000)]);
   try {
     const body = ["GET", "HEAD"].includes(request.method)
       ? undefined
-      : await readBoundedBody(request, 262_144);
+      : await readBoundedBody(request, 262_144, signal);
     return await fetch(upstream, {
       method: request.method,
       headers,
       body,
       redirect: "manual",
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(13_000)]),
+      signal,
     });
   } catch (error) {
-    if (error instanceof Response) return error;
-    return Response.json({ error: "API is unavailable; retry shortly" }, { status: 503 });
+    if (error instanceof Response) {
+      if (isIngest) error.headers.set("Access-Control-Allow-Origin", "*");
+      return error;
+    }
+    return unavailable("API is unavailable; retry shortly");
+  } finally {
+    if (isUpload) pendingIngestions--;
   }
 }

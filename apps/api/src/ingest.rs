@@ -120,7 +120,12 @@ impl Writer {
     }
     pub async fn stop(&self) {
         let (ack, rx) = oneshot::channel();
-        if self.tx.try_send(Write::Stop { ack }).is_ok() {
+        let tx = self.tx.clone();
+        // Shutdown must wait for a queue slot instead of silently skipping the drain.
+        if tokio::task::spawn_blocking(move || tx.send(Write::Stop { ack }))
+            .await
+            .is_ok_and(|result| result.is_ok())
+        {
             let _ = rx.await;
         }
     }
@@ -240,4 +245,39 @@ pub fn cleanup(store: &Store, now: i64) -> ApiResult<usize> {
         }
     }
     Ok(removed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn stop_waits_for_queue_capacity_and_worker_acknowledgment() {
+        let (tx, rx) = mpsc::sync_channel(1);
+        let (ack, _) = oneshot::channel();
+        tx.send(Write::Cleanup { ack }).unwrap();
+        let writer = Writer { tx };
+        let (started, ready) = oneshot::channel();
+        let stop = tokio::spawn(async move {
+            started.send(()).unwrap();
+            writer.stop().await;
+        });
+        ready.await.unwrap();
+        assert!(!stop.is_finished());
+        let ack = tokio::task::spawn_blocking(move || {
+            assert!(matches!(rx.recv().unwrap(), Write::Cleanup { .. }));
+            match rx.recv_timeout(Duration::from_secs(1)).unwrap() {
+                Write::Stop { ack } => ack,
+                _ => panic!("expected shutdown after the queued write"),
+            }
+        })
+        .await
+        .unwrap();
+        assert!(!stop.is_finished());
+        ack.send(()).unwrap();
+        tokio::time::timeout(Duration::from_secs(1), stop)
+            .await
+            .unwrap()
+            .unwrap();
+    }
 }

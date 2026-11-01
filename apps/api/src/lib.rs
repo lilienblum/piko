@@ -71,7 +71,8 @@ pub fn router(state: AppState) -> Router {
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_methods([axum::http::Method::POST])
-                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
+                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+                .expose_headers([header::RETRY_AFTER]),
         );
     Router::new()
         .merge(admin)

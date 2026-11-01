@@ -59,9 +59,9 @@ impl Query {
     pub fn validate(&self) -> ApiResult<()> {
         let span = self.to.signed_duration_since(self.from);
         if span.num_milliseconds() <= 0
-            || span.num_days() > 366
+            || span > chrono::Duration::days(366)
             || !["hour", "day"].contains(&self.bucket.as_str())
-            || (self.bucket == "hour" && span.num_hours() > 24 * 31)
+            || (self.bucket == "hour" && span > chrono::Duration::days(31))
             || self.page_size == 0
             || self.page_size > 100
             || self.page > 10_000
@@ -222,4 +222,24 @@ pub fn run(db: &mut Connection, id: &str, q: Query) -> ApiResult<Value> {
     Ok(
         json!({"summary":summary,"series":buckets,"groups":groups,"events":events,"event_names":names,"page":q.page,"page_size":q.page_size,"timezone":"UTC"}),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn range_limits_include_the_fractional_day_or_hour() {
+        let mut query: Query = serde_json::from_value(json!({
+            "from": "2026-01-01T00:00:00Z", "to": "2026-01-02T00:00:00Z"
+        }))
+        .unwrap();
+        for (bucket, days) in [("day", 366), ("hour", 31)] {
+            query.bucket = bucket.into();
+            query.to = query.from + chrono::Duration::days(days);
+            assert!(query.validate().is_ok());
+            query.to += chrono::Duration::milliseconds(1);
+            assert!(query.validate().is_err());
+        }
+    }
 }
