@@ -45,11 +45,9 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon
-        render={
-          <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="pointer-events-none size-4 text-muted-foreground" />
-        }
-      />
+      <SelectPrimitive.Icon data-slot="select-icon">
+        <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
+      </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
 }

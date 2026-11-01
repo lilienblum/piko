@@ -45,7 +45,9 @@ export function ValueSelect({
       <SelectTrigger id={id} aria-label={label} className={cn("w-full min-w-0", className)}>
         <SelectValue placeholder={placeholder}>
           {icon}
-          {options.find(([key]) => key === value)?.[1] ?? placeholder}
+          <span className="truncate">
+            {options.find(([key]) => key === value)?.[1] ?? placeholder}
+          </span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false} align="start">

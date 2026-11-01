@@ -16,6 +16,8 @@ colors:
   destructive-foreground: "#ffffff"
   border: "#c9ccc2"
   input: "#7a8073"
+  control-highlight: "#fafbf7"
+  control-edge: "color-mix(in oklab, var(--input) 65%, var(--background))"
   success: "#50632d"
   subtle: "#e1e3dc"
   data: "#7c691c"
@@ -37,6 +39,7 @@ colors:
   dark-destructive-foreground: "#3b211d"
   dark-border: "#353a38"
   dark-input: "#737b74"
+  dark-control-highlight: "#3b3f3c"
   dark-success: "#adbf85"
   dark-subtle: "#17191b"
   dark-data: "#d1c360"
@@ -102,13 +105,13 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
     typography: "{typography.control}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
     padding: "8px 16px"
     height: "36px"
   button-outline:
-    backgroundColor: "transparent"
+    backgroundColor: "{colors.card}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
     padding: "8px 16px"
     height: "36px"
   button-ghost:
@@ -120,7 +123,7 @@ components:
   input:
     backgroundColor: "{colors.card}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
     padding: "4px 12px"
     height: "36px"
   navigation-active:
@@ -164,7 +167,7 @@ components:
 
 **Creative North Star: "Yuzu"**
 
-Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
+Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, shallow raised controls, framed tabs, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
 
 Analytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
 
@@ -173,7 +176,7 @@ Analytical regions share a continuous ground with fine seams, aligned labels, an
 - Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.
 - Geist typography with restrained headings and prominent measurements.
 - Flat analytical fields; contained forms and inspection.
-- Squared controls, explicit focus, and stable loading geometry.
+- Tactile squared controls, explicit focus, and stable loading geometry.
 
 ## Colors
 
@@ -236,19 +239,23 @@ At (1150px) and below, Explore's results stack and query controls wrap. At (800p
 
 ## Elevation & Depth
 
-The workspace is flat at rest. Analytical depth comes from tonal fields, thin borders, alignment, and shared seams; cards, inputs, and buttons have no resting shadow. Modal dialogs and sheets remain distinct overlays with a dimmed backdrop and the existing larger shadow. This is a scoped distinction, not a ban on elevation everywhere. The chart's faint ochre area fill is a data treatment, not a decorative surface gradient.
+Analytical regions stay flat. Interactive controls use shallow, crisp depth inspired by the buttons and framed elements on [turbopuffer](https://turbopuffer.com/): a fine top highlight, squared face, and short lower edge. This distinction makes actions visible without raising every data region. Modal dialogs and sheets retain their existing larger shadow; the chart's faint ochre area fill remains a data treatment.
 
 ### Shadow Vocabulary
 
-- **Overlay:** the dialog/sheet shadow is recorded exactly in the sidecar; it separates temporary inspection or editing from the underlying workspace.
-- **Context menus:** select, dropdown, and popover surfaces use the soft context shadow recorded in the sidecar.
-- **Flat controls and surfaces:** explicit `box-shadow: none` keeps the everyday work surface quiet.
+- **Control face:** an inset top highlight and a (2px) solid lower edge. Primary and destructive highlights mix their respective foreground at (18%); neutral controls use `control-highlight`. `control-edge` mixes input stroke (65%) with the workspace ground.
+- **Pressed:** the lower edge reduces to (1px) and the face becomes inset. Enabled action buttons move down (1px) only when reduced motion is not requested. Selects change depth without moving their popup anchor.
+- **Overlay:** dialogs and sheets retain the overlay shadow recorded in the sidecar.
+- **Context menus:** squared select, dropdown, and popover surfaces use a crisp (3px by 3px) offset edge, recorded in the sidecar.
+- **Flat surfaces:** analytical fields, cards, and metadata remain without a resting shadow. Text inputs have a faint inset upper edge.
 
 **The Shared Ground Rule.** Keep analytical regions flat and aligned; reserve enclosed containers for editing, inspection, and genuinely separate context.
 
 ## Shapes
 
-Corners are deliberately squared: ordinary buttons and fields use the medium radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Analytical fields, proportional bars, and tab underlines remain square. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
+Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Analytical fields, proportional bars, and tab underlines remain square. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
+
+The select arrow compartment uses a (2px) inner corner to nest inside its (3px) outer corner and (1px) border; it is not another standalone radius token.
 
 Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Analytical chart, metric, and stream wrappers override the generic card silhouette with transparent backgrounds and square corners.
 
@@ -256,7 +263,7 @@ Thin borders define forms and seams. A stronger input stroke distinguishes edita
 
 ### Buttons
 
-Compact and direct. Primary buttons use warm ink with the theme's primary foreground; outline and ghost buttons carry secondary actions. Standard controls use the frontmatter height and medium radius; small and icon variants remain available for dense toolbars. Primary hover reduces the fill to (90%) opacity; outline and ghost hover use the accent field. Buttons use a brief (160ms) transition. Disabled controls reduce opacity to (50%) and stop pointer interaction. Keyboard focus uses a primary outline (2px) with an offset (3px), without a shadow glow.
+Compact, tactile actions. Primary buttons use warm ink with the theme's primary foreground; outline buttons use the card surface, and ghost actions remain flat. Raised variants use a (3px) corner, fine border, top highlight, and (2px) lower edge. The outline hover strengthens its boundary and uses the muted field. Pressing reduces the edge and briefly depresses enabled actions; motion runs for (120–160ms) and honors reduced motion. Disabled controls lose their raised edge, reduce opacity to (50%), and stop pointer interaction. Keyboard focus remains a primary outline (2px) with an offset (3px). Standard dimensions and small/icon variants remain unchanged.
 
 ### Chips
 
@@ -268,15 +275,15 @@ Contained editing cards use the card surface, a fine border, the large corner, v
 
 ### Inputs / Fields
 
-Clear, compact instruments. Text inputs and select triggers use the card surface, stronger field stroke, medium radius, and standard control height. Toolbar selectors use a quieter full border, card surface, large radius (6px), and comfortable inline padding (10px). Muted leading icons and a subtle hover/open fill make the whole control readable as a button. Keep their widths stable across selections. Checked menu items use the accent field. Labels remain visible above form fields; helper and error text sits nearby. Keyboard focus uses the same explicit outline as buttons. Invalid fields use the destructive stroke, and disabled fields reduce opacity. Text inputs increase their text size below the desktop breakpoint; narrow-screen minimum control height remains (40px).
+Clear, compact instruments. Inputs use a card surface, field stroke, small (3px) radius, and faint inset top edge. Selects share the raised button face and a distinct (28px) arrow compartment with a fine separator; the entire control is one trigger, not a split action. Labels have (10px) leading padding and (36px) trailing clearance, retain their leading icons, and truncate safely. Toolbar selectors use the same anatomy with medium-weight text; below (640px), their arrow compartment reduces to (24px), with (8px) leading padding and (32px) trailing clearance so common labels remain visible. Keep existing widths, heights, and nonmodal behavior stable. Opening a select insets the face and turns its arrow without shifting the trigger or removing the page scrollbar. Selected menu items use an accent fill and fine inset outline. Form labels, nearby helper/error text, invalid boundaries, explicit keyboard focus, and the (40px) narrow-screen minimum remain.
 
 ### Navigation
 
-The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650). Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
+The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
 
 ### Tabs
 
-The line variant uses transparent ground and an ink underline for the active tab. Active text strengthens from muted to foreground; focus remains explicit. Use this quiet local navigation within analytical breakdowns and inspection, preserving the existing segmented variant where already used.
+The line variant now uses a shared bottom rule and a framed active tab, like a small index divider. Its selected face uses the card surface, fine field border, squared top corners, and a top highlight; inactive labels stay flat. Preserve keyboard navigation, explicit focus, and existing dimensions. The segmented variant keeps its existing treatment.
 
 ### Shared measurements and event inspection
 
