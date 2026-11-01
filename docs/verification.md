@@ -67,3 +67,10 @@ All **38 Chromium tests passed in 2.1 minutes** against the two running Tako app
 All dashboard icons and installed shadcn controls now use native Hugeicons icon data and the official React renderer. Lucide was removed from the dependency graph. The shadcn CLI confirms `iconLibrary: hugeicons` with the existing Radix base. Manual browser review covered Settings, appearance-menu icons and its filled selection dot, and select chevrons/checkmarks.
 
 The existing **38 Chromium tests passed in 2.3 minutes**, including website/CLI flows, keyboard navigation, themes, narrow layouts, loading feedback, and stable refresh. No new tests were added for this visual replacement. `bun fmt`, `bun typecheck`, `bun lint`, five Bun tests, and the production build passed. The main client chunk is 948.82 kB (293.68 kB gzip); the existing chunk-size warning remains. The Rust backend and prior ingestion benchmarks are unchanged.
+
+
+## Collapsed sidebar alignment
+
+The reported collapsed sidebar was reproduced in the user's existing localhost tab and again after loading the current Hugeicons build. Each navigation SVG was 8 px left of its button center because the large-button variant removed padding without centering content. Two collapsed-only alignment utilities now center menu items in the rail and center icons in their existing square buttons. Browser measurements changed from `iconOffsetX: -8` to `iconOffsetX: 0` and `iconOffsetY: 0` for Overview, Explore, Settings, and Documentation.
+
+Four existing sidebar/theme/mobile Chromium checks passed in 16.5 seconds, with a temporary 894×870 dark screenshot capture matching the reported viewport. The capture instrumentation was removed afterward. Bun formatting, typecheck, lint, five unit tests, and the production build passed. Manual review also confirmed the current preview at `https://piko.test/explore`, where Tako serves live channels.
