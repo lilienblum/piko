@@ -279,7 +279,7 @@ Charts use a primary single-series line, light horizontal grid marks, muted axes
 
 ### Motion and loading
 
-Transitions clarify state rather than introducing spectacle. The rail uses a short linear size/position transition; dialogs and sheets use the existing short entry/exit treatment. Reduced-motion preference disables animations and transitions. Skeletons, chart placeholders, and pending tables preserve region dimensions; error messages and live/reconnecting/paused states remain explicit.
+Transitions clarify state rather than introducing spectacle. The rail uses a short linear size/position transition; dialogs and sheets use the existing short entry/exit treatment. Reduced-motion preference disables animations and transitions. Skeletons, chart placeholders, and pending tables preserve region dimensions; error messages and live/reconnecting/paused states remain explicit. The navigation rail and context toolbar render on the server and retain their geometry through hydration, including a saved collapsed rail. The footer also renders immediately. Only data regions use placeholders; the workspace catalog uses a quiet loading status. Retain existing results during refresh. A 150 ms visual delay prevents fast responses from flashing skeletons, following the component-level approach in [Skullet](https://skullet.lochie.me/docs#reveals); reduced-motion remains static. Controls that require JavaScript become enabled after hydration.
 
 ## Do's and Don'ts
 
