@@ -12,7 +12,7 @@ Verified locally on 1 November 2026 against the final two-process, per-product d
 | `cargo test`                                               | 9 Rust tests pass (2 storage, 6 API, 1 delivery deadline)                  |
 | `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                       |
 | `cargo build --release -p piko`                            | Pass                                                                       |
-| `bun test:e2e`                                             | 8 Chromium tests pass                                                      |
+| `bun test:e2e`                                             | 15 Chromium tests pass                                                     |
 | `bun scripts/verify-cli.ts`                                | Actual Rust CLI event committed; correct installation and numeric duration |
 | `docker compose config --quiet`                            | Pass                                                                       |
 | `bun benchmark`                                            | Completed; exact persisted-count assertion passes                          |
@@ -23,6 +23,10 @@ The Chromium suite exercises both product overviews, numeric Explore results, ty
 
 The dashboard follow-up also verifies real shadcn Select keyboard interaction, collapsible filters, sidebar collapse persistence, a mobile navigation drawer, and integration tabs. Theme checks cover Light/Dark/Auto, explicit overrides, reload persistence, live system-theme changes, cross-tab synchronization, and applying the saved theme before application JavaScript loads.
 
+The overview drilldown follow-up adds seven browser tests. They exercise website paths, referrers and campaigns; CLI commands and versions in a narrow dark layout; native source predicates for generic products; shares against the full result count; fixed UTC dates and product selection across reload and history; numeric, boolean and string equality; malformed and missing-product links; and pending/error/retry states. The final 15-test production-bundle run passed in 33.9 seconds. Manual inspection confirmed the Orbit website newsletter drilldown and Orbit CLI version drilldown. An unrelated-route search bug and a repeated-validation bug were reproduced and fixed before the passing run.
+
 Manual browser inspection covered desktop website and CLI overviews, Explore, Settings, and narrow-screen layout. Both preview processes were restarted against the same data directory; the sample events remained visible. The per-product import preserved the existing sample counts. The actual Rust CLI example appeared with one command execution, one installation, 100% success, and a numeric duration. No built-in login appears in the final UI.
 
 Limitations: Docker image build/start was not run because the host Docker daemon is unavailable. Compose syntax was validated. Cloudflare Access/Tunnel was not provisioned in a live account; the repository documents the required edge policy and origin boundary. Power-loss durability, filesystem failure injection, and long-running soak tests were not performed.
+
+This dashboard change leaves Rust, the API contract, and the benchmark harness unchanged. The Bun formatting, type, lint, SDK test, production build, and browser checks were rerun. The Rust and benchmark results above remain the measurements from the preceding API verification.

@@ -77,6 +77,8 @@ Data lives in `./data` by default (`state.sqlite`, SQLite WAL files, and `produc
 
 There is no built-in login, admin token, password, or admin session cookie. Management mutations use an `X-Piko-Admin: 1` request marker to prevent cross-site form submissions; it is not a secret or authorization mechanism. Cloudflare Access is the authentication boundary.
 
+Click an Overview breakdown row to inspect its matching events in Explore. Source and environment tabs expose campaign and CLI version data. See [the dashboard guide](docs/dashboard.md) for drilldowns, typed filters, and date behavior.
+
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
 ## Checks
