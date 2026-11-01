@@ -343,13 +343,20 @@ test("settings mutations show the active operation and retain a key after list r
   await expect(page.locator(".new-key")).not.toBeVisible();
 });
 
-test("server HTML includes a loading placeholder before JavaScript runs", async ({ request }) => {
-  const response = await request.get("/");
-  expect(response.ok()).toBe(true);
-  const html = await response.text();
-  expect(html).toContain('aria-label="Loading page"');
-  expect(html).toContain('data-slot="skeleton"');
-  expect(html).not.toContain("Opening Piko…");
+test("server HTML includes real navigation and controls without a full-page skeleton", async ({
+  request,
+}) => {
+  for (const route of ["/", "/explore", "/settings"]) {
+    const response = await request.get(route);
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+    expect(html).toContain('aria-label="Main navigation"');
+    expect(html).toContain('aria-label="Select project"');
+    expect(html).toContain("Last 30 days");
+    expect(html).toContain('aria-label="Loading workspace"');
+    expect(html).not.toContain('aria-label="Loading page"');
+    expect(html).not.toContain('data-slot="skeleton"');
+  }
 });
 
 test("product creation stays pending and retries catalog reload without duplicating the product", async ({

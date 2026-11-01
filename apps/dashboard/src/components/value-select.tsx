@@ -35,7 +35,9 @@ export function ValueSelect({
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger id={id} aria-label={label} className={cn("w-full min-w-0", className)}>
         {icon}
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>
+          {options.find(([key]) => key === value)?.[1]}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent position="popper" align="start">
         <SelectGroup>

@@ -247,6 +247,48 @@ h3,
 [data-collapsible="icon"] .brand-word {
   display: none;
 }
+/* Match the collapsed rail until React restores its local preference. */
+@media (min-width: 768px) {
+  html[data-sidebar-initial="collapsed"] {
+    [data-slot="sidebar-gap"],
+    [data-slot="sidebar-container"] {
+      width: var(--sidebar-width-icon);
+      transition: none;
+    }
+    [data-slot="sidebar-group-label"] {
+      margin-top: -2rem;
+      opacity: 0;
+      transition: none;
+    }
+    [data-slot="sidebar-menu"] {
+      align-items: center;
+    }
+    [data-slot="sidebar-menu-button"] {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.5rem;
+      justify-content: center;
+      transition: none;
+    }
+    [data-slot="sidebar-menu-button"][data-size="lg"] {
+      padding: 0;
+    }
+    [data-slot="sidebar-menu-button"] > span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .local-note,
+    .sidebar-footer,
+    .brand-word,
+    [data-slot="sidebar-menu-button"] > svg:last-child {
+      display: none;
+    }
+  }
+}
 .topbar {
   min-height: 64px;
   border-bottom: 1px solid var(--border);
@@ -560,13 +602,31 @@ h1 {
   width: 19px;
   color: var(--muted-foreground);
 }
-/* Route chunks and data fetches use the same card geometry as their content. */
-.route-loading {
-  width: 100%;
-  padding: 32px;
+/* Reserve space immediately; fast responses should not flash a placeholder. */
+@keyframes loading-wait {
+  from,
+  to {
+    opacity: 0;
+  }
 }
-.page-content > .route-loading {
-  padding: 0;
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="skeleton"] {
+    animation:
+      loading-wait 150ms step-end,
+      pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 150ms infinite;
+  }
+  .route-loading {
+    animation: loading-wait 150ms step-end;
+  }
+}
+/* The server-rendered shell stays in place while workspace data or a route loads. */
+.route-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--muted-foreground);
+  font-size: 13px;
 }
 .chart-placeholder {
   position: relative;
@@ -776,16 +836,6 @@ h1 {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-.initial-loading {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  gap: 25px;
-  color: var(--muted-foreground);
-  font-size: 12px;
 }
 @media (min-width: 1600px) {
   .page-content {
@@ -1501,10 +1551,10 @@ h1 {
 }
 
 @media (min-width: 1151px) {
-  .page-content:has(.query-builder) {
+  .page-content[data-page="explore"] {
     padding-top: 20px;
   }
-  .page-content:has(.query-builder) .page-heading {
+  .page-content[data-page="explore"] .page-heading {
     margin-bottom: 14px;
   }
   .query-builder {
@@ -1632,4 +1682,8 @@ h1 {
     align-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+html {
+  scrollbar-gutter: stable;
 }

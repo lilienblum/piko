@@ -31,7 +31,11 @@ function applyTheme(theme: Theme) {
 }
 // Runs in the document head before styles paint, including when React is still loading.
 export const themeScript = `(function(){var t='auto';try{t=localStorage.getItem('piko:theme')||'auto'}catch(e){}var r=t==='light'||t==='dark'?t:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.classList.remove('light','dark');e.classList.add(r);e.style.colorScheme=r})()`;
-const ThemeContext = createContext<{ theme: Theme; setTheme: (theme: Theme) => void } | null>(null);
+const ThemeContext = createContext<{
+  mounted: boolean;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+} | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("auto");
   const [mounted, setMounted] = useState(false);
@@ -61,17 +65,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(next);
     setThemeState(next);
   }
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ mounted, theme, setTheme }}>{children}</ThemeContext.Provider>
+  );
 }
 export function ThemeMenu() {
   const context = useContext(ThemeContext);
   if (!context) throw new Error("Missing theme provider");
-  const { theme, setTheme } = context;
+  const { mounted, theme, setTheme } = context;
   const icon = theme === "auto" ? ComputerIcon : theme === "dark" ? Moon02Icon : Sun03Icon;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Appearance" title={`Appearance: ${theme}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Appearance"
+          title={`Appearance: ${theme}`}
+          disabled={!mounted}
+        >
           <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>

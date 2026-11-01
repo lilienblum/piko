@@ -2,9 +2,9 @@ import { createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/rea
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ThemeProvider, themeScript } from "@/components/theme-provider";
+import { sidebarScript } from "@/lib/preferences";
 import styles from "../styles.css?url";
 export const Route = createRootRoute({
-  ssr: false,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -17,7 +17,7 @@ export const Route = createRootRoute({
       { rel: "icon", href: "/favicon.svg?v=3", type: "image/svg+xml" },
     ],
   }),
-  component: AppShell,
+  component: Root,
   shellComponent: Shell,
   notFoundComponent: () => (
     <div className="page-heading">
@@ -26,11 +26,19 @@ export const Route = createRootRoute({
     </div>
   ),
 });
+function Root() {
+  return (
+    <ThemeProvider>
+      <AppShell />
+    </ThemeProvider>
+  );
+}
 function Shell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <ScriptOnce>{themeScript}</ScriptOnce>
+        <ScriptOnce>{sidebarScript}</ScriptOnce>
         <HeadContent />
       </head>
       <body>
@@ -47,7 +55,7 @@ FORM: Field-station labels, candidate 5, registered shared measurements. Seed 1c
 -->`,
           }}
         />
-        <ThemeProvider>{children}</ThemeProvider>
+        {children}
         <Scripts />
       </body>
     </html>

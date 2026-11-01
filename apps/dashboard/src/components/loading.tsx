@@ -148,27 +148,9 @@ export function ExploreLoading() {
 }
 export function PageLoading({ label = "Loading page" }: { label?: string }) {
   return (
-    <section className="route-loading" role="status" aria-label={label} aria-busy="true">
-      <span className="sr-only">{label}…</span>
-      <div className="page-heading" aria-hidden="true">
-        <div className="flex w-full flex-col gap-3">
-          <Skeleton className="h-8 w-64 max-w-full" />
-          <Skeleton className="h-3 w-80 max-w-full" />
-        </div>
-      </div>
-      <div className="settings-grid" aria-hidden="true">
-        {[1, 2].map((n) => (
-          <Card key={n}>
-            <CardHeader>
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-48 max-w-full" />
-            </CardHeader>
-            <CardContent>
-              <BreakdownLoading />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </section>
+    <div className="route-loading" role="status" aria-label={label} aria-busy="true">
+      <Spinner aria-hidden="true" />
+      <span>{label}…</span>
+    </div>
   );
 }

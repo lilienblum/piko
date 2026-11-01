@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type CSSProperties,
@@ -109,6 +110,7 @@ export function Logo() {
 }
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [analyticsPending, setAnalyticsPending] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -139,6 +141,7 @@ export function AppShell() {
     setSelected(readPreference("piko:product") ?? "");
     const saved = Number(readPreference("piko:days"));
     if ([7, 30, 90].includes(saved)) setDays(saved);
+    setPreferencesReady(true);
     const controller = new AbortController();
     api<Product[]>("/products", "GET", undefined, controller.signal)
       .then((result) => {
@@ -162,6 +165,9 @@ export function AppShell() {
       });
     return () => controller.abort();
   }, []);
+  useLayoutEffect(() => {
+    if (preferencesReady) delete document.documentElement.dataset.sidebarInitial;
+  }, [preferencesReady]);
   async function reload(select?: string) {
     const result = await api<Product[]>("/products");
     setProducts(result);
@@ -196,12 +202,6 @@ export function AppShell() {
     setRefreshKey((key) => key + 1);
     if (error) void reload().catch((e) => setError(e.message));
   };
-  if (error && !products.length)
-    return (
-      <main className="initial-loading">
-        <ErrorState message={error} retry={() => window.location.reload()} />
-      </main>
-    );
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
     <Workspace.Provider
@@ -234,7 +234,7 @@ export function AppShell() {
         <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
           <header className="topbar">
             <div className="topbar-left">
-              <SidebarTrigger />
+              <SidebarTrigger disabled={!preferencesReady} />
               <Separator orientation="vertical" className="h-5" />
               <ValueSelect
                 label="Select project"
@@ -292,6 +292,7 @@ export function AppShell() {
               <span className="timezone">UTC</span>
               <ValueSelect
                 label="Date range"
+                disabled={!preferencesReady}
                 value={drilldown ? "linked" : String(days)}
                 icon={<HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />}
                 className="date-select"
@@ -326,9 +327,13 @@ export function AppShell() {
               <ThemeMenu />
             </div>
           </header>
-          <div className="page-content">
+          <div className="page-content" data-page={label.toLowerCase()}>
             {error && <ErrorState message={error} retry={refresh} />}
-            {loading ? <PageLoading label="Loading workspace" /> : <Outlet />}
+            {loading ? (
+              <PageLoading label="Loading workspace" />
+            ) : (
+              (!error || products.length > 0) && <Outlet />
+            )}
           </div>
           <footer className="page-footer">
             <span>Piko · Privacy-first analytics</span>
