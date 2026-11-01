@@ -1,7 +1,7 @@
 import { defineChannel } from "tako.sh";
 import type { ChangeEnvelope } from "../lib/change-envelope";
 
-// Durable hints let reconnecting clients catch up. Event data stays in the API.
+// Live hints have no replay history. Reconnecting clients query the API to catch up.
 export default defineChannel("analytics-changes", {
-  replayWindowMs: 60_000,
+  ephemeral: true,
 }).$messageTypes<{ changed: ChangeEnvelope }>();

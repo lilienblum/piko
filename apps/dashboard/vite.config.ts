@@ -31,5 +31,6 @@ function browserTracker(): Plugin {
 export default defineConfig({
   plugins: [tailwindcss(), browserTracker(), tanstackStart(), react(), tako()],
   resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
-  server: { port: 3000 },
+  // Tako reads channel metadata through this internal development hostname.
+  server: { port: 3000, allowedHosts: ["piko.tako"] },
 });

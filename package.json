@@ -37,6 +37,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "tako.sh": "0.0.0-9301901"
+    "tako.sh": "0.0.0-9ae824f"
   }
 }

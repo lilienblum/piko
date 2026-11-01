@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChangeChannel } from "@/lib/use-change-channel";
 import { parseChangeEnvelope } from "@/lib/change-envelope";
 
@@ -13,8 +13,6 @@ interface Props {
 
 export function LiveUpdates(props: Props) {
   const [enabled, setEnabled] = useState(false);
-  const [connection, setConnection] = useState(0);
-  const restart = useCallback(() => setConnection((value) => value + 1), []);
   useEffect(() => {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -39,48 +37,27 @@ export function LiveUpdates(props: Props) {
       clearTimeout(timer);
     };
   }, []);
-  return enabled ? (
-    <ChannelStatus key={connection} {...props} recovered={connection > 0} restart={restart} />
-  ) : null;
+  return enabled ? <ChannelStatus {...props} /> : null;
 }
 
-function ChannelStatus({
-  productId,
-  view,
-  scopeKey,
-  busy,
-  onPending,
-  onRefresh,
-  recovered,
-  restart,
-}: Props & { recovered: boolean; restart: () => void }) {
-  const [dirty, setDirty] = useState(recovered);
+function ChannelStatus({ productId, view, scopeKey, busy, onPending, onRefresh }: Props) {
+  const [dirty, setDirty] = useState(false);
   const [visible, setVisible] = useState(true);
-  const opened = useRef(false);
   const previousStatus = useRef("connecting");
   const lastRefresh = useRef(0);
   const previousScope = useRef(scopeKey);
-  const { status, error } = useChangeChannel((message) => {
+  const { status } = useChangeChannel((message) => {
     if (message.type !== "changed") return;
     const change = parseChangeEnvelope(message.data);
     if (change && productId && (change.products === null || change.products.includes(productId)))
       setDirty(true);
   });
   useEffect(() => {
-    // The pinned SDK exposes HTTP failures as Error messages and retains its cursor.
-    // Remount on replay expiry to discard that cursor, then reconcile canonical data.
-    if (!error?.message.includes("status 410.")) return;
-    const timer = setTimeout(restart, 1_000);
-    return () => clearTimeout(timer);
-  }, [error, restart]);
-  useEffect(() => {
-    // Canonical queries reconcile reconnects even after the replay window expires.
-    if (status === "open" && previousStatus.current !== "open") {
-      if (opened.current || view === "/") setDirty(true);
-      opened.current = true;
-    }
+    // No replay: reconcile every connection, including changes between the initial
+    // query and first subscription. Explore offers a refresh without replacing results.
+    if (status === "open" && previousStatus.current !== "open") setDirty(true);
     previousStatus.current = status;
-  }, [status, view]);
+  }, [status]);
   useEffect(() => {
     if (previousScope.current !== scopeKey) {
       previousScope.current = scopeKey;

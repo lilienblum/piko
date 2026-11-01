@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { Channel, type ChannelMessage } from "tako.sh/client";
+import type { ChangeEnvelope } from "../apps/dashboard/src/lib/change-envelope";
 
 const endpoint = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
 test.skip(process.env.PIKO_REALTIME !== "1", "Requires the two live Tako apps (PIKO_REALTIME=1)");
@@ -91,7 +93,7 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   const tool = await fixture("tool", 31);
   await open(page, tool, "/explore");
   await expect(page.getByText("across 31 matching events")).toBeVisible();
-  // A replayed fixture hint may already be visible. Explicitly establish the current result.
+  // Reconcile any changes missed before the initial connection opened.
   if (await page.getByRole("button", { name: "Refresh results" }).isVisible()) {
     await page.getByRole("button", { name: "Refresh results" }).click();
     await expect(page.getByText("New data available", { exact: true })).toBeHidden();
@@ -186,53 +188,102 @@ test("public ingestion keys cannot publish channel refresh notifications", async
   expect(await response.json()).toEqual({ live: true });
 });
 
-test("expired replay cursor starts a fresh subscription and reconciles canonical data", async ({
-  page,
+function listen(baseUrl?: string, lastEventId?: string) {
+  const subscription = new Channel("analytics-changes").subscribe({
+    baseUrl: baseUrl ?? "http://127.0.0.1:3000",
+    lastEventId,
+  });
+  const stream = subscription.raw as EventTarget;
+  const messages: ChannelMessage<ChangeEnvelope>[] = [];
+  let opened = false;
+  stream.addEventListener("open", () => {
+    opened = true;
+  });
+  stream.addEventListener("message", (event) => {
+    messages.push(JSON.parse((event as MessageEvent).data));
+  });
+  return { messages, isOpen: () => opened, close: subscription.close };
+}
+
+test("ephemeral hints reach connected subscribers without replaying disconnected history", async ({
+  baseURL,
 }) => {
-  const web = await fixture("website", 1);
-  let expired = false;
-  let sawCursor = false;
-  let fresh = false;
+  const observer = listen(baseURL);
+  const first = listen(baseURL);
+  const subscriptions = [observer, first];
+  try {
+    await expect.poll(() => observer.isOpen() && first.isOpen()).toBe(true);
+    const live = await fixture("website", 1);
+    for (const stream of subscriptions)
+      await expect
+        .poll(() => stream.messages.some((message) => message.data.products?.includes(live.id)))
+        .toBe(true);
+    first.close();
+    const missed = await fixture("tool", 1);
+    // The observer proves publication finished while the other subscriber was absent.
+    await expect
+      .poll(() => observer.messages.some((message) => message.data.products?.includes(missed.id)))
+      .toBe(true);
+    // Existing clients may reconnect with a cursor from the previous durable channel.
+    const reconnected = listen(baseURL, "1");
+    subscriptions.push(reconnected);
+    await expect.poll(reconnected.isOpen).toBe(true);
+    const fresh = await fixture("website", 1);
+    await expect
+      .poll(() => reconnected.messages.some((message) => message.data.products?.includes(fresh.id)))
+      .toBe(true);
+    expect(reconnected.messages.some((message) => message.data.products?.includes(missed.id))).toBe(
+      false,
+    );
+    for (const message of subscriptions.flatMap((stream) => stream.messages)) {
+      expect(message.id).toBe("");
+      expect(message.channel).toBe("analytics-changes");
+      expect(message.type).toBe("changed");
+      expect(Object.keys(message.data).sort()).toEqual(["products", "version"]);
+    }
+  } finally {
+    for (const stream of subscriptions) stream.close();
+  }
+});
+
+test("Explore catches up changes between its initial query and first live connection", async ({
+  page,
+  baseURL,
+}) => {
+  const observer = listen(baseURL);
   let release = () => {};
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   await page.route("**/_tako/channels/**", async (route) => {
-    const cursor = route.request().headers()["last-event-id"];
-    if (!expired && cursor !== "expired-cursor") {
-      const frame = JSON.stringify({ id: "expired-cursor", type: "noop", data: {} });
-      await route.fulfill({
-        status: 200,
-        contentType: "text/event-stream",
-        body: `id: expired-cursor\ndata: ${frame}\n\n`,
-      });
-      return;
-    }
-    if (!expired) {
-      sawCursor = true;
-      await gate;
-      expired = true;
-      await route.fulfill({ status: 410, body: "Replay cursor expired" });
-      return;
-    }
-    const request = route.request();
-    fresh =
-      !request.headers()["last-event-id"] &&
-      !new URL(request.url()).searchParams.has("last_message_id");
+    await gate;
     await route.continue();
   });
-  await page.addInitScript((id) => localStorage.setItem("piko:product", id), web.id);
-  await page.goto("/");
-  await expect(page.locator(".metric-value").first()).toHaveText("1");
-  await expect.poll(() => sawCursor, { timeout: 10000 }).toBe(true);
-  await ingest(web, "website", 2);
-  release();
-  await expect.poll(() => expired, { timeout: 15000 }).toBe(true);
-  await expect.poll(() => fresh, { timeout: 15000 }).toBe(true);
-  await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible({
-    timeout: 15000,
-  });
-  await expect(page.locator(".metric-value").first()).toHaveText("3", { timeout: 15000 });
+  try {
+    await expect.poll(observer.isOpen).toBe(true);
+    const tool = await fixture("tool", 1);
+    await expect
+      .poll(() => observer.messages.some((message) => message.data.products?.includes(tool.id)))
+      .toBe(true);
+    await page.addInitScript((id) => localStorage.setItem("piko:product", id), tool.id);
+    await page.goto("/explore");
+    await expect(page.getByText("across 1 matching events")).toBeVisible();
+    const before = observer.messages.length;
+    await ingest(tool, "tool", 2);
+    await expect
+      .poll(() =>
+        observer.messages.slice(before).some((message) => message.data.products?.includes(tool.id)),
+      )
+      .toBe(true);
+    release();
+    await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible();
+    await expect(page.getByText("across 1 matching events")).toBeVisible();
+    await page.getByRole("button", { name: "Refresh results" }).click();
+    await expect(page.getByText("across 3 matching events")).toBeVisible();
+  } finally {
+    release();
+    observer.close();
+  }
 });
 
 test("a transient runtime capability error retries and enables live updates", async ({ page }) => {

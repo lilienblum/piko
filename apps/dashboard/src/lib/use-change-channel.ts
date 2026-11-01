@@ -1,24 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Channel } from "tako.sh/client";
 
-// The public transport exposes the HTTP error; the pinned React convenience hook
-// replaces it with a generic error, which cannot distinguish expired replay.
+// Refresh hints need no client-side message history. The transport reconnects automatically.
 export function useChangeChannel(onMessage: (message: { type: string; data: unknown }) => void) {
   const handler = useRef(onMessage);
   handler.current = onMessage;
   const [status, setStatus] = useState<"connecting" | "open">("connecting");
-  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
     const subscription = new Channel("analytics-changes").subscribe();
     const source = subscription.raw as EventTarget;
     const opened = () => {
       setStatus("open");
-      setError(null);
     };
-    const failed = (event: Event) => {
-      setStatus("connecting");
-      setError((event as ErrorEvent).error ?? new Error((event as ErrorEvent).message));
-    };
+    const failed = () => setStatus("connecting");
     const received = (event: Event) => {
       try {
         const message: unknown = JSON.parse((event as MessageEvent).data);
@@ -44,5 +38,5 @@ export function useChangeChannel(onMessage: (message: { type: string; data: unkn
       subscription.close();
     };
   }, []);
-  return { status, error };
+  return { status };
 }
