@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import type { ExploreDrilldown } from "@/lib/explore-search";
-import { Filter, Play, X } from "lucide-react";
+import { Filter, Play, RefreshCw, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +74,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
   };
   const [draft, setDraft] = useState<Spec>(initial);
   const [applied, setApplied] = useState<Spec>(initial);
-  const rangeKey = `${range.from}:${range.to}`;
+  // A rolling end time advances on refresh without changing the selected interval.
+  const rangeKey = drilldown ? `${range.from}:${range.to}` : range.from;
   const [pageSize, setPageSize] = useState(15);
   const [pagination, setPagination] = useState({ rangeKey, page: 0 });
   const page = pagination.rangeKey === rangeKey ? pagination.page : 0;
@@ -93,6 +94,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     } catch {}
     return [{ property: applied.filterProperty, op: applied.filterOp, value }];
   }, [applied]);
+  const scopeKey = JSON.stringify([product?.id, rangeKey, applied]);
   const query = useQuery(
     product?.id,
     {
@@ -107,9 +109,9 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
       page_size: pageSize,
     },
     `${refreshKey}:${retryKey}`,
+    `${scopeKey}:${page}:${pageSize}`,
   );
-  useAnalyticsPending(query.loading);
-  const scopeKey = JSON.stringify([product?.id, range, applied, refreshKey]);
+  useAnalyticsPending(query.refreshing);
   const [lastResult, setLastResult] = useState<{ scope: string; data: QueryResult }>();
   useEffect(() => {
     if (query.data) setLastResult({ scope: scopeKey, data: query.data });
@@ -130,17 +132,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
         title="Follow your curiosity"
         description={`Ask a question of ${product?.name}. Start with an event, then look a little closer.`}
       />
-      {hasUpdates && (
-        <div className="live-update-notice" role="status">
-          <span>
-            <span className="live-dot" aria-hidden="true" />
-            New data available
-          </span>
-          <Button variant="outline" size="sm" onClick={refresh} disabled={query.loading}>
-            Refresh results
-          </Button>
-        </div>
-      )}
       {drilldown && (
         <section className="drilldown-context" aria-label="Overview selection">
           <div>
@@ -201,7 +192,24 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
         <CardHeader>
           <div className="card-heading">
             <CardTitle>Build a query</CardTitle>
-            <Badge variant="secondary">{product?.name}</Badge>
+            <Button
+              variant={hasUpdates ? "secondary" : "outline"}
+              size="sm"
+              className="w-40 text-xs"
+              aria-label="Refresh results"
+              aria-busy={query.refreshing}
+              disabled={query.refreshing}
+              onClick={refresh}
+            >
+              {query.refreshing ? (
+                <Spinner data-icon="inline-start" aria-hidden="true" />
+              ) : hasUpdates ? (
+                <span className="live-dot" aria-hidden="true" />
+              ) : (
+                <RefreshCw data-icon="inline-start" aria-hidden="true" />
+              )}
+              <span role="status">{hasUpdates ? "New data available" : "Refresh results"}</span>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -292,15 +300,15 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <Button
                     type="submit"
                     aria-label="Run query"
-                    aria-busy={query.loading}
-                    disabled={query.loading}
+                    aria-busy={query.refreshing}
+                    disabled={query.refreshing}
                   >
-                    {query.loading ? (
+                    {query.refreshing ? (
                       <Spinner data-icon="inline-start" aria-hidden="true" />
                     ) : (
                       <Play data-icon="inline-start" />
                     )}
-                    {query.loading ? "Running…" : "Run query"}
+                    Run query
                   </Button>
                 </div>
               </FieldGroup>
@@ -372,6 +380,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
       ) : (
         data && (
           <>
+            {query.error && query.data && <ErrorState message={query.error} retry={retry} />}
             <div className="explore-summary">
               <span>{measureLabels[applied.measure]}</span>
               <strong>
@@ -408,7 +417,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   page={page}
                   pageSize={pageSize}
                   loading={query.loading}
-                  error={query.error}
+                  refreshing={query.refreshing}
+                  error={query.data ? undefined : query.error}
                   onRetry={retry}
                   onPageChange={setPage}
                   onPageSizeChange={(size) => {

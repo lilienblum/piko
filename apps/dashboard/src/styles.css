@@ -1220,23 +1220,6 @@ h1 {
 .live-status[data-live-state="paused"] .live-dot {
   background: var(--muted-foreground);
 }
-.live-update-notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: -6px 0 20px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  font-size: 13px;
-}
-.live-update-notice > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
 @media (max-width: 640px) {
   .live-label {
     display: none;

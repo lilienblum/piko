@@ -88,16 +88,15 @@ test("workspace bootstrap keeps navigation visible with honest pending product s
   await expect(page.locator(".metric-value").first()).toHaveText("8");
 });
 
-test("overview placeholders keep card geometry and breakdown loading stays local", async ({
-  page,
-}) => {
+test("date changes use stable placeholders and breakdown loading stays local", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".metric-value").first()).toHaveText("8");
   const chart = await page.locator(".chart-card").boundingBox();
   const metric = await page.locator(".metric-card").first().boundingBox();
   const release = await hold(page, "**/api/products/*/query");
   try {
-    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await page.getByRole("combobox", { name: "Date range" }).click();
+    await page.getByRole("option", { name: "Last 7 days", exact: true }).click();
     const pending = page.getByRole("status", { name: "Loading overview", exact: true });
     await expect(pending).toBeVisible();
     await expect(pending.locator(".metric-card")).toHaveCount(4);

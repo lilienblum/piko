@@ -40,6 +40,8 @@ The [PostHog Activity interface](https://posthog.com/docs/activity) informed the
 
 Navigation stays available while the product catalog loads. Overview and Explore use placeholders shaped like their metric cards, charts, breakdowns, and event rows. Breakdown tabs load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
 
+Refreshing the current view keeps its cards, charts, event rows, inspector, and page number visible. Only the activity icons change while new data loads; a failed refresh leaves the last results available with retry feedback. New products, date selections, or applied queries still use placeholders so unrelated results are never mislabeled. The fixed-size refresh action in the query header also announces new data from the live channel without adding or removing a banner.
+
 Refresh and Run query indicate request activity and prevent duplicate submissions. Settings shows key-list loading separately from an empty list or a failed request. Create, save, and revoke actions show their active operation. A failed key revocation explains the failure inside its confirmation dialog.
 
 A newly created key remains available to copy if refreshing the key list fails. Retrying the list does not create another key. If product creation succeeds but refreshing the product selector fails, Retry loading product fetches the catalog without submitting another creation request.

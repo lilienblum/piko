@@ -49,7 +49,7 @@ function ProductOverview() {
     measure: "count",
     group_by: web ? "property:path" : tool ? "property:command" : "name",
   };
-  const backgroundScope = JSON.stringify([range.from, refreshKey, body.event, body.group_by]);
+  const backgroundScope = JSON.stringify([range.from, body.event, body.group_by]);
   const query = useQuery(product?.id, body, refreshKey, backgroundScope);
   const secondary = useQuery(
     product?.id,
@@ -72,6 +72,7 @@ function ProductOverview() {
     if (groupBy.startsWith("property:"))
       return { ...context, filter: { property: groupBy.slice(9), value: group.label } };
   };
+  const refreshError = query.error || (secondary.data && secondary.error);
   const s = query.data?.summary;
   const metrics = web
     ? [
@@ -189,7 +190,7 @@ function ProductOverview() {
       ) : (
         query.data && (
           <>
-            {query.error && <ErrorState message={query.error} retry={refresh} />}
+            {refreshError && <ErrorState message={refreshError} retry={refresh} />}
             <div className="metrics">
               {metrics.map((m) => (
                 <Card key={m.label} className="metric-card">
@@ -262,7 +263,7 @@ function ProductOverview() {
                       </CardHeader>
                       <TabsContent value={dimension}>
                         <CardContent>
-                          {secondary.error ? (
+                          {secondary.error && !secondary.data ? (
                             <ErrorState message={secondary.error} retry={refresh} />
                           ) : secondary.loading ? (
                             <BreakdownLoading />

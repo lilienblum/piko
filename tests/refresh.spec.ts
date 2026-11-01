@@ -81,6 +81,9 @@ test("manual Explore refresh retains results, rows, and current pagination", asy
   await expect(page.getByText("across 31 matching events")).toBeVisible();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
+  await expect(page.locator(".event-card")).toHaveAttribute("aria-busy", "false");
+  // Establish geometry after scrolling from the pagination footer to the refresh control.
+  await page.getByRole("button", { name: "Refresh analytics" }).scrollIntoViewIfNeeded();
   const chart = await page.locator(".chart-card").elementHandle();
   const stream = await page.locator(".event-card").elementHandle();
   const row = await page.locator(".event-card tbody tr").first().elementHandle();
@@ -104,4 +107,58 @@ test("manual Explore refresh retains results, rows, and current pagination", asy
   }
   await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
+});
+
+for (const path of ["/", "/explore"]) {
+  test(`failed refresh at ${path} keeps known results and can retry`, async ({ page }) => {
+    await page.goto(path);
+    const content = page.locator(path === "/" ? ".metric-value" : ".explore-summary").first();
+    await expect(content).toContainText("31");
+    const chart = await page.locator(".chart-card").elementHandle();
+    const row =
+      path === "/explore"
+        ? await page.locator(".event-card tbody tr").first().elementHandle()
+        : null;
+    await page.route(
+      "**/api/products/*/query",
+      (route) =>
+        route.fulfill({
+          status: 503,
+          json: { error: "Refresh temporarily unavailable" },
+        }),
+      { times: 1 },
+    );
+    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await expect(page.getByRole("alert").first()).toContainText("Refresh temporarily unavailable");
+    await expect(content).toContainText("31");
+    expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
+    if (row) expect(await row.evaluate((element) => element.isConnected)).toBe(true);
+    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(content).toContainText("31");
+  });
+}
+
+test("narrow Explore refresh keeps rows and controls in place", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/explore");
+  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  const builder = await page.locator(".query-builder").boundingBox();
+  const stream = await page.locator(".event-card").boundingBox();
+  const row = await page.locator(".event-card tbody tr").first().elementHandle();
+  const release = await holdQuery(page);
+  try {
+    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeDisabled();
+    expect(await row?.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await page.locator(".query-builder").boundingBox()).toEqual(builder);
+    expect(await page.locator(".event-card").boundingBox()).toEqual(stream);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: test.info().outputPath("mobile-refreshing.png") });
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
 });

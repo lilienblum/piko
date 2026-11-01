@@ -94,7 +94,7 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   // A replayed fixture hint may already be visible. Explicitly establish the current result.
   if (await page.getByRole("button", { name: "Refresh results" }).isVisible()) {
     await page.getByRole("button", { name: "Refresh results" }).click();
-    await expect(page.getByRole("button", { name: "Refresh results" })).toBeHidden();
+    await expect(page.getByText("New data available", { exact: true })).toBeHidden();
   }
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
@@ -105,6 +105,7 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   const details = page.getByRole("dialog");
   await expect(details).toBeVisible();
   const original = await details.textContent();
+  const queryBox = await page.locator(".query-builder").boundingBox();
   await ingest(tool, "tool");
   await expect(page.getByText("New data available", { exact: true })).toBeVisible({
     timeout: 10000,
@@ -112,10 +113,31 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
   await expect(page.getByText("across 31 matching events")).toBeVisible();
   expect(await details.textContent()).toBe(original);
+  expect(await page.locator(".query-builder").boundingBox()).toEqual(queryBox);
   await page.keyboard.press("Escape");
   await expect(page.getByLabel("Typed value")).toHaveValue("true");
-  await page.getByRole("button", { name: "Refresh results" }).click();
+  await page.getByRole("button", { name: "Refresh results" }).scrollIntoViewIfNeeded();
+  const refreshBox = await page.locator(".query-builder").boundingBox();
+  const row = await page.locator(".event-card tbody tr").first().elementHandle();
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/products/*/query", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.getByRole("button", { name: "Refresh results" }).click();
+    await expect(page.getByRole("button", { name: "Refresh results" })).toBeDisabled();
+    expect(await row?.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await page.locator(".query-builder").boundingBox()).toEqual(refreshBox);
+    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+  } finally {
+    release();
+  }
   await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await expect(page.getByText("Page 2 of 3")).toBeVisible();
   await expect(page.getByText("New data available", { exact: true })).toBeHidden();
 });
 

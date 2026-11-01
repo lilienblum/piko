@@ -52,6 +52,7 @@ type EventStreamProps = {
   page: number;
   pageSize: number;
   loading: boolean;
+  refreshing?: boolean;
   error?: string;
   onRetry: () => void;
   onPageChange: (page: number) => void;
@@ -106,6 +107,7 @@ export function EventStream({
   page,
   pageSize,
   loading,
+  refreshing = false,
   error,
   onRetry,
   onPageChange,
@@ -251,7 +253,11 @@ export function EventStream({
   );
   return (
     <>
-      <Card className="event-card event-stream" aria-label="Event stream" aria-busy={loading}>
+      <Card
+        className="event-card event-stream"
+        aria-label="Event stream"
+        aria-busy={loading || refreshing}
+      >
         <CardHeader>
           <div className="card-heading">
             <div>
@@ -349,14 +355,14 @@ export function EventStream({
                 ["30", "30 rows"],
                 ["50", "50 rows"],
               ]}
-              disabled={loading}
+              disabled={loading || refreshing}
               onValueChange={(value) => onPageSizeChange(Number(value))}
               className="stream-page-size"
             />
             <Button
               size="sm"
               variant="outline"
-              disabled={loading || page === 0}
+              disabled={loading || refreshing || page === 0}
               onClick={() => onPageChange(page - 1)}
             >
               <ChevronLeft data-icon="inline-start" />
@@ -365,7 +371,7 @@ export function EventStream({
             <Button
               size="sm"
               variant="outline"
-              disabled={loading || page + 1 >= pageCount}
+              disabled={loading || refreshing || page + 1 >= pageCount}
               onClick={() => onPageChange(page + 1)}
             >
               Next
