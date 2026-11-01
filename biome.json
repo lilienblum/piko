@@ -1,0 +1,1 @@
+{"$schema":"https://biomejs.dev/schemas/2.4.0/schema.json","files":{"includes":["**","!src/components/ui","!dist","!target","!bun.lock","!data","!docs/benchmark-results.json"]},"formatter":{"indentStyle":"space","indentWidth":2,"lineWidth":100},"linter":{"enabled":true,"rules":{"recommended":true}},"assist":{"actions":{"source":{"organizeImports":"on"}}}}
