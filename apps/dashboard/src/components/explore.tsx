@@ -1,31 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import type { ExploreDrilldown } from "@/lib/explore-search";
-import { ChevronLeft, ChevronRight, Filter, Play, X } from "lucide-react";
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
+import { Filter, Play, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ValueSelect } from "./value-select";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { number, type EventRow } from "@/lib/api";
+import { number, type QueryResult } from "@/lib/api";
+import { EventStream } from "./event-stream";
 import { useQuery } from "@/lib/use-query";
 import { useWorkspace, PageHeader, NoProduct } from "./app-shell";
 import { Breakdown, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
@@ -88,6 +73,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
   const [draft, setDraft] = useState<Spec>(initial);
   const [applied, setApplied] = useState<Spec>(initial);
   const rangeKey = `${range.from}:${range.to}`;
+  const [pageSize, setPageSize] = useState(15);
   const [pagination, setPagination] = useState({ rangeKey, page: 0 });
   const page = pagination.rangeKey === rangeKey ? pagination.page : 0;
   const setPage = (next: number | ((current: number) => number)) => {
@@ -95,7 +81,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
   };
   const [showFilter, setShowFilter] = useState(!!drilldown?.filter);
   const [validation, setValidation] = useState("");
-  const [selected, setSelected] = useState<EventRow | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const retry = () => setRetryKey((key) => key + 1);
   const filters = useMemo(() => {
     if (!applied.filterProperty) return [];
     let value: unknown = applied.filterValue;
@@ -115,87 +102,16 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
       group_by: applied.group,
       filters,
       page,
-      page_size: 15,
+      page_size: pageSize,
     },
-    refreshKey,
+    `${refreshKey}:${retryKey}`,
   );
-  const columns = useMemo<ColumnDef<EventRow>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Event",
-        cell: ({ row }) => (
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            className="h-auto px-0"
-            onClick={() => setSelected(row.original)}
-          >
-            {row.original.name}
-            <ChevronRight data-icon="inline-end" />
-          </Button>
-        ),
-      },
-      {
-        accessorKey: "source",
-        header: "Source",
-        cell: ({ row }) => <Badge variant="secondary">{row.original.source}</Badge>,
-      },
-      {
-        accessorKey: "actor_id",
-        header: "Identity",
-        cell: ({ row }) => (
-          <span className="identity-cell">
-            {row.original.actor_id ? (
-              <>
-                <span>{row.original.identity_kind}</span>
-                <code title={row.original.actor_id}>{row.original.actor_id.slice(0, 16)}</code>
-              </>
-            ) : (
-              "Anonymous"
-            )}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "properties",
-        header: "Properties",
-        cell: ({ row }) => (
-          <span className="property-preview" title={JSON.stringify(row.original.properties)}>
-            {Object.entries(row.original.properties)
-              .slice(0, 3)
-              .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
-              .join(" · ")}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "timestamp",
-        header: "Time (UTC)",
-        cell: ({ row }) => (
-          <time>
-            {new Date(row.original.timestamp).toLocaleString("en-GB", {
-              timeZone: "UTC",
-              month: "short",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </time>
-        ),
-      },
-    ],
-    [],
-  );
-  const table = useReactTable({
-    data: query.data?.events ?? [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    rowCount: query.data?.summary.total ?? 0,
-    state: { pagination: { pageIndex: page, pageSize: 15 } },
-  });
+  const scopeKey = JSON.stringify([product?.id, range, applied, refreshKey]);
+  const [lastResult, setLastResult] = useState<{ scope: string; data: QueryResult }>();
+  useEffect(() => {
+    if (query.data) setLastResult({ scope: scopeKey, data: query.data });
+  }, [query.data, scopeKey]);
+  const data = query.data ?? (lastResult?.scope === scopeKey ? lastResult.data : undefined);
   const update = (key: keyof Spec, value: string) => setDraft((d) => ({ ...d, [key]: value }));
   const measureLabels: Record<string, string> = {
     count: "Event count",
@@ -300,7 +216,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                       ["*", "All events"],
                       ...Array.from(
                         new Set([
-                          ...(query.data?.event_names ?? []),
+                          ...(data?.event_names ?? []),
                           ...(draft.event ? [draft.event] : []),
                         ]),
                       ).map((name): [string, string] => [name, name]),
@@ -426,31 +342,31 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
           </form>
         </CardContent>
       </Card>
-      {query.error ? (
-        <ErrorState message={query.error} retry={refresh} />
-      ) : query.loading ? (
+      {query.error && !data ? (
+        <ErrorState message={query.error} retry={retry} />
+      ) : !data ? (
         <Loading />
       ) : (
-        query.data && (
+        data && (
           <>
             <div className="explore-summary">
               <span>{measureLabels[applied.measure]}</span>
               <strong>
-                {number(query.data.summary.value, 2)}
+                {number(data.summary.value, 2)}
                 {applied.property === "duration_ms" &&
                 !["count", "actors"].includes(applied.measure)
                   ? " ms"
                   : ""}
               </strong>
-              <span>across {number(query.data.summary.total)} matching events</span>
+              <span>across {number(data.summary.total)} matching events</span>
             </div>
-            {query.data.summary.total === 0 ? (
+            {data.summary.total === 0 ? (
               <NoEvents />
             ) : (
               <>
                 <div className="explore-charts">
                   <SeriesChart
-                    data={query.data}
+                    data={data}
                     title="Results over time"
                     description="UTC daily buckets · missing numeric values are excluded"
                     label={measureLabels[applied.measure]}
@@ -458,95 +374,44 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <Breakdown
                     title="Breakdown"
                     description={`Grouped by ${applied.group.replace("property:", "")}`}
-                    groups={query.data.groups}
+                    groups={data.groups}
                     unit="Value"
                   />
                 </div>
-                <Card className="event-card">
-                  <CardHeader>
-                    <div className="card-heading">
-                      <div>
-                        <CardTitle>Event stream</CardTitle>
-                        <CardDescription>
-                          Click an event to inspect its typed properties.
-                        </CardDescription>
-                      </div>
-                      <Badge variant="outline">{number(query.data.summary.total)} events</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        {table.getHeaderGroups().map((group) => (
-                          <TableRow key={group.id}>
-                            {group.headers.map((header) => (
-                              <TableHead key={header.id}>
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableHeader>
-                      <TableBody>
-                        {table.getRowModel().rows.map((row) => (
-                          <TableRow key={row.id}>
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <div className="pagination">
-                      <span>
-                        Page {page + 1} of {Math.max(1, Math.ceil(query.data.summary.total / 15))}
-                      </span>
-                      <div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={page === 0}
-                          onClick={() => setPage((p) => p - 1)}
-                        >
-                          <ChevronLeft data-icon="inline-start" />
-                          Previous
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={(page + 1) * 15 >= query.data.summary.total}
-                          onClick={() => setPage((p) => p + 1)}
-                        >
-                          Next
-                          <ChevronRight data-icon="inline-end" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EventStream
+                  key={scopeKey}
+                  events={query.data?.events ?? []}
+                  total={data.summary.total}
+                  page={page}
+                  pageSize={pageSize}
+                  loading={query.loading}
+                  error={query.error}
+                  onRetry={retry}
+                  onPageChange={setPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(0);
+                  }}
+                  onFilterProperty={(property, value) => {
+                    const next = {
+                      ...applied,
+                      filterProperty: property,
+                      filterOp: "eq",
+                      filterValue: JSON.stringify(value),
+                    };
+                    setDraft(next);
+                    setApplied(next);
+                    setValidation("");
+                    setShowFilter(true);
+                    setPage(0);
+                    requestAnimationFrame(() => document.getElementById("filter-value")?.focus());
+                  }}
+                />
               </>
             )}
           </>
         )
       )}
-      <Dialog
-        open={!!selected}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
-      >
-        <DialogContent className="event-dialog">
-          <DialogHeader>
-            <DialogTitle>{selected?.name}</DialogTitle>
-            <DialogDescription>
-              Event properties retain their original JSON types.
-            </DialogDescription>
-          </DialogHeader>
-          <pre>{JSON.stringify(selected, null, 2)}</pre>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

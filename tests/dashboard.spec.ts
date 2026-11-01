@@ -40,6 +40,7 @@ test.beforeAll(async () => {
     else generic = data;
     const events = Array.from({ length: 32 }, (_, i) => ({
       event_id: crypto.randomUUID(),
+      timestamp: new Date(Date.now() - i * 1000).toISOString(),
       name: kind === "website" ? "page_view" : kind === "tool" ? "command_run" : "activity",
       source:
         kind === "website"
@@ -69,7 +70,12 @@ test.beforeAll(async () => {
                 os: "linux",
                 arch: "aarch64",
               }
-            : { variant: [true, "true", 42, "42", false, 0, ""][i % 7] },
+            : {
+                variant: [true, "true", 42, "42", false, 0, ""][i % 7],
+                note: `long-value-${"x".repeat(600)}`,
+                success: "false",
+                duration_ms: "0",
+              },
     }));
     const response = await fetch(`${apiUrl}/api/ingest`, {
       method: "POST",
@@ -526,4 +532,237 @@ test("only validated Explore search can change the workspace context", async ({ 
   await page.getByRole("link", { name: "Clear selection", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(web.name);
+});
+
+async function inspectorJson(page: Page) {
+  const inspector = page.getByRole("dialog");
+  await inspector.getByRole("tab", { name: "JSON", exact: true }).click();
+  return JSON.parse((await inspector.getByRole("tabpanel").locator("pre").textContent()) ?? "null");
+}
+
+test("event inspector exposes context, metadata and JSON with keyboard and clipboard support", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  const stream = page.locator(".event-card");
+  const opener = stream.getByRole("button", { name: "Inspect page_view", exact: true }).first();
+  await expect(stream.locator("tbody tr").first()).toContainText("Direct");
+  await expect(stream.locator("tbody tr").first()).toContainText("Visitor");
+  await opener.press("Enter");
+  const inspector = page.getByRole("dialog", { name: "page_view", exact: true });
+  await expect(inspector).toBeVisible();
+  const event = await inspectorJson(page);
+  expect(event.name).toBe("page_view");
+  await inspector.getByRole("button", { name: "Copy JSON", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(JSON.stringify(event, null, 2));
+  await inspector.getByRole("tab", { name: "Metadata", exact: true }).click();
+  for (const value of [
+    event.event_id,
+    event.actor_id,
+    event.session_id,
+    new Date(event.timestamp).toISOString(),
+    new Date(event.received_at).toISOString(),
+  ]) {
+    await expect(inspector.getByRole("tabpanel")).toContainText(value);
+  }
+  await page.keyboard.press("Escape");
+  await expect(inspector).not.toBeVisible();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await expect(inspector.getByRole("button", { name: "Newer event", exact: true })).toBeDisabled();
+  await inspector.getByRole("button", { name: "Older event", exact: true }).press("Enter");
+  await expect(inspector.getByRole("button", { name: "Older event", exact: true })).toBeFocused();
+  const older = await inspectorJson(page);
+  expect(older.event_id).not.toBe(event.event_id);
+  expect(older.timestamp).toBeLessThan(event.timestamp);
+  await inspector.getByRole("button", { name: "Newer event", exact: true }).click();
+  expect((await inspectorJson(page)).event_id).toBe(event.event_id);
+  await inspector.getByRole("tab", { name: "Properties", exact: true }).click();
+  await page.screenshot({ path: test.info().outputPath("event-inspector-website.png") });
+});
+
+test("property inspection filters the server using applied context and retains boolean type", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", tool.name);
+  await page.getByRole("link", { name: "Explore build", exact: true }).click();
+  await select(page, "Measure", "Numeric average");
+  const stream = page.locator(".event-card");
+  await expect(stream.locator("tbody tr").first()).toContainText("build");
+  await expect(stream.locator("tbody tr").first()).toContainText("110 ms");
+  await stream.getByRole("button", { name: "Inspect command_run", exact: true }).first().click();
+  const inspector = page.getByRole("dialog");
+  await inspector.getByLabel("Search properties").fill("SUCC");
+  await expect(inspector.getByRole("tabpanel").getByText("boolean", { exact: true })).toBeVisible();
+  const request = page.waitForRequest(
+    (r) =>
+      r.url().endsWith(`/products/${tool.id}/query`) &&
+      r.postDataJSON().filters?.[0]?.property === "success",
+  );
+  await inspector.getByRole("button", { name: "Filter by success", exact: true }).click();
+  expect((await request).postDataJSON()).toMatchObject({
+    event: "command_run",
+    measure: "count",
+    page: 0,
+    filters: [{ property: "success", op: "eq", value: false }],
+  });
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Measure", exact: true })).toContainText(
+    "Event count",
+  );
+  await expect(page.getByLabel("Typed value")).toHaveValue("false");
+  await expect(page.getByLabel("Typed value")).toBeFocused();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+});
+
+test("event pagination fetches server pages and keeps charts stable during loading", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  const stream = page.locator(".event-card");
+  await expect(stream.getByRole("button", { name: "Inspect page_view", exact: true })).toHaveCount(
+    15,
+  );
+  const sizeRequest = page.waitForRequest(
+    (r) => r.url().endsWith(`/products/${web.id}/query`) && r.postDataJSON().page_size === 30,
+  );
+  await select(page, "Rows per page", "30 rows");
+  const requested = (await sizeRequest).postDataJSON();
+  expect(requested).toMatchObject({ page: 0, page_size: 30 });
+  await expect(stream.getByRole("button", { name: "Inspect page_view", exact: true })).toHaveCount(
+    30,
+  );
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let failedOnce = false;
+  await page.route(`**/products/${web.id}/query`, async (route) => {
+    if (route.request().postDataJSON().page === 1 && !failedOnce) {
+      failedOnce = true;
+      await pending;
+      await route.fulfill({ status: 503, json: { error: "Temporary event page failure" } });
+    } else {
+      await route.continue();
+    }
+  });
+  try {
+    await stream.getByRole("button", { name: "Next", exact: true }).click();
+    await expect(stream).toHaveAttribute("aria-busy", "true");
+    await expect(stream.getByRole("status", { name: "Loading events", exact: true })).toBeVisible();
+    await expect(page.getByText("Results over time", { exact: true })).toBeVisible();
+    await expect(
+      stream.getByRole("button", { name: "Inspect page_view", exact: true }),
+    ).toHaveCount(0);
+    await expect(stream.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
+    release();
+    await expect(stream.getByRole("alert")).toContainText("Temporary event page failure");
+    const retried = page.waitForRequest((r) => r.url().endsWith(`/products/${web.id}/query`));
+    await stream.getByRole("button", { name: "Try again", exact: true }).click();
+    expect((await retried).postDataJSON()).toMatchObject({
+      page: 1,
+      page_size: 30,
+      from: requested.from,
+      to: requested.to,
+    });
+    await expect(
+      stream.getByRole("button", { name: "Inspect page_view", exact: true }),
+    ).toHaveCount(2);
+    await expect(stream.getByText("Page 2 of 2", { exact: true })).toBeVisible();
+    await expect(stream.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
+    await select(page, "Rows per page", "15 rows");
+    await expect(stream.getByText("Page 1 of 3", { exact: true })).toBeVisible();
+  } finally {
+    release();
+  }
+});
+
+test("inspector preserves numeric and string values and wraps long properties on mobile", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openWorkspace(page);
+  await appearance(page, "Dark");
+  await select(page, "Select product", generic.name);
+  await page.goto("/explore");
+  const stream = page.locator(".event-card");
+  await expect(stream.locator("tbody tr").first()).not.toContainText("0 ms");
+  for (const [index, value, total] of [
+    [2, 42, 5],
+    [3, "42", 5],
+    [5, 0, 4],
+    [6, "", 4],
+  ] as const) {
+    await page.goto("/explore");
+    await stream.getByRole("button", { name: "Inspect activity", exact: true }).nth(index).click();
+    const inspector = page.getByRole("dialog");
+    await inspector.getByLabel("Search properties").fill("variant");
+    await inspector.getByRole("button", { name: "Copy variant", exact: true }).click();
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe(JSON.stringify(value));
+    const request = page.waitForRequest(
+      (r) =>
+        r.url().endsWith(`/products/${generic.id}/query`) &&
+        r.postDataJSON().filters?.[0]?.property === "variant",
+    );
+    await inspector.getByRole("button", { name: "Filter by variant", exact: true }).click();
+    expect((await request).postDataJSON().filters).toEqual([
+      { property: "variant", op: "eq", value },
+    ]);
+    await expect(page.getByText(`across ${total} matching events`)).toBeVisible();
+  }
+  await page.goto("/explore");
+  await stream.getByRole("button", { name: "Inspect activity", exact: true }).first().click();
+  const inspector = page.getByRole("dialog");
+  await inspector.getByLabel("Search properties").fill("note");
+  await expect(inspector.getByRole("tabpanel")).toContainText("x".repeat(600));
+  expect(await inspector.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("event-inspector-mobile.png") });
+  await inspector.getByLabel("Search properties").fill("a-property-that-does-not-exist");
+  await expect(inspector.getByRole("button", { name: /^Filter by / })).toHaveCount(0);
+});
+
+test("clipboard failures are visible and inspector scope ends when the product changes", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.clipboard, "writeText", {
+      configurable: true,
+      value: () => Promise.reject(new Error("Clipboard denied")),
+    });
+  });
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await page.goto("/explore");
+  await page
+    .locator(".event-card")
+    .getByRole("button", { name: "Inspect page_view", exact: true })
+    .first()
+    .click();
+  const inspector = page.getByRole("dialog");
+  await inspector.getByRole("tab", { name: "JSON", exact: true }).click();
+  await inspector.getByRole("button", { name: "Copy JSON", exact: true }).click();
+  await expect(inspector.getByRole("alert")).toContainText(/copy|clipboard/i);
+  await page.keyboard.press("Escape");
+  await select(page, "Select product", tool.name);
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(
+    page.locator(".event-card").getByRole("button", { name: "Inspect page_view", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(".event-card").getByRole("button", { name: "Inspect command_run", exact: true }),
+  ).toHaveCount(15);
 });

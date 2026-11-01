@@ -3,7 +3,7 @@ import { api, type QueryResult } from "./api";
 export function useQuery(
   product: string | undefined,
   body: Record<string, unknown>,
-  refreshKey = 0,
+  refreshKey: string | number = 0,
 ) {
   const key = JSON.stringify(body);
   const requestKey = `${product}:${refreshKey}:${key}`;
