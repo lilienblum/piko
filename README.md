@@ -92,7 +92,9 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-`bun test` runs SDK and notification validation tests (scoped by `bunfig.toml`). `bun test:e2e` runs real Chromium tests. For Tako, run `SSL_CERT_FILE=.tako/dev-ca.pem PIKO_REALTIME=1 PIKO_DASHBOARD_URL=https://piko.test PIKO_API_URL=https://piko-api.test bun test:e2e`; without overrides it targets standalone ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun node_modules/@playwright/test/cli.js install chromium`.
+`bun test` runs SDK and test-runner validation tests (scoped by `bunfig.toml`). `bun test:e2e` starts two dedicated Tako apps at `https://piko-e2e.test` and `https://piko-e2e-api.test`, runs real Chromium tests, then stops those apps and deletes their temporary databases. Initialize local TLS and the notification secret once with `bun dev`; the preview need not be running during tests. No seed is needed. To run a subset, use `bun test:e2e tests/bklit-chart.spec.ts`.
+
+Every run gets fresh storage under `.tako/e2e/<run-id>/`. Test URLs are set by the runner, existing URL overrides cannot point it at the preview, and direct Playwright runs are rejected. A preflight requires an empty test database before any fixtures are created. Test failure, Ctrl-C, and SIGTERM all run teardown. A lock prevents simultaneous runs from sharing the test hosts. If a process is force-killed, follow the [test recovery instructions](docs/tako.md#browser-tests); its data remains separate from the preview. If Chromium is absent, install it with `bun node_modules/@playwright/test/cli.js install chromium`.
 
 ```sh
 cargo build --release -p piko

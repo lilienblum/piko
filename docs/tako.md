@@ -78,4 +78,10 @@ Scaling to zero alone is **not a maintenance lock**: an incoming request can col
 
 ## Verification boundaries
 
-The normal Rust suite covers committed hints, duplicates, typed queries, retention, bounded notification buffering, retry/deadline behavior, and exclusive directory ownership. Browser tests use `PIKO_DASHBOARD_URL` and `PIKO_API_URL` to target the actual Tako hosts. [Verification](verification.md) records the checks actually run; [the benchmark](benchmark.md) measures the standalone Rust database/API path, excluding the channel bridge, dashboard, TLS, and edge.
+The normal Rust suite covers committed hints, duplicates, typed queries, retention, bounded notification buffering, retry/deadline behavior, and exclusive directory ownership. Browser tests run through `bun test:e2e` using dedicated Tako hosts and disposable databases; they never target the preview. [Verification](verification.md) records the checks actually run; [the benchmark](benchmark.md) measures the standalone Rust database/API path, excluding the channel bridge, dashboard, TLS, and edge.
+
+## Browser tests
+
+Run `bun test:e2e`, optionally followed by Playwright file filters or flags. It derives temporary development configs from the real app configs, sets `PIKO_DATA_DIR` explicitly, points the dashboard and change-notification webhook at the test apps, and enables the realtime tests. Test hosts are stable (`piko-e2e.test`, `piko-e2e-api.test`); storage and generated config filenames are unique per run. The preview's database, ingestion keys, and projects are never used. The first addition of test TLS names may reload Tako's local daemon; the runner restores previously registered apps before testing and during teardown.
+
+Normal completion, test failures, Ctrl-C, and SIGTERM stop the test apps before deleting their data. If stopping an app fails, its data/configs are retained and the command fails instead of deleting an open database. A hard kill or machine shutdown cannot run teardown: after confirming no test run is active, use `tako dev list --json`, stop only `piko-e2e` and `piko-e2e-api` if listed (`tako dev stop <name>`), and remove `.tako/e2e/runner.lock`. Once those apps are stopped, abandoned directories under `.tako/e2e/` and root `.tako-e2e-*.toml` files are disposable. Do not remove `.tako/data/`, which holds the preview.
