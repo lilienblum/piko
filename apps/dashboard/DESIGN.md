@@ -1,213 +1,217 @@
 ---
 
 name: "Piko"
-description: "A small measurement workbench for websites, mobile apps, and developer tools."
+description: "Yuzu: a compact measurement tool in butter yellow, warm ink, and ochre."
 colors:
-background: "#f7f8f4"
-foreground: "#25382e"
-card: "#ffffff"
-primary: "#286449"
-primary-foreground: "#ffffff"
-secondary: "#e9eee4"
-muted: "#edf0e9"
-muted-foreground: "#59685f"
-accent: "#e2ebd8"
-destructive: "#ad353e"
-destructive-foreground: "#ffffff"
-border: "#d6ddd2"
-input: "#859283"
-success: "#286449"
-subtle: "#f1f4ed"
-sidebar: "#edf0df"
-sidebar-foreground: "#344331"
-sidebar-accent: "#dbe5c6"
-sidebar-accent-foreground: "#244c33"
-sidebar-border: "#d5ddc8"
-dark-background: "#171e19"
-dark-foreground: "#e5ebe1"
-dark-card: "#1e2821"
-dark-primary: "#c1d791"
-dark-primary-foreground: "#20321f"
-dark-secondary: "#2c392d"
-dark-muted: "#28342a"
-dark-muted-foreground: "#aab7a6"
-dark-accent: "#344432"
-dark-destructive: "#f19b9c"
-dark-destructive-foreground: "#3b2024"
-dark-border: "#3c4a3d"
-dark-input: "#73826e"
-dark-success: "#afd1a4"
-dark-subtle: "#1b251e"
-dark-sidebar: "#222d23"
-dark-sidebar-foreground: "#dce6d6"
-dark-sidebar-accent: "#354831"
-dark-sidebar-accent-foreground: "#e0ecc5"
-dark-sidebar-border: "#3c4a36"
+  background: "#faf9f2"
+  foreground: "#333326"
+  card: "#fffef9"
+  primary: "#36382b"
+  primary-foreground: "#fff4ac"
+  secondary: "#eae5c5"
+  muted: "#eeecdf"
+  muted-foreground: "#65634e"
+  accent: "#eee8b7"
+  destructive: "#a33c37"
+  destructive-foreground: "#ffffff"
+  border: "#d9d6ba"
+  input: "#8a876d"
+  success: "#50632d"
+  subtle: "#f2f0e3"
+  data: "#85721b"
+  sidebar: "#f1e68f"
+  sidebar-foreground: "#373727"
+  sidebar-accent: "#e5d971"
+  sidebar-accent-foreground: "#333326"
+  sidebar-border: "#d4c96e"
+  dark-background: "#1e1f19"
+  dark-foreground: "#f2f1da"
+  dark-card: "#27291f"
+  dark-primary: "#e6d766"
+  dark-primary-foreground: "#302f1a"
+  dark-secondary: "#42452f"
+  dark-muted: "#34372a"
+  dark-muted-foreground: "#bcbba1"
+  dark-accent: "#41442e"
+  dark-destructive: "#f2a195"
+  dark-destructive-foreground: "#3b211d"
+  dark-border: "#484b37"
+  dark-input: "#7e8066"
+  dark-success: "#b9cd86"
+  dark-subtle: "#24261d"
+  dark-data: "#d9ca58"
+  dark-sidebar: "#303226"
+  dark-sidebar-foreground: "#e8e7c7"
+  dark-sidebar-accent: "#42452f"
+  dark-sidebar-accent-foreground: "#f2f1da"
+  dark-sidebar-border: "#484b37"
 typography:
-display:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "32px"
-fontWeight: 620
-lineHeight: 1.2
-letterSpacing: "-0.025em"
-headline:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "25px"
-fontWeight: 680
-lineHeight: 1.3
-letterSpacing: "-0.025em"
-title:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "15px"
-fontWeight: 650
-lineHeight: 1.5
-letterSpacing: "-0.01em"
-body:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "14px"
-fontWeight: 400
-lineHeight: 1.5
-control:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "14px"
-fontWeight: 500
-lineHeight: 1.5
-supporting:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "13px"
-fontWeight: 400
-lineHeight: 1.55
-label:
-fontFamily: "Public Sans Variable, sans-serif"
-fontSize: "12px"
-fontWeight: 500
-lineHeight: 1.5
+  display:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "32px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-0.035em"
+  headline:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "28px"
+    fontWeight: 650
+    lineHeight: 1.3
+    letterSpacing: "-0.025em"
+  title:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "15px"
+    fontWeight: 650
+    lineHeight: 1.5
+    letterSpacing: "-0.01em"
+  body:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.5
+  control:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "14px"
+    fontWeight: 600
+    lineHeight: 1.5
+    letterSpacing: "-0.01em"
+  supporting:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.55
+  label:
+    fontFamily: "Geist Variable, sans-serif"
+    fontSize: "12px"
+    fontWeight: 500
+    lineHeight: 1.5
 rounded:
-sm: "5px"
-md: "7px"
-lg: "12px"
-xl: "16px"
-pill: "9999px"
+  sm: "3px"
+  md: "4px"
+  lg: "6px"
+  xl: "6px"
 spacing:
-2: "8px"
-3: "12px"
-4: "16px"
-5: "20px"
-6: "24px"
-8: "32px"
+  2: "8px"
+  3: "12px"
+  4: "16px"
+  5: "20px"
+  6: "24px"
+  8: "32px"
 components:
-button-primary:
-backgroundColor: "{colors.primary}"
-textColor: "{colors.primary-foreground}"
-typography: "{typography.control}"
-rounded: "{rounded.md}"
-padding: "8px 16px"
-height: "36px"
-button-outline:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-rounded: "{rounded.md}"
-padding: "8px 16px"
-height: "36px"
-button-ghost:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-rounded: "{rounded.md}"
-padding: "8px 16px"
-height: "36px"
-input:
-backgroundColor: "{colors.card}"
-textColor: "{colors.foreground}"
-rounded: "{rounded.md}"
-padding: "4px 12px"
-height: "36px"
-navigation-active:
-backgroundColor: "{colors.sidebar-accent}"
-textColor: "{colors.sidebar-accent-foreground}"
-rounded: "{rounded.md}"
-padding: "8px"
-height: "48px"
-badge-outline:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-typography: "{typography.label}"
-rounded: "{rounded.pill}"
-padding: "2px 8px"
-card-contained:
-backgroundColor: "{colors.card}"
-textColor: "{colors.foreground}"
-rounded: "{rounded.xl}"
-padding: "20px 24px"
-measurement-field:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-rounded: "0px"
-padding: "20px 0"
-breakdown-row:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-padding: "0 10px"
-height: "36px"
-tabs-line:
-backgroundColor: "transparent"
-textColor: "{colors.foreground}"
-rounded: "0px"
-height: "36px"
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.primary-foreground}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  button-outline:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  button-ghost:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  input:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "4px 12px"
+    height: "36px"
+  navigation-active:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.primary-foreground}"
+    rounded: "{rounded.sm}"
+    padding: "8px"
+    height: "48px"
+  badge-outline:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "2px 8px"
+  card-contained:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    padding: "20px 24px"
+  measurement-field:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    rounded: "0px"
+    padding: "20px 0"
+  breakdown-row:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    padding: "0 10px"
+    height: "36px"
+    rounded: "0px"
+  tabs-line:
+    backgroundColor: "transparent"
+    textColor: "{colors.foreground}"
+    rounded: "0px"
+    height: "36px"
 ---
 
 # Design System: Piko
 
 ## Overview
 
-**Creative North Star: "The Field-Station Workbench"**
+**Creative North Star: "Yuzu"**
 
-Piko is a small measurement workbench: calm, readable, and precise enough for daily investigation. Cool stone working surfaces, pine action and data marks, and a pale citron navigation rail establish an observational character. Public Sans and the existing three-stroke Piko mark keep the identity clear without ornamental botanical imagery.
+Piko is a compact measurement tool with a graphic identity. Butter-yellow navigation, warm ink, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
 
 Analytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
 
 **Key Characteristics:**
 
-- Stone ground, pine emphasis, citron orientation.
-- Humanist typography with restrained headings and prominent measurements.
+- Warm working ground, butter-yellow orientation, ink actions, ochre measurements.
+- Geist typography with restrained headings and prominent measurements.
 - Flat analytical fields; contained forms and inspection.
-- Compact controls, explicit focus, and stable loading geometry.
+- Squared controls, explicit focus, and stable loading geometry.
 
 ## Colors
 
-The palette combines cool stone and pine with a quiet citron orientation field. Frontmatter values are normative; unprefixed tokens are Light, and matching `dark-` tokens are Dark overrides from the stylesheet. Auto follows the system preference. Components use semantic CSS variables rather than choosing theme values directly.
+The palette combines warm neutral working surfaces, butter yellow, warm ink, and a dedicated ochre data color. Frontmatter values are normative; unprefixed tokens are Light, and matching `dark-` tokens are Dark overrides from the stylesheet. Auto follows the system preference. Components use semantic CSS variables rather than choosing theme values directly.
 
 ### Primary
 
-- **Pine** (`primary`): the main action, plotted line, focus outline, brand mark, and live indicator. In Dark, this becomes a light citron-green with dark text for readable filled controls.
+- **Warm action ink** (`primary`): filled actions, active navigation, and focus outlines. In Dark, this becomes a yellow accent with dark text for readable filled controls.
 - **Primary foreground** (`primary-foreground`): text on filled primary controls.
-- **Success** (`success`): small healthy-state indicators; it shares pine in Light and has its own subdued green in Dark.
+- **Success** (`success`): small healthy-state indicators, with a separate green in each theme.
+- **Chart ochre** (`data`): plotted measurements and legend marks; it becomes a lighter yellow in Dark.
 
 ### Secondary
 
-- **Citron ground** (`sidebar`): the persistent navigation region.
-- **Citron selection** (`sidebar-accent`, `sidebar-accent-foreground`): flat selected and hovered navigation items, separate from the main action color.
-- **Soft foliage** (`secondary`, `accent`): quiet badges, hover fields, and quantitative breakdown fills. The two roles stay subordinate to primary actions.
+- **Butter-yellow ground** (`sidebar`): the persistent navigation region.
+- **Rail hover** (`sidebar-accent`, `sidebar-accent-foreground`): hovered navigation. Active navigation instead uses the solid primary action pair.
+- **Soft yellow field** (`secondary`, `accent`): quiet badges, hover fields, and quantitative breakdown fills. The two roles stay subordinate to primary actions.
 - **Error red** (`destructive`, `destructive-foreground`): invalid fields, error text, and destructive status. It communicates a state rather than introducing another decorative accent.
 
 ### Neutral
 
-- **Cool stone** (`background`): the continuous workspace ground.
-- **White working surface** (`card`): fields, editing cards, popovers, and local messages; a darker green-neutral surface in Dark.
-- **Pine ink** (`foreground`): headings, body text, and values.
+- **Warm ground** (`background`): the continuous workspace ground.
+- **Cream working surface** (`card`): fields, editing cards, popovers, and local messages; a darker olive-neutral surface in Dark.
+- **Warm ink** (`foreground`): headings, body text, and values.
 - **Quiet ink** (`muted-foreground`): explanatory text, metadata, axes, and labels.
 - **Muted ground** (`muted`, `subtle`): code/context regions and table headers.
 - **Fine seam** (`border`, `sidebar-border`): analytical divisions and container boundaries.
 - **Field stroke** (`input`): stronger boundaries for interactive fields and outlined buttons.
-- **Navigation ink** (`sidebar-foreground`): labels on the citron ground.
+- **Navigation ink** (`sidebar-foreground`): labels on the butter-yellow ground.
 
-**The Measured Color Rule.** Use primary color for actions, focus, status, and the plotted measurement; use neutral surfaces and muted text for the surrounding evidence.
+**The Measured Color Rule.** Use ink primary for actions and navigation selection, data ochre for plotted measurements, and semantic success/destructive colors for status; keep surrounding evidence neutral.
 
 ## Typography
 
-**Display and Body Font:** Public Sans Variable, with sans-serif fallback.
+**Display and Body Font:** Geist Variable, with sans-serif fallback.
 **Code Font:** the platform monospace stack for identifiers, properties, snippets, and raw values.
 
-**Character:** one humanist family gives the interface an approachable, precise voice. Weight and alignment carry hierarchy; oversized display typography does not compete with the data.
+**Character:** one compact sans-serif family gives the interface an approachable, precise voice. Weight and alignment carry hierarchy; oversized display typography does not compete with the data.
 
 ### Hierarchy
 
@@ -224,7 +228,7 @@ The logo is a distinct wordmark treatment, not an additional heading scale. Use 
 
 ## Layout
 
-The persistent shell places a citron rail beside a continuous workspace. The expanded rail is (13rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
+The persistent shell places a butter-yellow rail beside a continuous workspace. The expanded rail is (13rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
 
 Product and date context precede page-level actions. Overview places related measurements on shared rows; Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
 
@@ -232,18 +236,19 @@ At (1150px) and below, Explore's results stack and query controls wrap. At (800p
 
 ## Elevation & Depth
 
-The workspace is flat at rest. Analytical depth comes from tonal fields, thin borders, alignment, and shared seams; cards, inputs, and buttons have no resting shadow. Modal dialogs and sheets remain distinct overlays with a dimmed backdrop and the existing larger shadow. This is a scoped distinction, not a ban on elevation everywhere. The chart's faint primary-color area fill is a data treatment, not a decorative surface gradient.
+The workspace is flat at rest. Analytical depth comes from tonal fields, thin borders, alignment, and shared seams; cards, inputs, and buttons have no resting shadow. Modal dialogs and sheets remain distinct overlays with a dimmed backdrop and the existing larger shadow. This is a scoped distinction, not a ban on elevation everywhere. The chart's faint ochre area fill is a data treatment, not a decorative surface gradient.
 
 ### Shadow Vocabulary
 
 - **Overlay:** the dialog/sheet shadow is recorded exactly in the sidecar; it separates temporary inspection or editing from the underlying workspace.
+- **Context menus:** select, dropdown, and popover surfaces use the soft context shadow recorded in the sidecar.
 - **Flat controls and surfaces:** explicit `box-shadow: none` keeps the everyday work surface quiet.
 
 **The Shared Ground Rule.** Keep analytical regions flat and aligned; reserve enclosed containers for editing, inspection, and genuinely separate context.
 
 ## Shapes
 
-Modest rounded corners soften interactive controls, while analytical fields remain square and open. Use the medium radius for ordinary buttons and fields, the extra-large radius for contained cards, and the existing large radius for contextual/inspection regions. Pills are reserved for compact badges. The three-stroke mark and small circular status dots remain part of the vocabulary; do not generalize the pill shape to every control.
+Corners are deliberately squared: ordinary buttons and fields use the medium radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Analytical fields, proportional bars, and tab underlines remain square. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
 
 Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Analytical chart, metric, and stream wrappers override the generic card silhouette with transparent backgrounds and square corners.
 
@@ -251,23 +256,23 @@ Thin borders define forms and seams. A stronger input stroke distinguishes edita
 
 ### Buttons
 
-Compact and direct. Primary buttons use pine with the theme's primary foreground; outline and ghost buttons carry secondary actions. Standard controls use the frontmatter height and medium radius; small and icon variants remain available for dense toolbars. Primary hover reduces the fill to (90%) opacity; outline and ghost hover use the accent field. Buttons use a brief (160ms) transition. Disabled controls reduce opacity to (50%) and stop pointer interaction. Keyboard focus uses a primary outline (2px) with an offset (3px), without a shadow glow.
+Compact and direct. Primary buttons use warm ink with the theme's primary foreground; outline and ghost buttons carry secondary actions. Standard controls use the frontmatter height and medium radius; small and icon variants remain available for dense toolbars. Primary hover reduces the fill to (90%) opacity; outline and ghost hover use the accent field. Buttons use a brief (160ms) transition. Disabled controls reduce opacity to (50%) and stop pointer interaction. Keyboard focus uses a primary outline (2px) with an offset (3px), without a shadow glow.
 
 ### Chips
 
-Small field labels. Source, type, and filter badges use a compact pill with the outline or secondary treatment. Status badges can use semantic success/destructive treatments. Keep real source and identity language visible; badge shape does not imply that every label is an action.
+Small field labels. Source, type, and filter badges use a compact squared badge with the outline or secondary treatment. Status badges can use semantic success/destructive treatments. Keep real source and identity language visible; badge shape does not imply that every label is an action.
 
 ### Cards / Containers
 
-Contained editing cards use the card surface, a fine border, the extra-large corner, vertical padding (20px), and horizontal content padding (24px). Their headers size to their actual content. Analytical variants remove the surrounding card shell and align headings and content on the same field. Use the flat surface and overlay distinction from Elevation & Depth.
+Contained editing cards use the card surface, a fine border, the large corner, vertical padding (20px), and horizontal content padding (24px). Settings, sources, and integration cards add a stronger top border in the input color. Their headers size to their actual content. Analytical variants remove the surrounding card shell and align headings and content on the same field. Use the flat surface and overlay distinction from Elevation & Depth.
 
 ### Inputs / Fields
 
-Clear, compact instruments. Text inputs and select triggers use the card surface, stronger field stroke, medium radius, and standard control height. Labels remain visible above fields; helper and error text sits nearby. Keyboard focus uses the same explicit outline as buttons. Invalid fields use the destructive stroke, and disabled fields reduce opacity. Text inputs increase their text size below the desktop breakpoint; narrow-screen minimum control height remains (40px).
+Clear, compact instruments. Text inputs and select triggers use the card surface, stronger field stroke, medium radius, and standard control height. Toolbar selectors are an intentional exception: transparent ground, square corners, and a single bottom stroke with narrow inline padding. Checked menu items use the accent field. Labels remain visible above form fields; helper and error text sits nearby. Keyboard focus uses the same explicit outline as buttons. Invalid fields use the destructive stroke, and disabled fields reduce opacity. Text inputs increase their text size below the desktop breakpoint; narrow-screen minimum control height remains (40px).
 
 ### Navigation
 
-The three destinations sit on the citron rail. Active links use the citron selection field and a stronger weight (650), without a raised capsule shadow. Hover uses the same tonal family. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Keep the real Piko mark. The context toolbar retains product/date scope across destinations.
+The three destinations sit on the butter-yellow rail. Active links use the solid primary fill and primary foreground with a stronger weight (650). Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
 
 ### Tabs
 
@@ -275,7 +280,7 @@ The line variant uses transparent ground and an ink underline for the active tab
 
 ### Shared measurements and event inspection
 
-Charts use a primary single-series line, light horizontal grid marks, muted axes, and a faint primary area fill. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
+Charts use an angular single-series line with linear interpolation, the data ochre stroke, light horizontal grid marks, muted axes, and a faint ochre area fill. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
 
 ### Motion and loading
 
@@ -286,7 +291,7 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 ### Do:
 
 - **Do** reuse semantic theme variables so Light, Dark, and Auto retain the same hierarchy.
-- **Do** preserve the three-stroke mark, Public Sans, and pine/citron relationship.
+- **Do** preserve the shared upright three-bar logo/favicon, Geist, and the Yuzu ink/yellow/ochre relationship.
 - **Do** align measurements and use fine dividers to connect analytical regions.
 - **Do** keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.
 - **Do** preserve chart and table geometry while data loads or refreshes.

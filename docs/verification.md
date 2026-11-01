@@ -174,3 +174,14 @@ Checks pass: `bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, all **22 B
 The compiled standalone dashboard passed **68 browser tests in 1.6 minutes**, with seven native-channel cases intentionally skipped. The native Tako run covered all seven channel cases plus refresh, SSR geometry, and sources: 26 passed initially; a hot-reload workspace error and a transient mobile-width assertion passed their targeted rerun after editing stopped. Together these runs cover every case in the **75-test suite**. The final select-alignment change was rebuilt and covered by the native checks. In-app browser inspection confirmed the Website and CLI overview layouts, automatic icons on the existing sample sources, and the icon picker at 390 px.
 
 The existing client-chunk warning remains (933.98 kB minified / 286.62 kB gzip). No new benchmark was run: analytical storage and query execution are unchanged, and prior measured results remain in [the benchmark report](benchmark.md). Production deployment, Docker startup, and Cloudflare policies were not re-tested.
+
+
+## Yuzu visual system — 2026-11-01
+
+Implemented the user's selected Yuzu direction across Overview, Explore, Settings, and shared shadcn controls. Butter-yellow navigation, warm ink, a dedicated ochre chart token, self-hosted Geist, squared controls/badges, underline toolbar selectors, solid navigation selection, and straight chart segments replace the previous pine/Public Sans treatment. The upright three-bar logo and favicon reference the same versioned SVG asset. Geist's SIL Open Font License ships with the application. Product behavior and analytics queries are unchanged.
+
+The full native Tako Chromium suite passed **75 tests in 4.8 minutes**, including Light/Dark/Auto persistence, narrow layouts, source icons, event inspection, live updates, stable refresh, and SSR shell geometry. `bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, all **22 Bun tests**, `bun run build`, and `git diff --check` pass. Compiled favicon and font-license files match the public source assets.
+
+In-app browser inspection covered light/dark Explore, desktop Overview and Settings, and 390 px Explore/Settings. An independent Impeccable finish review found no material corrections. The recorded design system and schema-v2 sidecar now describe Yuzu; frontmatter nesting and token references were validated. Checked color pairs pass contrast thresholds: normal text at least 5.77:1 in Light and 7.56:1 in Dark, input outlines at least 3.61:1, and plotted lines at least 4.50:1. These measurements are for the checked semantic pairs, not a full accessibility certification.
+
+The existing client chunk warning remains (933.67 kB minified / 286.51 kB gzip). Rust, storage, collectors, deployment configuration, and the benchmark are unchanged; their checks were not rerun for this visual change. No production deployment was performed.

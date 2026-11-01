@@ -63,8 +63,8 @@ Placeholders follow the selected theme and respect reduced-motion preferences. R
 
 Piko uses the free Stroke Rounded set from [Hugeicons](https://hugeicons.com/), rendered with `@hugeicons/react`. Import named icon data from `@hugeicons/core-free-icons` and pass it directly to `HugeiconsIcon`. Navigation, metric cards, controls, and installed shadcn primitives share this set. `apps/dashboard/components.json` also selects `hugeicons` for future generated components.
 
-Mobile source overviews focus on events and explicitly identified actors, with screen, version, and OS breakdowns when those properties are provided. They do not show website visitor/session or CLI installation cards.
+All sources share the same analytics interface. The optional icon is visual metadata; it does not change queries or infer identity.
 
 ## Source management
 
-Settings lists sources with their name and type. Add or edit a source there, then choose it in **Key source** before creating an ingestion key. Each key belongs permanently to one source. Integration snippets use the selected source's key; mobile sources start on the HTTP example. Renaming a source changes its display name without moving historical events. Sources share the project's retention policy and optional identity namespace. Revoke its keys to stop intake; source deletion and merging are outside v1.
+Settings lists sources with their name and icon. Automatic chooses an icon from the name; an explicit choice stays fixed after renaming. Add or edit a source there, then choose it in **Key source** before creating an ingestion key. Each key belongs permanently to one source. Integration snippets use the selected source's key; Browser, TypeScript, Rust CLI, and HTTP / Mobile examples are available for every source. Renaming a source changes its display name without moving historical events. Sources share the project's retention policy and optional identity namespace. Revoke its keys to stop intake; source deletion and merging are outside v1.

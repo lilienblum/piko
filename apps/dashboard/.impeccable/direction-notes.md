@@ -1,3 +1,5 @@
+> Historical exploration: the user selected Yuzu on 2026-11-01. The current visual system is recorded in ../DESIGN.md and the surface brief. The notes below document the superseded field-station direction.
+
 # Visual direction study
 
 Mode: Operate. The user delegates all interview and design answers. Keep the installed skill for this task; do not update tooling mid-redesign.
