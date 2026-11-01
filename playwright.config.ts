@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 1,
   timeout: 30000,
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: process.env.PIKO_DASHBOARD_URL ?? "http://127.0.0.1:3000",
     headless: true,
     viewport: { width: 1440, height: 1000 },
     trace: "retain-on-failure",

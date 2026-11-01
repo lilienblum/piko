@@ -1,0 +1,21 @@
+name = "piko"
+runtime = "bun"
+package_manager = "bun"
+preset = "tanstack-start"
+app_root = "apps/dashboard/src"
+main = "apps/dashboard/dist/server/tako-entry.mjs"
+assets = ["apps/dashboard/dist/client"]
+# Keep the process cwd at the repository root so channel discovery uses app_root.
+dev = ["bun", "node_modules/vite/bin/vite.js", "apps/dashboard", "--config", "apps/dashboard/vite.config.ts"]
+
+[build]
+install = "bun install --frozen-lockfile"
+run = "bun run build"
+include = ["apps/dashboard/dist/**", "apps/dashboard/src/channels/**", "apps/dashboard/src/lib/change-envelope.ts", "apps/dashboard/package.json", "package.json", "bun.lock"]
+
+[envs.development]
+route = "piko.test"
+
+[vars.development]
+SSL_CERT_FILE = ".tako/dev-ca.pem"
+PIKO_API_URL = "https://piko-api.test"

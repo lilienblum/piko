@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -49,6 +50,7 @@ import { api, type Product } from "@/lib/api";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
 import { Spinner } from "@/components/ui/spinner";
+import { LiveUpdates } from "./live-updates";
 
 type Context = {
   products: Product[];
@@ -57,6 +59,7 @@ type Context = {
   range: { from: string; to: string };
   refresh: () => void;
   refreshKey: number;
+  hasUpdates: boolean;
   setAnalyticsPending: (pending: boolean) => void;
 };
 const Workspace = createContext<Context | null>(null);
@@ -100,6 +103,8 @@ export function AppShell() {
   const [days, setDays] = useState(30);
   const [now, setNow] = useState(Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
+  const [hasUpdates, setHasUpdates] = useState(false);
+  const refreshBackground = useCallback(() => setNow(Date.now()), []);
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
@@ -167,7 +172,16 @@ export function AppShell() {
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
     <Workspace.Provider
-      value={{ products, product, reload, range, refresh, refreshKey, setAnalyticsPending }}
+      value={{
+        products,
+        product,
+        reload,
+        range,
+        refresh,
+        refreshKey,
+        hasUpdates,
+        setAnalyticsPending,
+      }}
     >
       <SidebarProvider
         open={sidebarOpen}
@@ -209,6 +223,14 @@ export function AppShell() {
               </div>
             </div>
             <div className="topbar-controls">
+              <LiveUpdates
+                productId={product?.id}
+                view={path}
+                scopeKey={JSON.stringify([product?.id, days, drilldown, refreshKey])}
+                busy={loading || analyticsPending}
+                onPending={setHasUpdates}
+                onRefresh={refreshBackground}
+              />
               <span className="timezone">UTC</span>
               <ValueSelect
                 label="Date range"

@@ -6,16 +6,18 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "bun scripts/dev.ts",
-    "build": "bun run --cwd apps/dashboard build && bun typecheck && bun build sdk/typescript/browser.ts --target browser --format esm --outfile apps/dashboard/dist/client/tracker.js",
-    "fmt": "biome format --write . && cargo fmt --all",
-    "fmt:check": "biome format . && cargo fmt --all --check",
-    "lint": "biome lint .",
-    "typecheck": "tsc --noEmit",
+    "build": "bun run --cwd apps/dashboard build && bun typecheck",
+    "fmt": "bun node_modules/@biomejs/biome/bin/biome format --write . && cargo fmt --all",
+    "fmt:check": "bun node_modules/@biomejs/biome/bin/biome format . && cargo fmt --all --check",
+    "lint": "bun node_modules/@biomejs/biome/bin/biome lint .",
+    "typecheck": "bun node_modules/typescript/bin/tsc --noEmit",
     "test": "bun test sdk scripts",
-    "test:e2e": "bun --bun playwright test",
+    "test:e2e": "bun node_modules/@playwright/test/cli.js test",
     "benchmark": "bun scripts/benchmark.ts",
     "seed": "bun scripts/seed.ts",
-    "dev:dashboard": "bun run --cwd apps/dashboard dev"
+    "dev:dashboard": "bun run --cwd apps/dashboard dev",
+    "dev:stop": "bun scripts/dev.ts --stop",
+    "dev:standalone": "bun scripts/dev-standalone.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
@@ -33,5 +35,8 @@
   "workspaces": [
     "apps/dashboard"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "tako.sh": "0.0.0-9301901"
+  }
 }

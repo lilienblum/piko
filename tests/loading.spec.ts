@@ -210,15 +210,15 @@ test("key loading never flashes empty and failed requests have a working local r
     release();
   }
   await expect(page.getByText("Loading fixture", { exact: true })).toBeVisible();
-  await page.route(
-    `**/api/products/${other.id}/keys`,
-    (route) =>
-      route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({ error: "Keys temporarily unavailable" }),
-      }),
-    { times: 1 },
+  let keysUnavailable = true;
+  await page.route(`**/api/products/${other.id}/keys`, (route) =>
+    keysUnavailable
+      ? route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Keys temporarily unavailable" }),
+        })
+      : route.continue(),
   );
   await page.getByRole("combobox", { name: "Select product" }).click();
   await page.getByRole("option", { name: other.name, exact: true }).click();
@@ -227,6 +227,7 @@ test("key loading never flashes empty and failed requests have a working local r
   await expect(
     page.getByText("No keys yet. Create one to start sending events."),
   ).not.toBeVisible();
+  keysUnavailable = false;
   await page.getByRole("button", { name: "Try again", exact: true }).click();
   await expect(page.getByText("No keys yet. Create one to start sending events.")).toBeVisible();
 });

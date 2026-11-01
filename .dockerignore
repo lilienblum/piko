@@ -7,3 +7,5 @@ data
 **/.tanstack
 test-results
 playwright-report
+
+.tako

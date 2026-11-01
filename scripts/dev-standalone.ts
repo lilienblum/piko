@@ -1,0 +1,21 @@
+export {};
+const env = { ...process.env };
+const api = Bun.spawn(["cargo", "run", "-p", "piko"], {
+  env,
+  stdout: "inherit",
+  stderr: "inherit",
+});
+const dashboard = Bun.spawn(["bun", "run", "dev"], {
+  cwd: "apps/dashboard",
+  env,
+  stdout: "inherit",
+  stderr: "inherit",
+});
+for (const signal of ["SIGINT", "SIGTERM"] as const)
+  process.on(signal, () => {
+    api.kill(signal);
+    dashboard.kill(signal);
+  });
+await Promise.race([api.exited, dashboard.exited]);
+api.kill();
+dashboard.kill();

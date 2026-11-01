@@ -25,7 +25,7 @@ export function Overview() {
   return product ? <ProductOverview key={product.id} /> : <NoProduct />;
 }
 function ProductOverview() {
-  const { product, range, refresh } = useWorkspace();
+  const { product, range, refresh, refreshKey } = useWorkspace();
   const web = product?.kind === "website";
   const tool = product?.kind === "tool";
   const dimensions = web
@@ -49,12 +49,18 @@ function ProductOverview() {
     measure: "count",
     group_by: web ? "property:path" : tool ? "property:command" : "name",
   };
-  const query = useQuery(product?.id, body);
-  const secondary = useQuery(product?.id, {
-    ...body,
-    group_by: secondaryGroup,
-  });
-  useAnalyticsPending(query.loading || secondary.loading);
+  const backgroundScope = JSON.stringify([range.from, refreshKey, body.event, body.group_by]);
+  const query = useQuery(product?.id, body, refreshKey, backgroundScope);
+  const secondary = useQuery(
+    product?.id,
+    {
+      ...body,
+      group_by: secondaryGroup,
+    },
+    refreshKey,
+    `${backgroundScope}:${secondaryGroup}`,
+  );
+  useAnalyticsPending(query.refreshing || secondary.refreshing);
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
@@ -173,7 +179,7 @@ function ProductOverview() {
           </Button>
         </div>
       </PageHeader>
-      {query.error ? (
+      {query.error && !query.data ? (
         <ErrorState message={query.error} retry={refresh} />
       ) : query.loading ? (
         <OverviewLoading
@@ -183,6 +189,7 @@ function ProductOverview() {
       ) : (
         query.data && (
           <>
+            {query.error && <ErrorState message={query.error} retry={refresh} />}
             <div className="metrics">
               {metrics.map((m) => (
                 <Card key={m.label} className="metric-card">

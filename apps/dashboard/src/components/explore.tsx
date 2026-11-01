@@ -64,7 +64,7 @@ export function Explore() {
   );
 }
 function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
-  const { product, range, refresh, refreshKey } = useWorkspace();
+  const { product, range, refresh, refreshKey, hasUpdates } = useWorkspace();
   const initial: Spec = {
     ...defaultSpec,
     event: drilldown?.event ?? "",
@@ -130,6 +130,17 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
         title="Follow your curiosity"
         description={`Ask a question of ${product?.name}. Start with an event, then look a little closer.`}
       />
+      {hasUpdates && (
+        <div className="live-update-notice" role="status">
+          <span>
+            <span className="live-dot" aria-hidden="true" />
+            New data available
+          </span>
+          <Button variant="outline" size="sm" onClick={refresh} disabled={query.loading}>
+            Refresh results
+          </Button>
+        </div>
+      )}
       {drilldown && (
         <section className="drilldown-context" aria-label="Overview selection">
           <div>

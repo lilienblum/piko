@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 const apiUrl = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
-const dashboard = "http://127.0.0.1:3000";
+const dashboard = process.env.PIKO_DASHBOARD_URL ?? "http://127.0.0.1:3000";
 async function admin(path: string, body?: unknown) {
   const response = await fetch(`${apiUrl}/api${path}`, {
     method: body ? "POST" : "GET",

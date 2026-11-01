@@ -5,6 +5,7 @@
       "**",
       "!**/components/ui",
       "!**/routeTree.gen.ts",
+      "!**/tako.d.ts",
       "!**/dist",
       "!target",
       "!bun.lock",

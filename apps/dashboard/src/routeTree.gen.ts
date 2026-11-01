@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TrackerDotjsRouteImport } from './routes/tracker[.]js'
+import { Route as PikoChangesRouteImport } from './routes/[_]piko.changes'
+import { Route as PikoRuntimeRouteImport } from './routes/[_]piko.runtime'
+import { Route as ApiSplatRouteImport } from './routes/api.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +32,93 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackerDotjsRoute = TrackerDotjsRouteImport.update({
+  id: '/tracker.js',
+  path: '/tracker.js',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PikoChangesRoute = PikoChangesRouteImport.update({
+  id: '/_piko/changes',
+  path: '/_piko/changes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PikoRuntimeRoute = PikoRuntimeRouteImport.update({
+  id: '/_piko/runtime',
+  path: '/_piko/runtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
+  '/tracker.js': typeof TrackerDotjsRoute
+  '/_piko/changes': typeof PikoChangesRoute
+  '/_piko/runtime': typeof PikoRuntimeRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
+  '/tracker.js': typeof TrackerDotjsRoute
+  '/_piko/changes': typeof PikoChangesRoute
+  '/_piko/runtime': typeof PikoRuntimeRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
+  '/tracker.js': typeof TrackerDotjsRoute
+  '/_piko/changes': typeof PikoChangesRoute
+  '/_piko/runtime': typeof PikoRuntimeRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explore' | '/settings'
+  fullPaths:
+    | '/'
+    | '/explore'
+    | '/settings'
+    | '/tracker.js'
+    | '/_piko/changes'
+    | '/_piko/runtime'
+    | '/api/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explore' | '/settings'
-  id: '__root__' | '/' | '/explore' | '/settings'
+  to:
+    | '/'
+    | '/explore'
+    | '/settings'
+    | '/tracker.js'
+    | '/_piko/changes'
+    | '/_piko/runtime'
+    | '/api/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/explore'
+    | '/settings'
+    | '/tracker.js'
+    | '/_piko/changes'
+    | '/_piko/runtime'
+    | '/api/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExploreRoute: typeof ExploreRoute
   SettingsRoute: typeof SettingsRoute
+  TrackerDotjsRoute: typeof TrackerDotjsRoute
+  PikoChangesRoute: typeof PikoChangesRoute
+  PikoRuntimeRoute: typeof PikoRuntimeRoute
+  ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +144,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tracker.js': {
+      id: '/tracker.js'
+      path: '/tracker.js'
+      fullPath: '/tracker.js'
+      preLoaderRoute: typeof TrackerDotjsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_piko/changes': {
+      id: '/_piko/changes'
+      path: '/_piko/changes'
+      fullPath: '/_piko/changes'
+      preLoaderRoute: typeof PikoChangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_piko/runtime': {
+      id: '/_piko/runtime'
+      path: '/_piko/runtime'
+      fullPath: '/_piko/runtime'
+      preLoaderRoute: typeof PikoRuntimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExploreRoute: ExploreRoute,
   SettingsRoute: SettingsRoute,
+  TrackerDotjsRoute: TrackerDotjsRoute,
+  PikoChangesRoute: PikoChangesRoute,
+  PikoRuntimeRoute: PikoRuntimeRoute,
+  ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

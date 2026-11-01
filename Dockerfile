@@ -22,7 +22,6 @@ RUN bun install --frozen-lockfile
 COPY apps/dashboard ./apps/dashboard
 COPY sdk ./sdk
 RUN cd apps/dashboard && bun run build
-RUN bun build sdk/typescript/browser.ts --target browser --format esm --outfile apps/dashboard/dist/client/tracker.js
 
 FROM oven/bun:1.4.4-slim AS dashboard
 WORKDIR /app
