@@ -40,7 +40,9 @@ async function fixture(options = "", hold = false, redirect?: string) {
         return new Response(source, { headers: { "content-type": "application/javascript" } });
       }
       if (path === "/api/ingest") {
-        const { events } = await request.json();
+        const body = await request.arrayBuffer();
+        if (body.byteLength > 262_144) return new Response("Body too large", { status: 413 });
+        const { events } = JSON.parse(new TextDecoder().decode(body));
         requests.push({ events, headers: Object.fromEntries(request.headers) });
         if (redirect) return new Response(null, { status: 307, headers: { location: redirect } });
         if (hold) await pending;
@@ -385,7 +387,7 @@ test("shutdown has one deadline for the whole queue and discards leftovers", asy
   }
 });
 
-test("valid events above the browser keepalive body limit still deliver while the page is open", async ({
+test("byte-heavy events split into bounded batches and deliver while the page is open", async ({
   page,
 }) => {
   const f = await fixture();
@@ -396,11 +398,15 @@ test("valid events above the browser keepalive body limit still deliver while th
       const properties = Object.fromEntries(
         Array.from({ length: 32 }, (_, i) => [`field_${i}`, "é".repeat(1024)]),
       );
-      window.tracker.track("large", properties);
+      for (let i = 0; i < 5; i++) window.tracker.track("large", properties);
       await window.tracker.shutdown();
     });
-    expect(f.requests).toHaveLength(1);
-    expect(f.requests[0].events[1].properties?.field_0).toBe("é".repeat(1024));
+    const events = f.requests.flatMap(({ events }) => events);
+    expect(events).toHaveLength(6);
+    expect(new Set(events.map((event) => event.event_id)).size).toBe(6);
+    const large = events.filter((event) => event.name === "large");
+    expect(large).toHaveLength(5);
+    for (const event of large) expect(event.properties?.field_0).toBe("é".repeat(1024));
   } finally {
     await f.server.stop(true);
   }

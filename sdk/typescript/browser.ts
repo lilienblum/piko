@@ -128,8 +128,16 @@ export function startBrowserTracker(options: BrowserOptions) {
     if (running) return running;
     const batch = queue.splice(0, 20);
     if (!batch.length) return Promise.resolve();
-    running = client
-      .sendBatch(batch)
+    running = (async () => {
+      // Leave framing headroom under keepalive's limit; a large single event uses ordinary fetch.
+      while (
+        batch.length > 1 &&
+        new TextEncoder().encode(JSON.stringify({ events: batch })).byteLength > 60_000
+      ) {
+        queue.unshift(...batch.splice(-1));
+      }
+      await client.sendBatch(batch);
+    })()
       .then(
         () => {},
         () => {}, // Best effort: retries are bounded; drop failed batches.
