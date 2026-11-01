@@ -1,6 +1,6 @@
 # Exploring from the overview
 
-Select a project, source, and date range in the header. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Website sources show page views; tool sources show command executions. Mobile/other sources and projects mixing source types include all event names. Source selection is remembered per project. Settings manages every source regardless of the analytics selection.
+Select a project, source, and date range in the header. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Every source uses the same overview, includes all event names, and offers the same chart metrics and breakdowns. Source selection is remembered per project. Settings manages every source regardless of the analytics selection.
 
 Click a page, command, event, referrer, or other breakdown row to open its matching events in Explore. Each link carries the project, selected source when applicable, exact UTC interval, and selected value. A source breakdown link uses its stable ID, so renaming does not break links. It works after reload and through browser history, even when the browser previously had a different product selected.
 
@@ -10,9 +10,7 @@ Explore shows the linked interval and applied filters. Use its query controls to
 
 Use the chart's metric and interval controls to ask a different question without opening Explore. Summary cards and breakdowns continue to describe the full selected period when the chart changes.
 
-- **Websites.** Chart page views or unique visitors with an explicit visitor ID.
-- **Developer tools.** Chart command executions, active installations with an explicit installation ID, average duration, or p95 duration.
-- **Mobile/other sources and mixed projects.** Chart event counts or identified actors. Identity kinds remain distinct.
+Every source offers event counts, identified actors, unique visitors, active installations, average duration, and p95 duration. Visitor and installation identities remain distinct. Summary cards show Events, Identified actors, Success rate, and Average duration; absent identities or properties are shown as unavailable, not invented zero values.
 
 Daily buckets are the default. Hourly buckets are available for ranges of 31 days or less; longer ranges use daily buckets. Labels and bucket boundaries use UTC. The first or last bucket is marked partial when the selected range cuts through it. A partial bucket should not be interpreted as a complete day or hour.
 
@@ -22,21 +20,17 @@ Changing a chart selection loads only the plot while its controls, summary cards
 
 ## Breakdown dimensions
 
-- **Websites.** Switch the source card between referrers, UTM sources, and campaigns. These use `referrer`, `utm_source`, and `utm_campaign` properties from the browser tracker.
-- **Developer tools.** Switch the environment card between operating systems, application versions, and architectures. These use `os`, `version`, and `arch` from the CLI example.
-- **Mobile/other sources and mixed projects.** Explore event names and managed sources directly. The Clients tab groups the original envelope `source` label; it is distinct from the trusted source attributed by the ingestion key.
+Top events always ranks event names. The **Breakdown** selector offers Sources, Clients, Pages, Commands, Referrers, Campaign sources, Campaigns, Screens, Versions, OS, and Architecture for every source. Property dimensions include all matching events; they do not silently restrict the event name. Missing values remain informational. Use Explore to explicitly filter an event, inspect typed properties, or choose other groupings.
 
-The count and percentage describe the selected row's share of all matching events. Percentages use the full result count, including groups outside the top 12. They are event shares, not visitor shares.
+## Source icons
 
-Values retain their property types. Boolean `true`, number `42`, and string `"42"` remain different filters. A row labeled “Not provided” has no drilldown because missing-property predicates are not supported yet.
-
-All dates and buckets use UTC. A linked interval is fixed at the moment the row was clicked. Refresh reruns that interval. The end is exclusive, and today's bucket may be partial.
+Settings lets you name sources and choose an optional icon from Hugeicons. **Automatic** follows common platform words in the name (iOS, Android, website, CLI, API, desktop, mobile, SDK, code, game); unrecognized names use a cube. Choosing an icon pins it across renames. Return to Automatic to follow the name again. Icons appear in the source list and source selector and never change analytics behavior. Integration language tabs are available for every source and remain under your control.
 
 ## Design notes
 
-The [Datafast demo](https://datafa.st/demo) and its [filter documentation](https://datafa.st/docs/datafast-filters) informed the actionable breakdown rows and dimension tabs. Piko applies these ideas to both websites and developer tools using its existing event queries.
+The [Datafast demo](https://datafa.st/demo) and its [filter documentation](https://datafa.st/docs/datafast-filters) informed the actionable breakdown rows and dimension choices. Piko applies these ideas to both websites and developer tools using its existing event queries.
 
-The [Plausible live dashboard](https://plausible.io/plausible.io) and its [dashboard tour](https://plausible.io/docs/guided-tour) informed chart metric selection, interval controls, and partial-period context. Piko uses chart-local controls so its existing summary metrics remain consistent across product types.
+The [Plausible live dashboard](https://plausible.io/plausible.io) and its [dashboard tour](https://plausible.io/docs/guided-tour) informed chart metric selection, interval controls, and partial-period context. Piko uses chart-local controls so its existing summary metrics remain consistent across sources.
 
 Period comparisons remain a future feature. They need explicit partial-day alignment and a query shape that avoids fetching unused event pages for comparison summaries.
 
@@ -54,7 +48,7 @@ The [PostHog Activity interface](https://posthog.com/docs/activity) informed the
 
 ## Loading and feedback
 
-Navigation stays available while the product catalog loads. Overview and Explore use placeholders shaped like their metric cards, charts, breakdowns, and event rows. Breakdown tabs load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
+Navigation stays available while the product catalog loads. Overview and Explore use placeholders shaped like their metric cards, charts, breakdowns, and event rows. Breakdown choices load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
 
 Refreshing the current view keeps its cards, charts, event rows, inspector, and page number visible. Only the activity icons change while new data loads; a failed refresh leaves the last results available with retry feedback. New products, date selections, or applied queries still use placeholders so unrelated results are never mislabeled. The fixed-size refresh action in the query header also announces new data from the live channel without adding or removing a banner.
 

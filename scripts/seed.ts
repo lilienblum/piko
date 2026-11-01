@@ -13,7 +13,7 @@ type DemoProject = { id: string; name: string; sources: { id: string; name: stri
 const existing = await admin<DemoProject[]>("/products");
 const product =
   existing.find((p) => p.name === "Orbit") ??
-  (await admin<DemoProject>("/products", { name: "Orbit", kind: "website", retention_days: 90 }));
+  (await admin<DemoProject>("/products", { name: "Orbit", retention_days: 90 }));
 const today = new Date();
 today.setUTCHours(0, 0, 0, 0);
 for (const [name, kind] of [
@@ -23,7 +23,7 @@ for (const [name, kind] of [
 ] as const) {
   const source =
     product.sources.find((source) => source.name === name) ??
-    (await admin<{ id: string }>(`/products/${product.id}/sources`, { name, kind }));
+    (await admin<{ id: string }>(`/products/${product.id}/sources`, { name }));
   const { key } = await admin<{ key: string }>(`/products/${product.id}/keys`, {
     label: "Sample data generator",
     source_id: source.id,

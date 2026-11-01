@@ -34,6 +34,13 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await dialog.getByRole("button", { name: "Create project", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByLabel("Project name")).toHaveValue(name);
+  await page.getByRole("button", { name: "Edit source Events", exact: true }).click();
+  await dialog.getByLabel("Source name").fill("Website");
+  await expect(dialog.getByRole("combobox", { name: "Icon", exact: true })).toContainText(
+    "Automatic · Website",
+  );
+  await dialog.getByRole("button", { name: "Save source", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
   await page.getByLabel("New key label").fill("Website key");
   await page.getByRole("button", { name: "Create ingestion key", exact: true }).click();
   const websiteKey = (await page.locator(".new-key").textContent()) ?? "";
@@ -41,16 +48,17 @@ test("one project combines website and mobile sources with scoped keys, queries,
 
   await page.getByRole("button", { name: "Add source", exact: true }).click();
   await dialog.getByLabel("Source name").fill("iOS app");
-  await select(page, "Source type", "Mobile app");
+  await expect(dialog.getByLabel("Source type")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Create source", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator(".source-row")).toHaveCount(2);
   await select(page, "Key source", "iOS app");
   await expect(page.locator(".new-key")).toHaveCount(0);
-  await expect(page.getByRole("tab", { name: "HTTP / Mobile" })).toHaveAttribute(
+  await expect(page.getByRole("tab", { name: "Browser", exact: true })).toHaveAttribute(
     "data-state",
     "active",
   );
+  await page.getByRole("tab", { name: "HTTP / Mobile" }).click();
   await page.getByLabel("New key label").fill("iOS key");
   await page.getByRole("button", { name: "Create ingestion key", exact: true }).click();
   const mobileKey = (await page.locator(".new-key").textContent()) ?? "";
@@ -109,9 +117,9 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Select source", "Mobile app");
-  await expect(page.locator(".metric-value")).toHaveCount(2);
+  await expect(page.locator(".metric-value")).toHaveCount(4);
   await expect(page.getByText("No actor IDs received")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Screens", exact: true })).toBeVisible();
+  await select(page, "Breakdown", "Screens");
   await page.screenshot({
     path: test.info().outputPath("mobile-source-overview.png"),
     fullPage: true,
@@ -127,7 +135,7 @@ test("source creation retries a failed catalog refresh without creating the sour
     headers: { "x-piko-admin": "1", "content-type": "application/json" },
     body: JSON.stringify({
       name: `Source retry ${Date.now()}`,
-      kind: "website",
+
       retention_days: 30,
     }),
   });
@@ -149,7 +157,7 @@ test("source creation retries a failed catalog refresh without creating the sour
   await page.getByRole("button", { name: "Add source", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Source name").fill("Tablet");
-  await select(page, "Source type", "Mobile app");
+  await expect(dialog.getByLabel("Source type")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Create source", exact: true }).click();
   await expect(dialog.getByText(/Source saved. Could not refresh/)).toBeVisible();
   await expect(dialog.getByLabel("Source name")).toBeDisabled();
@@ -175,4 +183,75 @@ test("source creation retries a failed catalog refresh without creating the sour
     page.getByText("The project or source in this link is not available in this workspace."),
   ).toBeVisible();
   expect(queries).toBe(0);
+});
+
+test("automatic and pinned source icons survive renames without changing analytics", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const response = await fetch(`${endpoint}/api/products`, {
+    method: "POST",
+    headers: { "x-piko-admin": "1", "content-type": "application/json" },
+    body: JSON.stringify({ name: `Icons ${Date.now()}`, retention_days: 30 }),
+  });
+  expect(response.ok).toBe(true);
+  const project = await response.json();
+  expect(project).not.toHaveProperty("kind");
+  await page.route("**/_piko/runtime", (route) => route.fulfill({ json: { live: false } }));
+  await page.goto("/settings");
+  await select(page, "Select project", project.name);
+  await page.getByRole("button", { name: "Add source", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  const icon = dialog.getByRole("combobox", { name: "Icon", exact: true });
+  await dialog.getByLabel("Source name").fill("Orbit iOS");
+  await expect(icon).toContainText("Automatic · iOS");
+  await expect(icon.locator("[data-source-icon]")).toHaveAttribute("data-source-icon", "ios");
+  await select(page, "Icon", "Android");
+  await dialog.getByLabel("Source name").fill("Orbit Website");
+  await expect(icon).toContainText("Android");
+  await dialog.getByRole("button", { name: "Create source", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.reload();
+  await expect(
+    page.locator(".source-row").filter({ hasText: "Orbit Website" }).locator("[data-source-icon]"),
+  ).toHaveAttribute("data-source-icon", "android");
+  await page.getByRole("button", { name: "Edit source Orbit Website", exact: true }).click();
+  await expect(icon).toContainText("Android");
+  await dialog.getByLabel("Source name").fill("Orbit CLI");
+  await select(page, "Icon", "Automatic · Terminal");
+  await dialog.getByRole("button", { name: "Save source", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.reload();
+  await expect(
+    page.locator(".source-row").filter({ hasText: "Orbit CLI" }).locator("[data-source-icon]"),
+  ).toHaveAttribute("data-source-icon", "terminal");
+  await select(page, "Key source", "Orbit CLI");
+  await page.getByLabel("New key label").fill("Mixed events");
+  await page.getByRole("button", { name: "Create ingestion key", exact: true }).click();
+  const key = (await page.locator(".new-key").textContent()) ?? "";
+  await ingest(key, "command_run", 10);
+  await ingest(key, "custom_event", 20);
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await select(page, "Select source", "Orbit CLI");
+  await expect(page.locator(".metric-value").first()).toHaveText("2");
+  const metrics = await page.locator(".metric-label").allTextContents();
+  expect(metrics).toEqual(["Events", "Identified actors", "Success rate", "Average duration"]);
+  await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Edit source Orbit CLI", exact: true }).click();
+  await dialog.getByLabel("Source name").fill("Orbit iOS");
+  await expect(icon).toContainText("Automatic · iOS");
+  await dialog.getByRole("button", { name: "Save source", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Select source", exact: true })).toContainText(
+    "Orbit iOS",
+  );
+  await expect(page.locator(".metric-value").first()).toHaveText("2");
+  expect(await page.locator(".metric-label").allTextContents()).toEqual(metrics);
+  await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();
+  await select(page, "Chart metric", "Average duration");
+  await expect(
+    page.getByText("No numeric durations received in this range.", { exact: true }),
+  ).toBeVisible();
 });

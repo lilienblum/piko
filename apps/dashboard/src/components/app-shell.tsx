@@ -17,15 +17,12 @@ import {
   ArrowUpRight01Icon,
   Calendar03Icon,
   Cancel01Icon,
-  CommandLineIcon,
   CubeIcon,
   DashboardSquare01Icon,
-  Globe02Icon,
   HelpCircleIcon,
   RefreshIcon,
   Search01Icon,
   Settings02Icon,
-  SmartPhone01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
@@ -48,11 +45,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { api, type Product, type Source, type SourceKind } from "@/lib/api";
+import { api, type Product, type Source } from "@/lib/api";
 import { readPreference, savePreference } from "@/lib/preferences";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
 import { Spinner } from "@/components/ui/spinner";
+import { SourceIcon } from "./source-icon";
 import { LiveUpdates } from "./live-updates";
 
 type Context = {
@@ -60,7 +58,6 @@ type Context = {
   product?: Product;
   source?: Source;
   sourceId?: string;
-  dashboardKind: SourceKind;
   reload: (select?: string) => Promise<void>;
   range: { from: string; to: string };
   refresh: () => void;
@@ -80,17 +77,6 @@ export function useAnalyticsPending(pending: boolean) {
     setAnalyticsPending(pending);
     return () => setAnalyticsPending(false);
   }, [pending, setAnalyticsPending]);
-}
-export function ProductIcon({ kind }: { kind: string }) {
-  const icon =
-    kind === "website"
-      ? Globe02Icon
-      : kind === "tool"
-        ? CommandLineIcon
-        : kind === "mobile"
-          ? SmartPhone01Icon
-          : CubeIcon;
-  return <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />;
 }
 export function Logo() {
   return (
@@ -191,10 +177,6 @@ export function AppShell() {
     : (sourceSelection[product?.id ?? ""] ?? "");
   const source = product?.sources?.find((source) => source.id === requestedSource);
   const sourceId = source?.id;
-  const kinds = new Set(product?.sources?.map((source) => source.kind));
-  const projectKind =
-    kinds.size > 1 ? "generic" : (product?.sources?.[0]?.kind ?? product?.kind ?? "generic");
-  const dashboardKind = source?.kind ?? projectKind;
   const defaultRange = useMemo(() => {
     const end = new Date(now);
     const start = new Date(now);
@@ -216,7 +198,6 @@ export function AppShell() {
         product,
         source,
         sourceId,
-        dashboardKind,
         reload,
         range,
         refresh,
@@ -254,7 +235,7 @@ export function AppShell() {
                       : "No projects yet"
                 }
                 className="product-select"
-                icon={<ProductIcon kind={projectKind} />}
+                icon={<HugeiconsIcon icon={CubeIcon} strokeWidth={2} aria-hidden="true" />}
                 onValueChange={(value) => {
                   clearDrilldown();
                   setSelected(value);
@@ -268,6 +249,7 @@ export function AppShell() {
                   value={sourceId ?? "all"}
                   disabled={!product || loading}
                   className="source-select"
+                  icon={<SourceIcon name={source?.name ?? ""} icon={source?.icon} />}
                   onValueChange={(value) => {
                     if (!product) return;
                     clearDrilldown();
@@ -277,7 +259,14 @@ export function AppShell() {
                   }}
                   options={[
                     ["all", "All sources"],
-                    ...(product?.sources ?? []).map((source) => [source.id, source.name] as const),
+                    ...(product?.sources ?? []).map(
+                      (source) =>
+                        [
+                          source.id,
+                          source.name,
+                          <SourceIcon key={source.id} name={source.name} icon={source.icon} />,
+                        ] as const,
+                    ),
                   ]}
                 />
               )}

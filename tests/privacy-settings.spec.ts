@@ -9,7 +9,7 @@ test("Settings defaults minimize collection without changing existing retention"
     headers: { "content-type": "application/json", "x-piko-admin": "1" },
     body: JSON.stringify({
       name: `Privacy settings ${Date.now()}`,
-      kind: "website",
+
       retention_days: 90,
     }),
   });

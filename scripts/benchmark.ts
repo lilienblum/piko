@@ -93,7 +93,7 @@ try {
   if (!ready) throw new Error(`API startup failed: ${await log.text()}`);
   const products: { id: string; client: Piko }[] = [];
   for (const kind of ["website", "tool"]) {
-    const p = await request("/products", { name: `Benchmark ${kind}`, kind, retention_days: 90 });
+    const p = await request("/products", { name: `Benchmark ${kind}`, retention_days: 90 });
     const k = await request(`/products/${p.id}/keys`, { label: "benchmark" });
     products.push({
       id: p.id,

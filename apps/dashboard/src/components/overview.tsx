@@ -2,15 +2,13 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewLoading, BreakdownLoading } from "./loading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
-import { number, sourceGroups, type Group, type Product } from "@/lib/api";
+import { number, sourceGroups, type Group } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
-import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct, ProductIcon } from "./app-shell";
+import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
 import { Breakdown, BreakdownRows, ErrorState, NoEvents, SeriesChart } from "./shared";
 import { ValueSelect } from "./value-select";
 
@@ -22,93 +20,49 @@ type ChartChoice = {
   property?: "duration_ms";
   unit?: "ms";
 };
-const chartChoices: Record<Product["kind"], ChartChoice[]> = {
-  website: [
-    { id: "count", label: "Page views", measure: "count" },
-    { id: "visitors", label: "Unique visitors", measure: "actors", identity_kind: "visitor" },
-  ],
-  tool: [
-    { id: "count", label: "Command executions", measure: "count" },
-    {
-      id: "installations",
-      label: "Active installations",
-      measure: "actors",
-      identity_kind: "installation",
-    },
-    {
-      id: "average",
-      label: "Average duration",
-      measure: "avg",
-      property: "duration_ms",
-      unit: "ms",
-    },
-    { id: "p95", label: "p95 duration", measure: "p95", property: "duration_ms", unit: "ms" },
-  ],
-  mobile: [
-    { id: "count", label: "Events", measure: "count" },
-    { id: "actors", label: "Identified actors", measure: "actors" },
-  ],
-  generic: [
-    { id: "count", label: "Events", measure: "count" },
-    { id: "actors", label: "Identified actors", measure: "actors" },
-  ],
-};
+const chartChoices: ChartChoice[] = [
+  { id: "count", label: "Events", measure: "count" },
+  { id: "actors", label: "Identified actors", measure: "actors" },
+  { id: "visitors", label: "Unique visitors", measure: "actors", identity_kind: "visitor" },
+  {
+    id: "installations",
+    label: "Active installations",
+    measure: "actors",
+    identity_kind: "installation",
+  },
+  { id: "average", label: "Average duration", measure: "avg", property: "duration_ms", unit: "ms" },
+  { id: "p95", label: "p95 duration", measure: "p95", property: "duration_ms", unit: "ms" },
+];
+const dimensions = [
+  ["source_id", "Sources"],
+  ["source", "Clients"],
+  ["property:path", "Pages"],
+  ["property:command", "Commands"],
+  ["property:referrer", "Referrers"],
+  ["property:utm_source", "Campaign sources"],
+  ["property:utm_campaign", "Campaigns"],
+  ["property:screen", "Screens"],
+  ["property:version", "Versions"],
+  ["property:os", "OS"],
+  ["property:arch", "Architecture"],
+] as const;
 export function Overview() {
-  const { product, sourceId, dashboardKind } = useWorkspace();
-  return product ? (
-    <ProductOverview key={`${product.id}:${sourceId ?? "all"}:${dashboardKind}`} />
-  ) : (
-    <NoProduct />
-  );
+  const { product, sourceId } = useWorkspace();
+  return product ? <ProductOverview key={`${product.id}:${sourceId ?? "all"}`} /> : <NoProduct />;
 }
 function ProductOverview() {
-  const { product, source, sourceId, dashboardKind, range, refresh, refreshKey } = useWorkspace();
-  const web = dashboardKind === "website";
-  const tool = dashboardKind === "tool";
-  const mobile = dashboardKind === "mobile";
-  const dimensions = web
-    ? [
-        ["referrer", "Referrers"],
-        ["utm_source", "Sources"],
-        ["utm_campaign", "Campaigns"],
-      ]
-    : tool
-      ? [
-          ["os", "OS"],
-          ["version", "Versions"],
-          ["arch", "Architecture"],
-        ]
-      : mobile
-        ? [
-            ["screen", "Screens"],
-            ["version", "Versions"],
-            ["os", "OS"],
-          ]
-        : [
-            ["source_id", "Sources"],
-            ["source", "Clients"],
-          ];
-  const [dimension, setDimension] = useState(dimensions[0][0]);
-  const secondaryGroup = web || tool || mobile ? `property:${dimension}` : dimension;
-  const body = {
-    ...range,
-    source_id: sourceId,
-    event: web ? "page_view" : tool ? "command_run" : undefined,
-    measure: "count",
-    group_by: web ? "property:path" : tool ? "property:command" : "name",
-  };
-  const backgroundScope = JSON.stringify([range.from, body.event, body.group_by]);
+  const { product, source, sourceId, range, refresh, refreshKey } = useWorkspace();
+  const [dimension, setDimension] = useState<string>("source_id");
+  const body = { ...range, source_id: sourceId, measure: "count", group_by: "name" };
+  const backgroundScope = JSON.stringify([range.from, body.group_by]);
   const query = useQuery(product?.id, body, refreshKey, backgroundScope);
   const secondary = useQuery(
     product?.id,
-    {
-      ...body,
-      group_by: secondaryGroup,
-    },
+    { ...body, group_by: dimension },
     refreshKey,
-    `${backgroundScope}:${secondaryGroup}`,
+    `${backgroundScope}:${dimension}`,
   );
-  const choices = chartChoices[dashboardKind];
+  const choices = chartChoices;
   const [chartMetric, setChartMetric] = useState("count");
   const [chartInterval, setChartInterval] = useState("day");
   const [chartRetry, setChartRetry] = useState(0);
@@ -136,7 +90,7 @@ function ProductOverview() {
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
-    const context = { productId: product.id, sourceId, ...range, event: body.event };
+    const context = { productId: product.id, sourceId, ...range };
     if (groupBy === "source_id" && typeof group.label === "string")
       return { ...context, sourceId: group.label };
     if (groupBy === "name" && typeof group.label === "string")
@@ -148,80 +102,31 @@ function ProductOverview() {
   };
   const refreshError = query.error || (secondary.data && secondary.error);
   const s = query.data?.summary;
-  const metrics = (
-    web
-      ? [
-          {
-            label: "Page views",
-            value: number(s?.total),
-            detail: "Every visit to a page",
-          },
-          {
-            label: "Unique visitors",
-            value: s?.total && !s.visitors ? "—" : number(s?.visitors),
-            detail:
-              s?.total && !s.visitors ? "No visitor IDs received" : "With an explicit visitor ID",
-          },
-          {
-            label: "Sessions",
-            value: s?.total && !s.sessions ? "—" : number(s?.sessions),
-            detail: "Distinct visitor + session pairs",
-          },
-          {
-            label: "Views per session",
-            value: s?.sessions ? number((s?.session_views ?? 0) / s.sessions, 1) : "—",
-            detail: "Views with an explicit session ID",
-          },
-        ]
-      : tool
-        ? [
-            {
-              label: "Command executions",
-              value: number(s?.total),
-              detail: "Across all commands",
-            },
-            {
-              label: "Active installations",
-              value: s?.total && !s.installations ? "—" : number(s?.installations),
-              detail: "With an explicit installation ID",
-            },
-            {
-              label: "Success rate",
-              value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
-              detail: "Commands reporting success",
-            },
-            {
-              label: "Average duration",
-              value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
-              detail: `p95 · ${number(s?.p95_duration)} ms`,
-            },
-          ]
-        : [
-            {
-              label: "Events",
-              value: number(s?.total),
-              detail: source ? "Events from this source" : "All sources, one project",
-            },
-            {
-              label: "Identified actors",
-              value: mobile && s?.total && !s.actors ? "—" : number(s?.actors),
-              detail:
-                mobile && s?.total && !s.actors
-                  ? "No actor IDs received"
-                  : "Identity kinds counted separately",
-            },
-            {
-              label: "Website visitors",
-              value: number(s?.visitors),
-              detail: "Explicit visitor identities",
-            },
-            {
-              label: "Installations",
-              value: number(s?.installations),
-              detail: "Explicit installation identities",
-            },
-          ]
-  ).slice(0, mobile ? 2 : 4);
+  const metrics = [
+    {
+      label: "Events",
+      value: number(s?.total),
+      detail: source ? "Events from this source" : "All sources, one project",
+    },
+    {
+      label: "Identified actors",
+      value: s?.total && !s.actors ? "—" : number(s?.actors),
+      detail: s?.total && !s.actors ? "No actor IDs received" : "Identity kinds counted separately",
+    },
+    {
+      label: "Success rate",
+      value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
+      detail: "Events reporting a boolean success value",
+    },
+    {
+      label: "Average duration",
+      value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
+      detail:
+        s?.p95_duration == null
+          ? "No numeric durations received"
+          : `p95 · ${number(s.p95_duration)} ms`,
+    },
+  ];
   const chart = (
     <SeriesChart
       data={chartResult.data}
@@ -230,7 +135,7 @@ function ProductOverview() {
         choice.measure === "actors"
           ? `${choice.identity_kind === "visitor" ? "Visitors" : choice.identity_kind === "installation" ? "Installations" : "Identities"} counted once per ${bucket}.`
           : choice.unit
-            ? `${choice.measure === "p95" ? "95th-percentile" : "Average"} execution time per ${bucket}, in milliseconds.`
+            ? `${choice.measure === "p95" ? "95th-percentile" : "Average"} duration per ${bucket}, in milliseconds.`
             : `${choice.label} per ${bucket}, including anonymous activity.`
       }
       label={choice.label}
@@ -282,25 +187,9 @@ function ProductOverview() {
     <>
       <PageHeader
         title={source ? `${product.name} / ${source.name}` : product.name}
-        description={
-          web
-            ? "Page views, visitors, and how people find your website."
-            : tool
-              ? "See how your tool performs in the hands of developers."
-              : "Event activity across your project."
-        }
+        description="Events, identities, and performance across your project."
       >
         <div className="heading-actions">
-          <Badge variant="outline">
-            <ProductIcon kind={dashboardKind} />
-            {web
-              ? "Website"
-              : tool
-                ? "Developer tool"
-                : dashboardKind === "mobile"
-                  ? "Mobile app"
-                  : "Project"}
-          </Badge>
           <Button variant="outline" asChild>
             <Link to="/explore">
               Explore events
@@ -340,92 +229,49 @@ function ProductOverview() {
                 {chart}
                 <div className="breakdowns">
                   <Breakdown
-                    title={web ? "Top pages" : tool ? "Top commands" : "Top events"}
-                    description={
-                      web
-                        ? "Page views by path"
-                        : tool
-                          ? "What developers reach for most"
-                          : "Events ranked by count"
-                    }
+                    title="Top events"
+                    description="Events ranked by count"
                     groups={query.data.groups}
                     total={s?.total}
                     drilldown={(group) => drilldown(body.group_by, group)}
                   />
-                  <Tabs value={dimension} onValueChange={setDimension}>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>
-                          {web
-                            ? "Acquisition"
-                            : tool
-                              ? "Environment"
-                              : mobile
-                                ? "App activity"
-                                : "Sources"}
-                        </CardTitle>
-                        <CardDescription>
-                          {web
-                            ? "How visitors find your website"
-                            : tool
-                              ? "Where your tool is running"
-                              : mobile
-                                ? "Screens and app versions"
-                                : "Where events are collected"}
-                        </CardDescription>
-                        <TabsList
-                          variant="line"
-                          aria-label={
-                            web
-                              ? "Acquisition breakdown"
-                              : tool
-                                ? "Environment breakdown"
-                                : mobile
-                                  ? "App breakdown"
-                                  : "Source breakdown"
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Breakdown</CardTitle>
+                      <CardDescription>Choose a dimension to look closer.</CardDescription>
+                      <ValueSelect
+                        label="Breakdown"
+                        value={dimension}
+                        onValueChange={setDimension}
+                        options={dimensions}
+                      />
+                    </CardHeader>
+                    <CardContent>
+                      {secondary.error && !secondary.data ? (
+                        <ErrorState message={secondary.error} retry={refresh} />
+                      ) : secondary.loading ? (
+                        <BreakdownLoading />
+                      ) : (
+                        <BreakdownRows
+                          title={
+                            dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"
                           }
-                          className="breakdown-tabs"
-                        >
-                          {dimensions.map(([value, label]) => (
-                            <TabsTrigger key={value} value={value}>
-                              {label}
-                            </TabsTrigger>
-                          ))}
-                        </TabsList>
-                      </CardHeader>
-                      <TabsContent value={dimension}>
-                        <CardContent>
-                          {secondary.error && !secondary.data ? (
-                            <ErrorState message={secondary.error} retry={refresh} />
-                          ) : secondary.loading ? (
-                            <BreakdownLoading />
-                          ) : (
-                            <BreakdownRows
-                              title={
-                                dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"
-                              }
-                              groups={
-                                secondaryGroup === "source_id"
-                                  ? sourceGroups(secondary.data?.groups ?? [], product.sources)
-                                  : (secondary.data?.groups ?? [])
-                              }
-                              total={secondary.data?.summary.total}
-                              drilldown={(group) => drilldown(secondaryGroup, group)}
-                            />
-                          )}
-                        </CardContent>
-                      </TabsContent>
-                    </Card>
-                  </Tabs>
+                          groups={
+                            dimension === "source_id"
+                              ? sourceGroups(secondary.data?.groups ?? [], product.sources)
+                              : (secondary.data?.groups ?? [])
+                          }
+                          total={secondary.data?.summary.total}
+                          drilldown={(group) => drilldown(dimension, group)}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
                 <div className="insight-note">
                   <span className="status-dot" />
                   {product.retention_days}-day retention<span>·</span>
-                  {web
-                    ? "Visitors are counted only when a visitor ID is sent."
-                    : tool
-                      ? "Installations are counted only when an installation ID is sent."
-                      : "No identity is inferred from IP addresses or user agents."}
+                  No identity is inferred from IP addresses or user agents.
                   <Link to="/settings">
                     Manage collection
                     <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" />

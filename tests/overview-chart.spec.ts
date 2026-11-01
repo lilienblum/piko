@@ -33,10 +33,9 @@ test.beforeAll(async () => {
   const suffix = Date.now();
   const timestamp = new Date(Date.now() - 3600000).toISOString();
   for (const name of ["website", "tool", "generic", "anonymous"] as const) {
-    const kind = name === "anonymous" ? "tool" : name;
     const product = await admin("/products", {
       name: `Chart ${name} ${suffix}`,
-      kind,
+
       retention_days: 180,
     });
     products[name] = product;
@@ -127,7 +126,6 @@ test("visitor chart excludes installation identities without shrinking overview 
   expect(Math.max(...daily.series.map((point) => point.value ?? 0))).toBe(2);
   expect((await visitors).request().postDataJSON()).toMatchObject({
     identity_kind: "visitor",
-    event: "page_view",
     page_size: 1,
   });
   await expect(page.locator(".metric-value").first()).toHaveText("6");
@@ -156,7 +154,6 @@ test("CLI duration aggregates ignore strings and booleans, and product switches 
   await select(page, "Chart metric", "Average duration");
   expect((await result(average)).summary.value).toBe(200);
   expect((await average).request().postDataJSON()).toMatchObject({
-    event: "command_run",
     property: "duration_ms",
   });
   const p95 = chartResponse(page, "p95");

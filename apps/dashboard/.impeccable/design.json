@@ -701,7 +701,7 @@
       "name": "Source badge",
       "kind": "chip",
       "refersTo": "badge-outline",
-      "description": "Quiet source/type annotation; a non-interactive label.",
+      "description": "Quiet metadata annotation; a non-interactive label.",
       "html": "<span class=\"ds-badge\">Website</span>",
       "css": ".ds-badge{display:inline-flex;align-items:center;padding:2px 8px;border:1px solid var(--border);border-radius:9999px;color:var(--foreground);background:transparent;font:500 12px/1.5 \"Public Sans Variable\",sans-serif;white-space:nowrap;}"
     },

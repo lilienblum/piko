@@ -6,7 +6,7 @@ test.beforeAll(async () => {
   const response = await fetch(`${endpoint}/api/products`, {
     method: "POST",
     headers: { "x-piko-admin": "1", "content-type": "application/json" },
-    body: JSON.stringify({ name: `SSR ${Date.now()}`, kind: "website", retention_days: 30 }),
+    body: JSON.stringify({ name: `SSR ${Date.now()}`, retention_days: 30 }),
   });
   expect(response.ok).toBe(true);
   project = await response.json();

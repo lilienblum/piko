@@ -1,28 +1,32 @@
 import { useState, type FormEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Edit02Icon } from "@hugeicons/core-free-icons";
-import { api, sourceKinds, type Product, type Source } from "@/lib/api";
-import { ProductIcon, useWorkspace } from "./app-shell";
+import { api, type Product, type Source } from "@/lib/api";
+import { useWorkspace } from "./app-shell";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "./ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Spinner } from "./ui/spinner";
-import { ValueSelect } from "./value-select";
+import { SourceIcon, SourceIconPicker } from "./source-icon";
+import type { SourceIconId } from "@/lib/source-icons";
 import { ErrorState } from "./shared";
 
 export function SourceSettings({ product }: { product: Product }) {
   const { reload } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Source>();
-  const [draft, setDraft] = useState({ name: "", kind: "website" });
+  const [draft, setDraft] = useState<{ name: string; icon: SourceIconId | null }>({
+    name: "",
+    icon: null,
+  });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   function show(source?: Source) {
     setEditing(source);
-    setDraft(source ? { name: source.name, kind: source.kind } : { name: "", kind: "website" });
+    setDraft(source ? { name: source.name, icon: source.icon } : { name: "", icon: null });
     setSaved(false);
     setError("");
     setOpen(true);
@@ -74,11 +78,10 @@ export function SourceSettings({ product }: { product: Product }) {
           {(product.sources ?? []).map((source) => (
             <div className="source-row" key={source.id}>
               <span className="source-mark">
-                <ProductIcon kind={source.kind} />
+                <SourceIcon name={source.name} icon={source.icon} />
               </span>
               <div className="source-copy">
                 <strong>{source.name}</strong>
-                <span>{sourceKinds.find(([kind]) => kind === source.kind)?.[1]}</span>
               </div>
               <Button
                 size="sm"
@@ -125,14 +128,16 @@ export function SourceSettings({ product }: { product: Product }) {
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="source-kind">Source type</FieldLabel>
-                <ValueSelect
-                  id="source-kind"
-                  value={draft.kind}
-                  onValueChange={(kind) => setDraft({ ...draft, kind })}
-                  options={sourceKinds}
+                <FieldLabel htmlFor="source-icon">Icon</FieldLabel>
+                <SourceIconPicker
+                  name={draft.name}
+                  value={draft.icon}
+                  onChange={(icon) => setDraft({ ...draft, icon })}
                   disabled={busy || saved}
                 />
+                <FieldDescription>
+                  Automatic follows the source name. Icons only change its appearance.
+                </FieldDescription>
               </Field>
             </FieldGroup>
             {error && <ErrorState message={error} />}

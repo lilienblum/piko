@@ -100,34 +100,39 @@ impl Event {
 pub struct Product {
     pub id: String,
     pub name: String,
-    pub kind: String,
     pub retention_days: i64,
     pub created_at: String,
     pub sources: Vec<Source>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Source {
+    pub icon: Option<String>,
     pub id: String,
     pub product_id: String,
     pub name: String,
-    pub kind: String,
     pub created_at: String,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SourceInput {
+    pub icon: Option<String>,
     pub name: String,
-    pub kind: String,
 }
 impl SourceInput {
     pub fn validate(&self) -> ApiResult<()> {
-        if self.name.trim().is_empty()
-            || self.name.len() > 80
-            || !["website", "mobile", "tool", "generic"].contains(&self.kind.as_str())
-        {
+        if self.icon.as_deref().is_some_and(|icon| {
+            ![
+                "website", "ios", "android", "mobile", "terminal", "desktop", "server", "code",
+                "package", "game", "generic",
+            ]
+            .contains(&icon)
+        }) {
             return Err(ApiError::bad(
-                "Use a source name of 1–80 bytes and kind website/mobile/tool/generic",
+                "Unknown source icon; use website/ios/android/mobile/terminal/desktop/server/code/package/game/generic, or null for automatic",
             ));
+        }
+        if self.name.trim().is_empty() || self.name.len() > 80 {
+            return Err(ApiError::bad("Use a source name of 1–80 bytes"));
         }
         Ok(())
     }
@@ -136,18 +141,16 @@ impl SourceInput {
 #[serde(deny_unknown_fields)]
 pub struct ProductInput {
     pub name: String,
-    pub kind: String,
     pub retention_days: i64,
 }
 impl ProductInput {
     pub fn validate(&self) -> ApiResult<()> {
         if self.name.trim().is_empty()
             || self.name.len() > 80
-            || !["website", "mobile", "tool", "generic"].contains(&self.kind.as_str())
             || !(1..=3650).contains(&self.retention_days)
         {
             return Err(ApiError::bad(
-                "Use a name of 1–80 bytes, kind website/mobile/tool/generic, and retention_days 1–3650",
+                "Use a name of 1–80 bytes and retention_days 1–3650",
             ));
         }
         Ok(())

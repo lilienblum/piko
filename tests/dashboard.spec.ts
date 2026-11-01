@@ -32,7 +32,7 @@ const range = () => ({
 test.beforeAll(async () => {
   const suffix = Date.now();
   for (const kind of ["website", "tool", "generic"]) {
-    const p = await admin("/products", { name: `E2E ${kind} ${suffix}`, kind, retention_days: 30 });
+    const p = await admin("/products", { name: `E2E ${kind} ${suffix}`, retention_days: 30 });
     const { key } = await admin(`/products/${p.id}/keys`, { label: "E2E fixture" });
     const data = { ...p, key };
     if (kind === "website") web = data;
@@ -93,12 +93,10 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await openWorkspace(page);
   await select(page, "Select project", web.name);
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
-  await expect(page.getByText("Top pages", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Top events", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".metric-value").first()).toHaveText("32");
   await select(page, "Select project", tool.name);
-  await expect(
-    page.locator(".metrics").getByText("Command executions", { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".metrics").getByText("Events", { exact: true })).toBeVisible();
   await expect(page.locator(".metric-value").nth(2)).toHaveText("50%");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await select(page, "Measure", "Numeric average");
@@ -126,8 +124,7 @@ test("create product, edit retention, create and revoke a key", async ({ page })
   const dialog = page.getByRole("dialog");
   const name = `UI product ${Date.now()}`;
   await dialog.getByLabel("Project name").fill(name);
-  await dialog.getByRole("combobox", { name: "First source type" }).click();
-  await page.getByRole("option", { name: "Other" }).click();
+  await expect(dialog.getByLabel("First source type")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Create project", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByLabel("Project name")).toHaveValue(name);
@@ -172,7 +169,7 @@ test("browser tracker sends page/SPA/custom events, preserves identity, and reta
 }) => {
   const p = await admin("/products", {
     name: `Tracker ${Date.now()}`,
-    kind: "website",
+
     retention_days: 30,
   });
   const { key } = await admin(`/products/${p.id}/keys`, { label: "Tracker" });
@@ -314,6 +311,7 @@ test("website breakdown links preserve product and dates across reload and histo
 }) => {
   await openWorkspace(page);
   await select(page, "Select project", web.name);
+  await select(page, "Breakdown", "Pages");
   const docs = page.getByRole("link", { name: "Explore /docs", exact: true });
   await expect(docs).toContainText("50%");
   const clicked = new URL((await docs.getAttribute("href")) ?? "", dashboard);
@@ -327,7 +325,6 @@ test("website breakdown links preserve product and dates across reload and histo
   expect((await request).postDataJSON()).toMatchObject({
     from: selection.from,
     to: selection.to,
-    event: "page_view",
     filters: [{ property: "path", op: "eq", value: "/docs" }],
   });
   await expect(page.getByText("across 16 matching events")).toBeVisible();
@@ -355,21 +352,22 @@ test("website breakdown links preserve product and dates across reload and histo
   expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
 });
 
-test("acquisition tabs drill into referrers and campaigns, with missing values informational", async ({
+test("breakdown choices drill into referrers and campaigns, with missing values informational", async ({
   page,
 }) => {
   await openWorkspace(page);
   await select(page, "Select project", web.name);
+  await select(page, "Breakdown", "Referrers");
   await page.getByRole("link", { name: "Explore Direct", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("referrer");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await page.getByRole("tab", { name: "Sources", exact: true }).click();
+  await select(page, "Breakdown", "Campaign sources");
   await page.getByRole("link", { name: "Explore newsletter", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("utm_source");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await page.getByRole("tab", { name: "Campaigns", exact: true }).click();
+  await select(page, "Breakdown", "Campaigns");
   await expect(page.getByText("Not provided", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore Not provided" })).toHaveCount(0);
   await page.getByRole("link", { name: "Explore launch", exact: true }).click();
@@ -387,7 +385,7 @@ test("tool command and version links work in the narrow dark layout", async ({ p
   await openWorkspace(page);
   await appearance(page, "Dark");
   await select(page, "Select project", tool.name);
-  await page.getByRole("tab", { name: "Versions", exact: true }).click();
+  await select(page, "Breakdown", "Versions");
   await expect(page.getByRole("link", { name: "Explore 1.0.0", exact: true })).toBeVisible();
   await page.screenshot({
     path: test.info().outputPath("tool-breakdown-dark-mobile.png"),
@@ -397,10 +395,11 @@ test("tool command and version links work in the narrow dark layout", async ({ p
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("version");
   await page.goBack();
+  await select(page, "Breakdown", "Commands");
   await page.getByRole("link", { name: "Explore build", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
-    "command_run",
+    "All events",
   );
   await select(page, "Measure", "Numeric average");
   await page.getByRole("button", { name: "Run query" }).click();
@@ -413,7 +412,7 @@ test("generic client links use envelope filters and shares include groups outsid
 }) => {
   await openWorkspace(page);
   await select(page, "Select project", generic.name);
-  await page.getByRole("tab", { name: "Clients", exact: true }).click();
+  await select(page, "Breakdown", "Clients");
   const source = page.getByRole("link", { name: "Explore sdk", exact: true });
   await expect(source).toContainText("25%");
   const request = page.waitForRequest(
@@ -479,11 +478,12 @@ test("drilldown URLs preserve primitive property types and reject unsafe or inco
   expect(requests).toEqual([]);
 });
 
-test("secondary breakdown tabs show pending and retry states without stale rows", async ({
+test("secondary breakdown choices show pending and retry states without stale rows", async ({
   page,
 }) => {
   await openWorkspace(page);
   await select(page, "Select project", web.name);
+  await select(page, "Breakdown", "Referrers");
   await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).toBeVisible();
   let release = () => {};
   const pending = new Promise<void>((resolve) => {
@@ -500,7 +500,7 @@ test("secondary breakdown tabs show pending and retry states without stale rows"
     }
   });
   try {
-    await page.getByRole("tab", { name: "Sources", exact: true }).click();
+    await select(page, "Breakdown", "Campaign sources");
     await expect(page.getByRole("status", { name: "Loading breakdown" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).not.toBeVisible();
     release();
@@ -595,6 +595,7 @@ test("property inspection filters the server using applied context and retains b
 }) => {
   await openWorkspace(page);
   await select(page, "Select project", tool.name);
+  await select(page, "Breakdown", "Commands");
   await page.getByRole("link", { name: "Explore build", exact: true }).click();
   await select(page, "Measure", "Numeric average");
   const stream = page.locator(".event-card");
@@ -611,7 +612,6 @@ test("property inspection filters the server using applied context and retains b
   );
   await inspector.getByRole("button", { name: "Filter by success", exact: true }).click();
   expect((await request).postDataJSON()).toMatchObject({
-    event: "command_run",
     measure: "count",
     page: 0,
     filters: [{ property: "success", op: "eq", value: false }],

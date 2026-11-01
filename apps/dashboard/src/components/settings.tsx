@@ -37,10 +37,11 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { api, sourceKinds, type Product } from "@/lib/api";
+import { api, type Product } from "@/lib/api";
 import { PageHeader, useWorkspace } from "./app-shell";
 import { ErrorState } from "./shared";
 import { SourceSettings } from "./source-settings";
+import { SourceIcon } from "./source-icon";
 type KeyInfo = {
   source_id: string;
   id: string;
@@ -55,7 +56,7 @@ function ProductFields({
   prefix,
   disabled = false,
 }: {
-  value: { name: string; kind: string; retention_days: number };
+  value: { name: string; retention_days: number };
   onChange: (v: typeof value) => void;
   prefix: string;
   disabled?: boolean;
@@ -74,21 +75,6 @@ function ProductFields({
           onChange={(e) => onChange({ ...value, name: e.target.value })}
         />
       </Field>
-      {prefix === "create" && (
-        <Field>
-          <FieldLabel htmlFor={`${prefix}-kind`}>First source type</FieldLabel>
-          <ValueSelect
-            id={`${prefix}-kind`}
-            disabled={disabled}
-            value={value.kind}
-            onValueChange={(kind) => onChange({ ...value, kind })}
-            options={sourceKinds}
-          />
-          <FieldDescription>
-            Start with one source. Add websites, mobile apps, and tools to this project later.
-          </FieldDescription>
-        </Field>
-      )}
       <Field>
         <FieldLabel htmlFor={`${prefix}-retention`}>Retention (days)</FieldLabel>
         <Input
@@ -111,7 +97,7 @@ function ProductFields({
 export function Settings() {
   const { product, reload } = useWorkspace();
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({ name: "", kind: "website", retention_days: 30 });
+  const [draft, setDraft] = useState({ name: "", retention_days: 30 });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<Product>();
@@ -126,7 +112,7 @@ export function Settings() {
       setCreatedProduct(saved);
       await reload(saved.id);
       setOpen(false);
-      setDraft({ name: "", kind: "website", retention_days: 30 });
+      setDraft({ name: "", retention_days: 30 });
       setCreatedProduct(undefined);
     } catch (e) {
       setError(
@@ -211,7 +197,6 @@ function ProductSettings({ product }: { product: Product }) {
   const keySource = product.sources?.find((source) => source.id === keySourceId);
   const [draft, setDraft] = useState({
     name: product.name,
-    kind: product.kind as string,
     retention_days: product.retention_days,
   });
   const [keyState, setKeyState] = useState<
@@ -226,9 +211,7 @@ function ProductSettings({ product }: { product: Product }) {
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState<"save" | "create-key" | "revoke" | null>(null);
   const busy = pending !== null;
-  const [integration, setIntegration] = useState(
-    keySource?.kind === "tool" ? "rust" : keySource?.kind === "mobile" ? "http" : "browser",
-  );
+  const [integration, setIntegration] = useState("browser");
   const [copied, setCopied] = useState(false);
   const [revoke, setRevoke] = useState<KeyInfo | null>(null);
   const [revokeError, setRevokeError] = useState("");
@@ -444,15 +427,16 @@ function ProductSettings({ product }: { product: Product }) {
                     id="key-source"
                     value={keySourceId}
                     disabled={busy}
-                    options={(product.sources ?? []).map((source) => [source.id, source.name])}
+                    icon={<SourceIcon name={keySource?.name ?? ""} icon={keySource?.icon} />}
+                    options={(product.sources ?? []).map((source) => [
+                      source.id,
+                      source.name,
+                      <SourceIcon key={source.id} name={source.name} icon={source.icon} />,
+                    ])}
                     onValueChange={(id) => {
                       setKeySourceId(id);
                       setCreatedKey(null);
                       setCopied(false);
-                      const kind = product.sources?.find((source) => source.id === id)?.kind;
-                      setIntegration(
-                        kind === "tool" ? "rust" : kind === "mobile" ? "http" : "browser",
-                      );
                     }}
                   />
                 </Field>

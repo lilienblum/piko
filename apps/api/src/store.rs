@@ -115,7 +115,7 @@ impl Store {
 pub fn product(db: &rusqlite::Connection, id: &str) -> ApiResult<Product> {
     let mut product = db
         .query_row(
-            "SELECT id,name,kind,retention_days,created_at FROM products WHERE id=?",
+            "SELECT id,name,retention_days,created_at FROM products WHERE id=?",
             [id],
             row_product,
         )
@@ -129,17 +129,14 @@ fn row_product(r: &rusqlite::Row<'_>) -> rusqlite::Result<Product> {
     Ok(Product {
         id: r.get(0)?,
         name: r.get(1)?,
-        kind: r.get(2)?,
-        retention_days: r.get(3)?,
-        created_at: r.get(4)?,
+        retention_days: r.get(2)?,
+        created_at: r.get(3)?,
         sources: Vec::new(),
     })
 }
 pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
     let mut q = db
-        .prepare(
-            "SELECT id,name,kind,retention_days,created_at FROM products ORDER BY created_at,id",
-        )
+        .prepare("SELECT id,name,retention_days,created_at FROM products ORDER BY created_at,id")
         .map_err(anyhow::Error::from)?;
     let mut products = q
         .query_map([], row_product)
@@ -165,20 +162,10 @@ pub fn save_product(
         None => uuid::Uuid::new_v4().to_string(),
     };
     let tx = db.unchecked_transaction().map_err(anyhow::Error::from)?;
-    tx.execute("INSERT INTO products VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET name=?2,kind=?3,retention_days=?4",params![id,input.name.trim(),input.kind,input.retention_days,chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
+    tx.execute("INSERT INTO products(id,name,retention_days,created_at) VALUES (?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET name=?2,retention_days=?3",params![id,input.name.trim(),input.retention_days,chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
     tx.execute(
-        "INSERT OR IGNORE INTO sources(id,product_id,name,kind,created_at) VALUES (?1,?1,?2,?3,?4)",
-        params![
-            id,
-            match input.kind.as_str() {
-                "website" => "Website",
-                "tool" => "CLI",
-                "mobile" => "Mobile app",
-                _ => "Events",
-            },
-            input.kind,
-            chrono::Utc::now().to_rfc3339()
-        ],
+        "INSERT OR IGNORE INTO sources(id,product_id,name,created_at) VALUES (?1,?1,'Events',?2)",
+        params![id, chrono::Utc::now().to_rfc3339()],
     )
     .map_err(anyhow::Error::from)?;
     tx.commit().map_err(anyhow::Error::from)?;

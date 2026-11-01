@@ -6,8 +6,8 @@ The dashboard talks to this API over HTTP; the API does not serve frontend files
 
 | Method     | Path                            | Body/result                                                         |
 | ---------- | ------------------------------- | ------------------------------------------------------------------- |
-| GET / POST | `/api/products`                 | List / create `{ name, kind, retention_days }`                      |
-| PATCH      | `/api/products/:id`             | Edit name and retention (1–3650 days); legacy kind is retained      |
+| GET / POST | `/api/products`                 | List / create `{ name, retention_days }`                            |
+| PATCH      | `/api/products/:id`             | Edit name and retention (1–3650 days)                               |
 | GET / POST | `/api/products/:id/keys`        | List metadata / create `{ label, source_id }` → full key shown once |
 | DELETE     | `/api/products/:id/keys/:keyId` | Revoke key, scoped to product                                       |
 | POST       | `/api/products/:id/query`       | Parameterized analytics query below                                 |
@@ -18,18 +18,22 @@ Management mutations require `X-Piko-Admin: 1`. This public request marker preve
 
 ## Projects and sources
 
-A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. Its `kind` is `website`, `mobile`, `tool`, or `generic` and determines dashboard defaults. Source names are unique within a project (ASCII case-insensitive). Creating a project automatically creates an initial source using the requested `kind`. Project responses include `sources` with `id`, `product_id`, `name`, `kind`, and `created_at`.
+A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. All sources have the same analytics capabilities; there is no project or source type. Source names are unique within a project (ASCII case-insensitive). Creating a project automatically creates an initial source named **Events**, which can be renamed. Project responses include `sources` with `id`, `product_id`, `name`, `icon`, and `created_at`.
 
 - `GET /api/products/:id/sources`: list sources.
-- `POST /api/products/:id/sources` with `{ "name": "iOS app", "kind": "mobile" }`: create a source.
-- `PATCH /api/products/:id/sources/:sourceId` with `{ "name", "kind" }`: edit that source without changing its ID or historical attribution.
-- `POST /api/products/:id/keys` with `{ "label": "iOS release", "source_id": "SOURCE_UUID" }`: create a write-only key for that source. Omitting `source_id` selects the initial source for existing integrations. Key metadata and creation responses include `source_id`.
+- `POST /api/products/:id/sources` with `{ "name": "iOS app" }`: create a source with an automatic icon.
+- `PATCH /api/products/:id/sources/:sourceId` with `{ "name": "iOS app", "icon": "ios" }`: save a name and optional icon without changing its ID or historical attribution. As with the existing edit endpoint, send the complete editable representation; an omitted or null icon selects Automatic.
+- `POST /api/products/:id/keys` with `{ "label": "iOS release", "source_id": "SOURCE_UUID" }`: create a write-only key for that source. Omitting `source_id` selects the initial source. Key metadata and creation responses include `source_id`.
 
-Keys cannot move between sources or projects. Foreign-project source IDs are rejected. Source deletion and merging are not supported; revoke a source's keys to stop new authorized intake. A project edit's legacy `kind` field does not change existing source types; use the source endpoint.
+`icon` accepts `website`, `ios`, `android`, `mobile`, `terminal`, `desktop`, `server`, `code`, `package`, `game`, or `generic`. An omitted/null value is stored as null: the dashboard derives a visual icon from common platform words in the current name, with a cube fallback. Explicit choices stay fixed across renames. Icons never filter events, select metrics or integration languages, or infer user/device identity. Unknown icons return 400; obsolete `kind` fields are rejected with 422.
+
+Keys cannot move between sources or projects. Foreign-project source IDs are rejected. Source deletion and merging are not supported; revoke a source's keys to stop new authorized intake.
 
 ### Existing data
 
-Stop the API and back up the whole data directory before updating. The SQLite migration creates one initial source per existing project and assigns its existing keys. Each DuckDB file receives an additive `source_id` column when opened; historical events belong to that initial source. The migration does not guess source attribution from the old free-form `source` label. Counts, event IDs, and key values remain unchanged. Repeated startup is idempotent. Older API binaries cannot write this expanded schema; downgrading requires restoring the complete pre-upgrade backup.
+Stop the API and back up the whole data directory before updating. Catalog schema 3 adds nullable `sources.icon` and removes the obsolete `kind` columns from projects and sources. Existing sources use Automatic, retaining their names, IDs, creation times and key assignments. The migration does not rewrite analytics events. Repeated startup preserves subsequent icon choices.
+
+For catalogs predating Sources, migration first creates one initial source per project and assigns its existing keys. Each older DuckDB file receives an additive `source_id` column when opened; historical events belong to that initial source. Attribution is never guessed from the free-form event `source` label. Counts, event IDs, and key values remain unchanged. Older API binaries cannot use the new catalog; downgrading requires restoring the complete pre-upgrade backup. Management clients must stop sending `kind`; ingestion SDKs are unchanged.
 
 ## Ingestion
 

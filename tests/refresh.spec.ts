@@ -25,7 +25,7 @@ async function holdQuery(page: Page) {
 test.beforeAll(async () => {
   product = await admin("/products", {
     name: `Refresh ${Date.now()}`,
-    kind: "website",
+
     retention_days: 30,
   });
   const { key } = await admin(`/products/${product.id}/keys`, { label: "Refresh regression" });

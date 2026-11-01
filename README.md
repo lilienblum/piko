@@ -61,7 +61,7 @@ Under Tako, data lives in `$TAKO_DATA_DIR` (locally `.tako/data/app`); standalon
 
 ## Use it
 
-1. **Settings:** create a project, then add named **sources** such as Website, iOS app, or CLI. Source types are website, mobile app, developer tool, and other; no URL is needed. Create a key for a specific source and copy it while visible. Only its SHA-256 hash and display prefix are stored.
+1. **Settings:** create a project, then add named **sources** such as Website, iOS app, or CLI. All sources use the same analytics UI. Icons follow the source name automatically, or can be chosen from a predefined Hugeicons set; no URL is needed. Create a key for a specific source and copy it while visible. Only its SHA-256 hash and display prefix are stored.
 2. **Overview:** select a project, source (or **All sources**), and date range. Website sources default to `page_view`; tools to `command_run`; mobile/other sources and mixed projects show all events. A combined project shares storage and retention. Missing identity or duration is shown honestly as unavailable.
 3. **Explore:** select an event, measure, grouping, and optional typed property filter. Counts, distinct actors, numeric sum/average, and duration p50/p95 run in DuckDB. Charts, grouping, filtering, and event pagination are server-side. Click an event for its original typed envelope.
 

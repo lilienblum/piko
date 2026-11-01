@@ -1,21 +1,15 @@
-export type SourceKind = "website" | "mobile" | "tool" | "generic";
+import type { SourceIconId } from "./source-icons";
+
 export type Source = {
   id: string;
   product_id: string;
   name: string;
-  kind: SourceKind;
+  icon: SourceIconId | null;
   created_at: string;
 };
-export const sourceKinds = [
-  ["website", "Website"],
-  ["mobile", "Mobile app"],
-  ["tool", "Developer tool"],
-  ["generic", "Other"],
-] as const;
 export type Product = {
   id: string;
   name: string;
-  kind: SourceKind;
   sources: Source[];
   retention_days: number;
   created_at: string;

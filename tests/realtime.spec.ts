@@ -18,7 +18,7 @@ async function admin(path: string, body?: unknown) {
 async function fixture(kind: "website" | "tool", count: number): Promise<Fixture> {
   const product = await admin("/products", {
     name: `Live ${kind} ${crypto.randomUUID().slice(0, 8)}`,
-    kind,
+
     retention_days: 30,
   });
   const { key } = await admin(`/products/${product.id}/keys`, { label: "Realtime test" });

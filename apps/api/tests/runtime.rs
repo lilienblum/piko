@@ -116,7 +116,7 @@ async fn standalone_process_preserves_io_exclusivity_and_commits_across_crash() 
         .json(
             &client,
             "/api/products",
-            json!({"name":"Crash recovery","kind":"tool","retention_days":30}),
+            json!({"name":"Crash recovery","retention_days":30}),
         )
         .await;
     let id = product["id"].as_str().unwrap();

@@ -13,7 +13,7 @@ async function request(path: string, body: unknown) {
 }
 const product = await request("/products", {
   name: "Rust CLI example",
-  kind: "tool",
+
   retention_days: 30,
 });
 const { key } = await request(`/products/${product.id}/keys`, { label: "CLI example" });

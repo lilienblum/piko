@@ -1048,13 +1048,7 @@ h1 {
   height: 12px;
   color: var(--muted-foreground);
 }
-.breakdown-tabs {
-  margin-top: 8px;
-  max-width: 100%;
-}
-.breakdown-tabs [data-slot="tabs-trigger"] {
-  font-size: 12px;
-}
+
 .drilldown-context {
   display: flex;
   justify-content: space-between;
@@ -1651,10 +1645,7 @@ h1 {
 .source-copy strong {
   overflow-wrap: anywhere;
 }
-.source-copy span {
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
+
 @media (max-width: 1150px) {
   .topbar {
     flex-wrap: wrap;

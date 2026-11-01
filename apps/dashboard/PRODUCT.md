@@ -16,7 +16,7 @@ Provide a clear, minimal, self-hosted view of product usage. Success means movin
 
 ## Positioning
 
-Projects group named website, mobile app, developer-tool, and generic sources under one typed event model and project-scoped storage. Sources have separate ingestion keys, combined or filtered analytics, and shared project retention. Collection does not require a URL or infer identity from IP/user-agent information.
+Projects group named sources from websites, mobile apps, and developer tools under one typed event model and project-scoped storage. Sources have separate ingestion keys, combined or filtered analytics, and shared project retention. All sources use the same analytics UI; source types are removed. Optional Hugeicons are visual metadata only, inferred from the name when not explicitly selected. Collection does not require a URL or infer identity from IP/user-agent information.
 
 ## Operating Context
 

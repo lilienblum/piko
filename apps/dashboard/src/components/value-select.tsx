@@ -23,7 +23,7 @@ export function ValueSelect({
 }: {
   value: string;
   onValueChange: (value: string) => void;
-  options: readonly (readonly [string, string])[];
+  options: readonly (readonly [string, string, ReactNode?])[];
   id?: string;
   label?: string;
   placeholder?: string;
@@ -34,16 +34,19 @@ export function ValueSelect({
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger id={id} aria-label={label} className={cn("w-full min-w-0", className)}>
-        {icon}
         <SelectValue placeholder={placeholder}>
+          {icon}
           {options.find(([key]) => key === value)?.[1]}
         </SelectValue>
       </SelectTrigger>
       <SelectContent position="popper" align="start">
         <SelectGroup>
-          {options.map(([key, text]) => (
+          {options.map(([key, text, optionIcon]) => (
             <SelectItem key={key} value={key}>
-              {text}
+              <span className="flex items-center gap-2">
+                {optionIcon}
+                {text}
+              </span>
             </SelectItem>
           ))}
         </SelectGroup>

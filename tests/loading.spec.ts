@@ -32,12 +32,12 @@ test.beforeAll(async () => {
   const suffix = Date.now();
   product = await admin("/products", {
     name: `Loading website ${suffix}`,
-    kind: "website",
+
     retention_days: 30,
   });
   other = await admin("/products", {
     name: `Loading tool ${suffix}`,
-    kind: "tool",
+
     retention_days: 30,
   });
   const { key } = await admin(`/products/${product.id}/keys`, { label: "Loading fixture" });
@@ -122,7 +122,8 @@ test("date changes use stable placeholders and breakdown loading stays local", a
     (r) => r.postDataJSON().group_by === "property:utm_source",
   );
   try {
-    await page.getByRole("tab", { name: "Sources", exact: true }).click();
+    await page.getByRole("combobox", { name: "Breakdown", exact: true }).click();
+    await page.getByRole("option", { name: "Campaign sources", exact: true }).click();
     await expect(
       page.getByRole("status", { name: "Loading breakdown", exact: true }),
     ).toBeVisible();

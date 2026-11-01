@@ -26,7 +26,7 @@ impl Fixture {
             "POST",
             "/api/products",
             MANAGEMENT,
-            json!({"name":name,"kind":"tool","retention_days":30}),
+            json!({"name":name,"retention_days":30}),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{p}");
@@ -286,7 +286,7 @@ async fn retention_is_product_specific_and_uses_event_time() {
         "PATCH",
         &format!("/api/products/{a}"),
         MANAGEMENT,
-        json!({"name":"Short","kind":"tool","retention_days":1}),
+        json!({"name":"Short","retention_days":1}),
     )
     .await;
     let mut changes = f.state.changes.subscribe();
@@ -456,7 +456,7 @@ async fn management_has_no_app_auth_but_rejects_cross_site_mutations() {
                 .uri("/api/products")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    json!({"name":"CSRF","kind":"generic","retention_days":30}).to_string(),
+                    json!({"name":"CSRF","retention_days":30}).to_string(),
                 ))
                 .unwrap(),
         )
@@ -638,7 +638,7 @@ async fn multiple_sources_share_a_project_but_keys_and_filters_are_scoped() {
         "POST",
         &format!("/api/products/{id}/sources"),
         MANAGEMENT,
-        json!({"name":"iOS","kind":"mobile"}),
+        json!({"name":"iOS"}),
     )
     .await;
     assert_eq!(
@@ -647,11 +647,37 @@ async fn multiple_sources_share_a_project_but_keys_and_filters_are_scoped() {
             "POST",
             &format!("/api/products/{id}/sources"),
             MANAGEMENT,
-            json!({"name":"IOS","kind":"mobile"})
+            json!({"name":"IOS"})
         )
         .await
         .0,
         StatusCode::BAD_REQUEST
+    );
+    assert!(mobile["icon"].is_null());
+    assert!(mobile.get("kind").is_none());
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            &format!("/api/products/{id}/sources"),
+            MANAGEMENT,
+            json!({"name":"Invalid", "icon":"unrecognized"})
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        call(
+            &f.app,
+            "POST",
+            &format!("/api/products/{id}/sources"),
+            MANAGEMENT,
+            json!({"name":"Old type", "kind":"mobile"})
+        )
+        .await
+        .0,
+        StatusCode::UNPROCESSABLE_ENTITY
     );
     let source_id = mobile["id"].as_str().unwrap();
     let (_, key) = call(
@@ -751,11 +777,12 @@ async fn multiple_sources_share_a_project_but_keys_and_filters_are_scoped() {
         "PATCH",
         &format!("/api/products/{id}/sources/{source_id}"),
         MANAGEMENT,
-        json!({"name":"iOS app","kind":"mobile"}),
+        json!({"name":"iOS app", "icon":"android"}),
     )
     .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(renamed["id"], source_id);
+    assert_eq!(renamed["icon"], "android");
     let (_, filtered) = call(
         &f.app,
         "POST",
