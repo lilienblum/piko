@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -11,15 +12,37 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
-import { number } from "@/lib/api";
+import { number, type Group } from "@/lib/api";
+import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, PageHeader, NoProduct, ProductIcon } from "./app-shell";
-import { Breakdown, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
+import { Breakdown, BreakdownRows, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
 export function Overview() {
+  const { product } = useWorkspace();
+  return product ? <ProductOverview key={product.id} /> : <NoProduct />;
+}
+function ProductOverview() {
   const { product, range, refresh } = useWorkspace();
   const web = product?.kind === "website";
   const tool = product?.kind === "tool";
+  const dimensions = web
+    ? [
+        ["referrer", "Referrers"],
+        ["utm_source", "Sources"],
+        ["utm_campaign", "Campaigns"],
+      ]
+    : tool
+      ? [
+          ["os", "OS"],
+          ["version", "Versions"],
+          ["arch", "Architecture"],
+        ]
+      : [["source", "Sources"]];
+  const [dimension, setDimension] = useState(dimensions[0][0]);
+  const secondaryGroup = web || tool ? `property:${dimension}` : "source";
   const body = {
     ...range,
     event: web ? "page_view" : tool ? "command_run" : undefined,
@@ -29,9 +52,19 @@ export function Overview() {
   const query = useQuery(product?.id, body);
   const secondary = useQuery(product?.id, {
     ...body,
-    group_by: web ? "property:referrer" : tool ? "property:os" : "source",
+    group_by: secondaryGroup,
   });
   if (!product) return <NoProduct />;
+  const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
+    if (group.label === null) return;
+    const context = { productId: product.id, ...range, event: body.event };
+    if (groupBy === "name" && typeof group.label === "string")
+      return { ...context, event: group.label };
+    if (groupBy === "source" && typeof group.label === "string")
+      return { ...context, source: group.label };
+    if (groupBy.startsWith("property:"))
+      return { ...context, filter: { property: groupBy.slice(9), value: group.label } };
+  };
   const s = query.data?.summary;
   const metrics = web
     ? [
@@ -183,22 +216,61 @@ export function Overview() {
                           : "The interactions that matter"
                     }
                     groups={query.data.groups}
+                    total={s?.total}
+                    drilldown={(group) => drilldown(body.group_by, group)}
                   />
-                  {secondary.error ? (
-                    <ErrorState message={secondary.error} retry={refresh} />
-                  ) : (
-                    <Breakdown
-                      title={web ? "Referrers" : tool ? "Operating systems" : "Sources"}
-                      description={
-                        web
-                          ? "Where your visitors come from"
-                          : tool
-                            ? "Where your tool is running"
-                            : "Where events are collected"
-                      }
-                      groups={secondary.data?.groups ?? []}
-                    />
-                  )}
+                  <Tabs value={dimension} onValueChange={setDimension}>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          {web ? "Acquisition" : tool ? "Environment" : "Sources"}
+                        </CardTitle>
+                        <CardDescription>
+                          {web
+                            ? "How visitors find your website"
+                            : tool
+                              ? "Where your tool is running"
+                              : "Where events are collected"}
+                        </CardDescription>
+                        <TabsList
+                          aria-label={
+                            web
+                              ? "Acquisition breakdown"
+                              : tool
+                                ? "Environment breakdown"
+                                : "Source breakdown"
+                          }
+                          className="breakdown-tabs"
+                        >
+                          {dimensions.map(([value, label]) => (
+                            <TabsTrigger key={value} value={value}>
+                              {label}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                      </CardHeader>
+                      <TabsContent value={dimension}>
+                        <CardContent>
+                          {secondary.error ? (
+                            <ErrorState message={secondary.error} retry={refresh} />
+                          ) : secondary.loading ? (
+                            <div role="status" aria-label="Loading breakdown">
+                              <Skeleton className="h-32" />
+                            </div>
+                          ) : (
+                            <BreakdownRows
+                              title={
+                                dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"
+                              }
+                              groups={secondary.data?.groups ?? []}
+                              total={secondary.data?.summary.total}
+                              drilldown={(group) => drilldown(secondaryGroup, group)}
+                            />
+                          )}
+                        </CardContent>
+                      </TabsContent>
+                    </Card>
+                  </Tabs>
                 </div>
                 <div className="insight-note">
                   <span className="status-dot" />

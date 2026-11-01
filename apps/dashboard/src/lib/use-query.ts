@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { api, type QueryResult } from "./api";
-export function useQuery(product: string | undefined, body: Record<string, unknown>) {
+export function useQuery(
+  product: string | undefined,
+  body: Record<string, unknown>,
+  refreshKey = 0,
+) {
   const key = JSON.stringify(body);
-  const requestKey = `${product}:${key}`;
+  const requestKey = `${product}:${refreshKey}:${key}`;
   const [result, setResult] = useState<{ key: string; data?: QueryResult; error?: string }>();
   useEffect(() => {
     if (!product) return;

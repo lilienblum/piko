@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowUpRight,
   Box,
@@ -54,6 +54,7 @@ type Context = {
   reload: (select?: string) => Promise<void>;
   range: { from: string; to: string };
   refresh: () => void;
+  refreshKey: number;
 };
 const Workspace = createContext<Context | null>(null);
 export function useWorkspace() {
@@ -87,8 +88,22 @@ export function AppShell() {
   const [selected, setSelected] = useState("");
   const [days, setDays] = useState(30);
   const [now, setNow] = useState(Date.now());
+  const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
+  const navigate = useNavigate();
+  const exploreSearch = useSearch({ from: "/explore", shouldThrow: false });
+  const drilldown = exploreSearch?.drilldown;
+  const linkedProductId = drilldown?.productId;
+  useEffect(() => {
+    if (linkedProductId && products.some((p) => p.id === linkedProductId)) {
+      setSelected(linkedProductId);
+      localStorage.setItem("piko:product", linkedProductId);
+    }
+  }, [linkedProductId, products]);
+  const clearDrilldown = () => {
+    if (path === "/explore") void navigate({ to: "/explore", search: {} });
+  };
   useEffect(() => {
     setSidebarOpen(localStorage.getItem("piko:sidebar") !== "collapsed");
     setSelected(localStorage.getItem("piko:product") ?? "");
@@ -112,16 +127,20 @@ export function AppShell() {
     }
     setError("");
   }
-  const product = products.find((p) => p.id === selected) ?? products[0];
-  const range = useMemo(() => {
+  const product = drilldown
+    ? products.find((p) => p.id === drilldown.productId)
+    : (products.find((p) => p.id === selected) ?? products[0]);
+  const defaultRange = useMemo(() => {
     const end = new Date(now);
     const start = new Date(now);
     start.setUTCHours(0, 0, 0, 0);
     start.setUTCDate(start.getUTCDate() - days + 1);
     return { from: start.toISOString(), to: end.toISOString() };
   }, [days, now]);
+  const range = drilldown ? { from: drilldown.from, to: drilldown.to } : defaultRange;
   const refresh = () => {
     setNow(Date.now());
+    setRefreshKey((key) => key + 1);
     if (error) void reload().catch((e) => setError(e.message));
   };
   if (error && !products.length)
@@ -139,7 +158,7 @@ export function AppShell() {
     );
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
-    <Workspace.Provider value={{ products, product, reload, range, refresh }}>
+    <Workspace.Provider value={{ products, product, reload, range, refresh, refreshKey }}>
       <SidebarProvider
         open={sidebarOpen}
         onOpenChange={(open) => {
@@ -158,10 +177,11 @@ export function AppShell() {
                 label="Select product"
                 value={product?.id ?? ""}
                 disabled={!products.length}
-                placeholder="No products yet"
+                placeholder={drilldown ? "Product unavailable" : "No products yet"}
                 className="product-select"
                 icon={<ProductIcon kind={product?.kind ?? "generic"} />}
                 onValueChange={(value) => {
+                  clearDrilldown();
                   setSelected(value);
                   localStorage.setItem("piko:product", value);
                 }}
@@ -176,15 +196,18 @@ export function AppShell() {
               <span className="timezone">UTC</span>
               <ValueSelect
                 label="Date range"
-                value={String(days)}
+                value={drilldown ? "linked" : String(days)}
                 icon={<CalendarDays />}
                 className="date-select"
                 onValueChange={(value) => {
+                  if (value === "linked") return;
+                  clearDrilldown();
                   setDays(Number(value));
                   localStorage.setItem("piko:days", value);
                   setNow(Date.now());
                 }}
                 options={[
+                  ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
                   ["7", "Last 7 days"],
                   ["30", "Last 30 days"],
                   ["90", "Last 90 days"],

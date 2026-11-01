@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { ArrowRight, ChartNoAxesCombined, RefreshCw } from "lucide-react";
+import { ArrowRight, ChartNoAxesCombined, ChevronRight, RefreshCw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,6 +15,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { groupLabel, number, type Group, type QueryResult } from "@/lib/api";
+import type { ExploreDrilldown } from "@/lib/explore-search";
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {
   return (
     <Alert variant="destructive">
@@ -165,32 +166,48 @@ export function SeriesChart({
     </Card>
   );
 }
-export function Breakdown({
-  title,
-  description,
-  groups,
-  unit = "Events",
-}: {
+type BreakdownProps = {
   title: string;
-  description: string;
   groups: Group[];
   unit?: string;
-}) {
-  const max = Math.max(...groups.map((g) => g.value ?? 0), 1);
+  total?: number;
+  drilldown?: (group: Group) => ExploreDrilldown | undefined;
+};
+export function Breakdown({ description, ...props }: BreakdownProps & { description: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle>{props.title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="breakdown-head">
-          <span>{title}</span>
-          <span>{unit}</span>
-        </div>
-        {groups.length ? (
-          groups.map((g) => (
-            <div className="breakdown-row" key={JSON.stringify(g.label)}>
+        <BreakdownRows {...props} />
+      </CardContent>
+    </Card>
+  );
+}
+export function BreakdownRows({
+  title,
+  groups,
+  unit = "Events",
+  total,
+  drilldown,
+}: BreakdownProps) {
+  const max = Math.max(...groups.map((g) => g.value ?? 0), 1);
+  return (
+    <>
+      <div className="breakdown-head">
+        <span>{title}</span>
+        <span>
+          {unit}
+          {total !== undefined ? " · Share" : ""}
+        </span>
+      </div>
+      {groups.length ? (
+        groups.map((g) => {
+          const target = drilldown?.(g);
+          const content = (
+            <>
               <div
                 className="breakdown-fill"
                 style={{ width: `${Math.max(0, (g.value ?? 0) / max) * 85}%` }}
@@ -198,13 +215,36 @@ export function Breakdown({
               <span className="breakdown-label" title={groupLabel(g.label)}>
                 {groupLabel(g.label)}
               </span>
-              <span className="breakdown-value">{number(g.value, 1)}</span>
+              <span className="breakdown-values">
+                <span className="breakdown-value">{number(g.value, 1)}</span>
+                {total !== undefined && (
+                  <span className="breakdown-share">
+                    {number(total ? (g.count / total) * 100 : 0, 1)}%
+                  </span>
+                )}
+                {target && <ChevronRight className="breakdown-arrow" aria-hidden="true" />}
+              </span>
+            </>
+          );
+          return target ? (
+            <Link
+              className="breakdown-row"
+              to="/explore"
+              search={{ drilldown: target }}
+              key={JSON.stringify(g.label)}
+              aria-label={`Explore ${groupLabel(g.label)}`}
+            >
+              {content}
+            </Link>
+          ) : (
+            <div className="breakdown-row" key={JSON.stringify(g.label)}>
+              {content}
             </div>
-          ))
-        ) : (
-          <p className="quiet">No values in this range.</p>
-        )}
-      </CardContent>
-    </Card>
+          );
+        })
+      ) : (
+        <p className="quiet">No values in this range.</p>
+      )}
+    </>
   );
 }

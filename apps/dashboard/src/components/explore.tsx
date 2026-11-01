@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Link, useSearch } from "@tanstack/react-router";
+import type { ExploreDrilldown } from "@/lib/explore-search";
 import { ChevronLeft, ChevronRight, Filter, Play, X } from "lucide-react";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ import { useWorkspace, PageHeader, NoProduct } from "./app-shell";
 import { Breakdown, ErrorState, Loading, NoEvents, SeriesChart } from "./shared";
 type Spec = {
   event: string;
+  source: string;
   measure: string;
   property: string;
   group: string;
@@ -38,6 +41,7 @@ type Spec = {
 };
 const defaultSpec: Spec = {
   event: "",
+  source: "",
   measure: "count",
   property: "duration_ms",
   group: "name",
@@ -47,19 +51,49 @@ const defaultSpec: Spec = {
 };
 export function Explore() {
   const { product } = useWorkspace();
-  return product ? <ExploreProduct key={product.id} /> : <NoProduct />;
+  const { drilldown, invalidDrilldown } = useSearch({ from: "/explore" });
+  if (invalidDrilldown || (drilldown && !product))
+    return (
+      <>
+        <PageHeader
+          title="This selection is unavailable"
+          description={
+            invalidDrilldown
+              ? "The link contains an invalid product, date range, or filter. Clear it to explore your products."
+              : "The product in this link no longer exists in this workspace."
+          }
+        />
+        <Button asChild variant="outline">
+          <Link to="/explore" search={{}}>
+            Clear selection
+          </Link>
+        </Button>
+      </>
+    );
+  return product ? (
+    <ExploreProduct key={`${product.id}:${JSON.stringify(drilldown)}`} drilldown={drilldown} />
+  ) : (
+    <NoProduct />
+  );
 }
-function ExploreProduct() {
-  const { product, range, refresh } = useWorkspace();
-  const [draft, setDraft] = useState<Spec>(defaultSpec);
-  const [applied, setApplied] = useState<Spec>(defaultSpec);
+function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
+  const { product, range, refresh, refreshKey } = useWorkspace();
+  const initial: Spec = {
+    ...defaultSpec,
+    event: drilldown?.event ?? "",
+    source: drilldown?.source ?? "",
+    filterProperty: drilldown?.filter?.property ?? "",
+    filterValue: drilldown?.filter ? JSON.stringify(drilldown.filter.value) : "",
+  };
+  const [draft, setDraft] = useState<Spec>(initial);
+  const [applied, setApplied] = useState<Spec>(initial);
   const rangeKey = `${range.from}:${range.to}`;
   const [pagination, setPagination] = useState({ rangeKey, page: 0 });
   const page = pagination.rangeKey === rangeKey ? pagination.page : 0;
   const setPage = (next: number | ((current: number) => number)) => {
     setPagination({ rangeKey, page: typeof next === "function" ? next(page) : next });
   };
-  const [showFilter, setShowFilter] = useState(false);
+  const [showFilter, setShowFilter] = useState(!!drilldown?.filter);
   const [validation, setValidation] = useState("");
   const [selected, setSelected] = useState<EventRow | null>(null);
   const filters = useMemo(() => {
@@ -70,16 +104,21 @@ function ExploreProduct() {
     } catch {}
     return [{ property: applied.filterProperty, op: applied.filterOp, value }];
   }, [applied]);
-  const query = useQuery(product?.id, {
-    ...range,
-    event: applied.event || undefined,
-    measure: applied.measure,
-    property: applied.property,
-    group_by: applied.group,
-    filters,
-    page,
-    page_size: 15,
-  });
+  const query = useQuery(
+    product?.id,
+    {
+      ...range,
+      event: applied.event || undefined,
+      source: applied.source || undefined,
+      measure: applied.measure,
+      property: applied.property,
+      group_by: applied.group,
+      filters,
+      page,
+      page_size: 15,
+    },
+    refreshKey,
+  );
   const columns = useMemo<ColumnDef<EventRow>[]>(
     () => [
       {
@@ -172,6 +211,62 @@ function ExploreProduct() {
         title="Follow your curiosity"
         description={`Ask a question of ${product?.name}. Start with an event, then look a little closer.`}
       />
+      {drilldown && (
+        <section className="drilldown-context" aria-label="Overview selection">
+          <div>
+            <strong>Overview selection</strong>
+            <p className="drilldown-range">
+              <time dateTime={range.from} title={range.from}>
+                {new Date(range.from).toLocaleString("en-GB", {
+                  timeZone: "UTC",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </time>
+              {" to "}
+              <time dateTime={range.to} title={range.to}>
+                {new Date(range.to).toLocaleString("en-GB", {
+                  timeZone: "UTC",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </time>
+              {" UTC"}
+            </p>
+            <div className="drilldown-filters">
+              {applied.event && <Badge variant="outline">Event · {applied.event}</Badge>}
+              {applied.source && (
+                <Badge variant="outline">
+                  Source · {applied.source}
+                  <button
+                    type="button"
+                    aria-label="Remove source filter"
+                    onClick={() => {
+                      setDraft((d) => ({ ...d, source: "" }));
+                      setApplied((d) => ({ ...d, source: "" }));
+                      setPage(0);
+                    }}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              )}
+              {applied.filterProperty && (
+                <Badge variant="outline" className="drilldown-property">
+                  {applied.filterProperty} {applied.filterOp === "eq" ? "=" : applied.filterOp}{" "}
+                  {applied.filterValue}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/explore" search={{}}>
+              <X data-icon="inline-start" />
+              Clear selection
+            </Link>
+          </Button>
+        </section>
+      )}
       <Card className="query-builder">
         <CardHeader>
           <div className="card-heading">
@@ -247,9 +342,12 @@ function ExploreProduct() {
                       ["identity_kind", "Identity kind"],
                       ["property:path", "Page path"],
                       ["property:referrer", "Referrer"],
+                      ["property:utm_source", "Campaign source"],
+                      ["property:utm_campaign", "Campaign"],
                       ["property:command", "Command"],
                       ["property:os", "OS"],
                       ["property:version", "Version"],
+                      ["property:arch", "Architecture"],
                       ["property:success", "Success"],
                     ]}
                   />

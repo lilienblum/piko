@@ -72,5 +72,5 @@ export async function api<T>(
 export const number = (n: number | null | undefined, digits = 0) =>
   n == null ? "—" : new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(n);
 export function groupLabel(value: Group["label"]) {
-  return value === null ? "Not provided" : String(value);
+  return value === null ? "Not provided" : value === "" ? "Empty string" : String(value);
 }

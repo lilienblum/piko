@@ -24,35 +24,52 @@ async function appearance(page: Page, theme: "Light" | "Dark" | "Auto") {
 }
 let web: { id: string; name: string; key: string };
 let tool: { id: string; name: string; key: string };
+let generic: { id: string; name: string; key: string };
 const range = () => ({
   from: new Date(Date.now() - 86400000).toISOString(),
   to: new Date(Date.now() + 1000).toISOString(),
 });
 test.beforeAll(async () => {
   const suffix = Date.now();
-  for (const kind of ["website", "tool"]) {
+  for (const kind of ["website", "tool", "generic"]) {
     const p = await admin("/products", { name: `E2E ${kind} ${suffix}`, kind, retention_days: 30 });
     const { key } = await admin(`/products/${p.id}/keys`, { label: "E2E fixture" });
     const data = { ...p, key };
     if (kind === "website") web = data;
-    else tool = data;
+    else if (kind === "tool") tool = data;
+    else generic = data;
     const events = Array.from({ length: 32 }, (_, i) => ({
       event_id: crypto.randomUUID(),
-      name: kind === "website" ? "page_view" : "command_run",
-      source: kind === "website" ? "browser" : "cli",
+      name: kind === "website" ? "page_view" : kind === "tool" ? "command_run" : "activity",
+      source:
+        kind === "website"
+          ? "browser"
+          : kind === "tool"
+            ? "cli"
+            : i < 8
+              ? "sdk"
+              : `source-${i % 12}`,
       actor_id: `actor-${Math.floor(i / 2)}`,
-      identity_kind: kind === "website" ? "visitor" : "installation",
+      identity_kind: kind === "website" ? "visitor" : kind === "tool" ? "installation" : "actor",
       ...(kind === "website" ? { session_id: `s-${Math.floor(i / 2)}` } : {}),
       properties:
         kind === "website"
-          ? { path: i % 2 ? "/docs" : "/", referrer: "Direct" }
-          : {
-              command: i % 2 ? "build" : "deploy",
-              duration_ms: 100 + i * 10,
-              success: i % 2 === 0,
-              version: "1.0.0",
-              os: "linux",
-            },
+          ? {
+              path: i % 2 ? "/docs" : "/",
+              referrer: "Direct",
+              utm_source: i % 2 ? "newsletter" : "organic",
+              ...(i % 2 ? { utm_campaign: "launch" } : {}),
+            }
+          : kind === "tool"
+            ? {
+                command: i % 2 ? "build" : "deploy",
+                duration_ms: 100 + i * 10,
+                success: i % 2 === 0,
+                version: "1.0.0",
+                os: "linux",
+                arch: "aarch64",
+              }
+            : { variant: [true, "true", 42, "42", false, 0, ""][i % 7] },
     }));
     const response = await fetch(`${apiUrl}/api/ingest`, {
       method: "POST",
@@ -282,4 +299,231 @@ test("mobile drawer navigates and dark selects fit the screen", async ({ page })
   await page.getByRole("button", { name: "Run query" }).click();
   await expect(page.locator(".explore-summary strong")).toHaveText("255 ms");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("website breakdown links preserve product and dates across reload and history", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  const docs = page.getByRole("link", { name: "Explore /docs", exact: true });
+  await expect(docs).toContainText("50%");
+  const clicked = new URL((await docs.getAttribute("href")) ?? "", dashboard);
+  const selection = JSON.parse(clicked.searchParams.get("drilldown") ?? "null");
+  expect(selection.productId).toBe(web.id);
+  expect(selection.filter).toEqual({ property: "path", value: "/docs" });
+  const request = page.waitForRequest(
+    (r) => r.url().endsWith(`/products/${web.id}/query`) && r.postDataJSON().filters?.length === 1,
+  );
+  await docs.click();
+  expect((await request).postDataJSON()).toMatchObject({
+    from: selection.from,
+    to: selection.to,
+    event: "page_view",
+    filters: [{ property: "path", op: "eq", value: "/docs" }],
+  });
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Date range" })).toContainText("Fixed dates");
+  await expect(page.getByLabel("Typed value")).toHaveValue('"/docs"');
+  await page.screenshot({ path: test.info().outputPath("website-drilldown.png"), fullPage: true });
+  await page.evaluate((id) => localStorage.setItem("piko:product", id), tool.id);
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(web.name);
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  const refresh = page.waitForRequest((r) => r.url().endsWith(`/products/${web.id}/query`));
+  await page.getByRole("button", { name: "Refresh analytics" }).click();
+  expect((await refresh).postDataJSON()).toMatchObject({ from: selection.from, to: selection.to });
+  await page.getByRole("link", { name: "Clear selection", exact: true }).click();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await expect(page.getByLabel("Typed value")).toHaveValue('"/docs"');
+  await page.goForward();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await page.goBack();
+  await select(page, "Select product", tool.name);
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Overview selection" })).not.toBeVisible();
+  expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
+});
+
+test("acquisition tabs drill into referrers and campaigns, with missing values informational", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await page.getByRole("link", { name: "Explore Direct", exact: true }).click();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await expect(page.getByLabel("Property", { exact: true })).toHaveValue("referrer");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("tab", { name: "Sources", exact: true }).click();
+  await page.getByRole("link", { name: "Explore newsletter", exact: true }).click();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await expect(page.getByLabel("Property", { exact: true })).toHaveValue("utm_source");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("tab", { name: "Campaigns", exact: true }).click();
+  await expect(page.getByText("Not provided", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore Not provided" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Explore launch", exact: true }).click();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await select(page, "Date range", "Last 7 days");
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
+  await page.goBack();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await expect(page.getByLabel("Property", { exact: true })).toHaveValue("utm_campaign");
+});
+
+test("tool command and version links work in the narrow dark layout", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openWorkspace(page);
+  await appearance(page, "Dark");
+  await select(page, "Select product", tool.name);
+  await page.getByRole("tab", { name: "Versions", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Explore 1.0.0", exact: true })).toBeVisible();
+  await page.screenshot({
+    path: test.info().outputPath("tool-breakdown-dark-mobile.png"),
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Explore 1.0.0", exact: true }).click();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await expect(page.getByLabel("Property", { exact: true })).toHaveValue("version");
+  await page.goBack();
+  await page.getByRole("link", { name: "Explore build", exact: true }).click();
+  await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
+    "command_run",
+  );
+  await select(page, "Measure", "Numeric average");
+  await page.getByRole("button", { name: "Run query" }).click();
+  await expect(page.locator(".explore-summary strong")).toHaveText("260 ms");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("generic source links use envelope filters and shares include groups outside the top twelve", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", generic.name);
+  const source = page.getByRole("link", { name: "Explore sdk", exact: true });
+  await expect(source).toContainText("25%");
+  const request = page.waitForRequest(
+    (r) => r.url().endsWith(`/products/${generic.id}/query`) && r.postDataJSON().source === "sdk",
+  );
+  await source.click();
+  expect((await request).postDataJSON()).toMatchObject({ source: "sdk", filters: [] });
+  await expect(page.getByText("across 8 matching events")).toBeVisible();
+  await page.getByRole("button", { name: "Remove source filter" }).click();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("link", { name: "Explore activity", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
+    "activity",
+  );
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+});
+
+test("drilldown URLs preserve primitive property types and reject unsafe or incomplete context", async ({
+  page,
+}) => {
+  const bounds = range();
+  for (const [value, total] of [
+    [true, 5],
+    ["true", 5],
+    [42, 5],
+    ["42", 5],
+    [false, 4],
+    [0, 4],
+    ["", 4],
+  ] as const) {
+    const drilldown = { productId: generic.id, ...bounds, filter: { property: "variant", value } };
+    const request = page.waitForRequest(
+      (r) =>
+        r.url().endsWith(`/products/${generic.id}/query`) && r.postDataJSON().filters?.length === 1,
+    );
+    await page.goto(`/explore?drilldown=${encodeURIComponent(JSON.stringify(drilldown))}`);
+    expect((await request).postDataJSON().filters).toEqual([
+      { property: "variant", op: "eq", value },
+    ]);
+    await expect(page.getByText(`across ${total} matching events`)).toBeVisible();
+    await expect(page.getByLabel("Typed value")).toHaveValue(JSON.stringify(value));
+    await page.getByRole("button", { name: "Run query" }).click();
+    await expect(page.getByText(`across ${total} matching events`)).toBeVisible();
+  }
+  const requests: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().endsWith("/query")) requests.push(r.url());
+  });
+  for (const drilldown of [
+    { productId: generic.id },
+    { productId: generic.id, ...bounds, filter: { property: "variant", value: null } },
+    { productId: generic.id, from: bounds.to, to: bounds.from },
+    { productId: generic.id, from: "2020-01-01T00:00:00.000Z", to: bounds.to },
+    { productId: crypto.randomUUID(), ...bounds },
+  ]) {
+    await page.goto(`/explore?drilldown=${encodeURIComponent(JSON.stringify(drilldown))}`);
+    await expect(
+      page.getByRole("heading", { name: "This selection is unavailable" }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Clear selection", exact: true })).toBeVisible();
+  }
+  expect(requests).toEqual([]);
+});
+
+test("secondary breakdown tabs show pending and retry states without stale rows", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).toBeVisible();
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let failedOnce = false;
+  await page.route(`**/products/${web.id}/query`, async (route) => {
+    if (route.request().postDataJSON().group_by === "property:utm_source" && !failedOnce) {
+      failedOnce = true;
+      await pending;
+      await route.fulfill({ status: 503, json: { error: "Temporary breakdown failure" } });
+    } else {
+      await route.continue();
+    }
+  });
+  try {
+    await page.getByRole("tab", { name: "Sources", exact: true }).click();
+    await expect(page.getByRole("status", { name: "Loading breakdown" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).not.toBeVisible();
+    release();
+    await expect(page.getByText("Temporary breakdown failure")).toBeVisible();
+    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Explore newsletter", exact: true })).toBeVisible();
+    await expect(page.getByText("Temporary breakdown failure")).not.toBeVisible();
+  } finally {
+    release();
+  }
+});
+
+test("only validated Explore search can change the workspace context", async ({ page }) => {
+  await openWorkspace(page);
+  await select(page, "Select product", web.name);
+  await page.goto("/?drilldown=true");
+  await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
+  await expect(page.locator(".metric-value").first()).toHaveText("32");
+  const malformed = encodeURIComponent(
+    JSON.stringify({ productId: tool.id, from: "bad", to: "bad" }),
+  );
+  await page.goto(`/settings?drilldown=${malformed}`);
+  await expect(page.getByLabel("Product name")).toHaveValue(web.name);
+  const queries: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/query")) queries.push(request.url());
+  });
+  await page.goto(`/explore?drilldown=${malformed}`);
+  await expect(page.getByRole("heading", { name: "This selection is unavailable" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("piko:product"))).toBe(web.id);
+  expect(queries).toEqual([]);
+  await page.getByRole("link", { name: "Clear selection", exact: true }).click();
+  await expect(page.getByText("across 32 matching events")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(web.name);
 });
