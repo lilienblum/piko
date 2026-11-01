@@ -33,6 +33,8 @@ export function ValueSelect({
 }) {
   return (
     <Select
+      // A value picker must not remove the page scrollbar. Enclosing dialogs own their scroll lock.
+      modal={false}
       items={options.map(([value, label]) => ({ value, label }))}
       value={options.some(([key]) => key === value) ? value : null}
       onValueChange={(next) => {

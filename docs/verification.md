@@ -223,3 +223,11 @@ New browser coverage exercises select typeahead, Enter/Escape and focus restorat
 **79 Chromium tests passed in 3.2 minutes** against the isolated Tako test apps. After the final sidebar state-selector correction, all **5 affected keyboard, theme, sidebar, and mobile checks passed**. **24 Bun tests / 124 assertions**, formatting, lint, typecheck, and the client/SSR production build pass. Manual browser inspection covered the source picker, both themes, mobile Settings and navigation, and the active page highlight. Test teardown removed its temporary apps/databases. The native preview API required a clean restart after an orphaned process retained its directory lock; its five retained projects were confirmed afterward.
 
 The measured main client chunk is **933.04 kB minified / 303.40 kB gzip**. The existing Vite chunk-size warning remains; this is a build-size measurement, not a performance benchmark. Rust, ingestion, and storage code are unchanged; backend tests and the ingestion benchmark were not rerun. No production deployment was performed.
+
+## Select scrollbar stability — 2026-11-02
+
+Dashboard value pickers now use Base UI’s supported `modal={false}` option. Opening a selector keeps the document scrollbar visible and leaves page scrolling available. An enclosing dialog still owns its modal scroll lock and focus containment.
+
+The added regression failed before the fix because an open selector blocked wheel scrolling. All **5 focused browser checks** then passed, covering unchanged gutter/content geometry on opening and closing at 1440, 894, and 390 px, wheel scrolling, keyboard selection, Escape/focus restoration, and a nested select inside a dialog. In the native preview, the document client width previously changed from **1265 to 1280 px** when opening a select; after the fix it stayed **1265 px** before opening, while open, and after closing. Main-content position and width also stayed unchanged, with the scrollbar visibly present.
+
+`bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, **24 Bun tests / 124 assertions**, and the production build pass. The existing bundle-size warning remains. The full browser suite and backend checks were not rerun for this scoped change. Tests used the isolated Tako apps and their disposable databases.

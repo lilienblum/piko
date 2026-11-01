@@ -84,3 +84,41 @@ test("nested source select closes before its dialog and restores keyboard focus"
     await expect(appearance).toBeFocused();
   }
 });
+
+for (const width of [1440, 894, 390]) {
+  test(`selects keep the page scrollbar and layout stable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/settings");
+    await expect(page.getByLabel("Project name", { exact: true })).toHaveValue(alpha.name);
+    const geometry = () =>
+      page.evaluate(() => {
+        const main = document.querySelector("main")?.getBoundingClientRect();
+        if (!main) throw new Error("Expected the dashboard layout to be mounted");
+        return {
+          gutter: innerWidth - document.documentElement.clientWidth,
+          bodyWidth: document.body.getBoundingClientRect().width,
+          mainX: main.x,
+          mainWidth: main.width,
+          scrollY,
+        };
+      });
+    const before = await geometry();
+    for (const name of ["Select project", "Date range"]) {
+      const select = page.getByRole("combobox", { name, exact: true });
+      await select.click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+      expect(await geometry()).toEqual(before);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("listbox")).toBeHidden();
+      await expect(select).toBeFocused();
+      expect(await geometry()).toEqual(before);
+    }
+    // A filter picker must not lock page scrolling or remove its scrollbar.
+    await page.getByRole("combobox", { name: "Select project", exact: true }).click();
+    await page.mouse.move(width / 2, 700);
+    await page.mouse.wheel(0, 200);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before.scrollY);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("listbox")).toBeHidden();
+  });
+}
