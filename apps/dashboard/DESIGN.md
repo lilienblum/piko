@@ -268,7 +268,7 @@ Contained editing cards use the card surface, a fine border, the large corner, v
 
 ### Inputs / Fields
 
-Clear, compact instruments. Text inputs and select triggers use the card surface, stronger field stroke, medium radius, and standard control height. Toolbar selectors are an intentional exception: transparent ground, square corners, and a single bottom stroke with narrow inline padding. Checked menu items use the accent field. Labels remain visible above form fields; helper and error text sits nearby. Keyboard focus uses the same explicit outline as buttons. Invalid fields use the destructive stroke, and disabled fields reduce opacity. Text inputs increase their text size below the desktop breakpoint; narrow-screen minimum control height remains (40px).
+Clear, compact instruments. Text inputs and select triggers use the card surface, stronger field stroke, medium radius, and standard control height. Toolbar selectors use a quieter full border, card surface, large radius (6px), and comfortable inline padding (10px). Muted leading icons and a subtle hover/open fill make the whole control readable as a button. Keep their widths stable across selections. Checked menu items use the accent field. Labels remain visible above form fields; helper and error text sits nearby. Keyboard focus uses the same explicit outline as buttons. Invalid fields use the destructive stroke, and disabled fields reduce opacity. Text inputs increase their text size below the desktop breakpoint; narrow-screen minimum control height remains (40px).
 
 ### Navigation
 

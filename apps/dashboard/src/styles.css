@@ -281,13 +281,20 @@ h3,
   border-radius: 4px;
 }
 .topbar [data-slot="select-trigger"] {
-  background: transparent;
-  border-width: 0 0 1px;
-  border-radius: 0;
-  padding-inline: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding-inline: 10px;
+  gap: 8px;
+  font-weight: 500;
+  transition:
+    background-color 160ms,
+    border-color 160ms;
 }
-.topbar [data-slot="select-trigger"]:hover {
-  border-bottom-color: var(--foreground);
+.topbar [data-slot="select-trigger"]:hover,
+.topbar [data-slot="select-trigger"][aria-expanded="true"] {
+  background: var(--muted);
+  border-color: color-mix(in oklab, var(--muted-foreground) 45%, var(--border));
 }
 [data-slot="sidebar-header"] {
   border-bottom: 1px solid var(--sidebar-border);
@@ -471,6 +478,9 @@ h3,
 }
 .breadcrumbs svg {
   width: 12px;
+}
+.topbar [data-slot="select-value"] > svg {
+  color: var(--muted-foreground);
 }
 .breadcrumbs strong {
   font-weight: 500;
