@@ -23,6 +23,7 @@ pub fn secret(prefix: &str) -> String {
     )
 }
 pub struct Store {
+    pub changes: crate::changes::Changes,
     pub sqlite_path: PathBuf,
     pub analytics: crate::product_db::ProductDatabases,
     pub query_slots: Arc<tokio::sync::Semaphore>,
@@ -58,6 +59,7 @@ impl Store {
             );
         }
         Ok(Arc::new(Self {
+            changes: crate::changes::Changes::default(),
             sqlite_path,
             analytics,
             query_slots: Arc::new(tokio::sync::Semaphore::new(queries)),

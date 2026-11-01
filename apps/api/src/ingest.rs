@@ -64,7 +64,9 @@ impl Writer {
                         }
                         for (id, batch) in products {
                             match store.analytics.connection(&id) {
-                                Ok(mut lease) => persist(&mut lease.connection, batch),
+                                Ok(mut lease) => {
+                                    persist(&mut lease.connection, batch, &store.changes)
+                                }
                                 Err(error) => {
                                     for item in batch {
                                         if let Write::Events { ack, .. } = item {
@@ -123,7 +125,7 @@ impl Writer {
         }
     }
 }
-fn persist(db: &mut Connection, batch: Vec<Write>) {
+fn persist(db: &mut Connection, batch: Vec<Write>, changes: &crate::changes::Changes) {
     let result = (|| -> anyhow::Result<Vec<Ack>> {
         let tx = db.transaction()?;
         tx.execute_batch("CREATE TEMP TABLE IF NOT EXISTS ingest_buffer AS SELECT *, 0::BIGINT AS request_no, 0::BIGINT AS sequence FROM events WHERE false; DELETE FROM ingest_buffer;")?;
@@ -188,6 +190,11 @@ fn persist(db: &mut Connection, batch: Vec<Write>) {
     })();
     match result {
         Ok(acks) => {
+            if acks.iter().any(|ack| ack.accepted > 0)
+                && let Some(Write::Events { product_id, .. }) = batch.first()
+            {
+                changes.product_changed(product_id);
+            }
             for (item, result) in batch.into_iter().zip(acks) {
                 if let Write::Events { ack, .. } = item {
                     let _ = ack.send(Ok(result));
@@ -220,13 +227,17 @@ pub fn cleanup(store: &Store, now: i64) -> ApiResult<usize> {
             .connection
             .transaction()
             .map_err(anyhow::Error::from)?;
-        removed += tx
+        let count = tx
             .execute(
                 "DELETE FROM events WHERE product_id=? AND event_time<?",
                 params![p.id, now - p.retention_days * 86_400_000],
             )
             .map_err(anyhow::Error::from)?;
         tx.commit().map_err(anyhow::Error::from)?;
+        removed += count;
+        if count > 0 {
+            store.changes.product_changed(&p.id);
+        }
     }
     Ok(removed)
 }

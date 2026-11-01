@@ -278,8 +278,14 @@ async fn retention_is_product_specific_and_uses_event_time() {
         json!({"name":"Short","kind":"tool","retention_days":1}),
     )
     .await;
+    let mut changes = f.state.changes.subscribe();
     let (_, r) = call(&f.app, "POST", "/api/cleanup", MANAGEMENT, Value::Null).await;
     assert_eq!(r["removed"], 1);
+    assert_eq!(changes.recv().await.unwrap(), a);
+    assert!(changes.try_recv().is_err());
+    let (_, r) = call(&f.app, "POST", "/api/cleanup", MANAGEMENT, Value::Null).await;
+    assert_eq!(r["removed"], 0);
+    assert!(changes.try_recv().is_err());
     for (id, total) in [(&a, 0), (&b, 1)] {
         let (_, r) = call(
             &f.app,
@@ -496,5 +502,118 @@ async fn management_has_no_app_auth_but_rejects_cross_site_mutations() {
     )
     .await;
     assert_eq!(result["summary"]["total"], 1);
+    f.state.writer.stop().await;
+}
+
+#[tokio::test]
+async fn committed_changes_are_visible_scoped_and_skip_duplicate_retries() {
+    let f = Fixture::new(8);
+    let (a, ka) = f.product("Changed A").await;
+    let (b, kb) = f.product("Changed B").await;
+    let mut changes = f.state.changes.subscribe();
+    let app = f.app.clone();
+    let retry_key = ka.clone();
+    let request = tokio::spawn(async move {
+        call(&app, "POST", "/api/ingest", &ka, event("one", json!(12))).await
+    });
+    assert_eq!(changes.recv().await.unwrap(), a);
+    // Read as soon as the signal arrives, independently of the HTTP acknowledgment.
+    let (_, result) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{a}/query"),
+        MANAGEMENT,
+        range(),
+    )
+    .await;
+    assert_eq!(result["summary"]["total"], 1);
+    let (status, ack) = request.await.unwrap();
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(ack["accepted"], 1);
+    let (_, retry) = call(
+        &f.app,
+        "POST",
+        "/api/ingest",
+        &retry_key,
+        event("one", json!(12)),
+    )
+    .await;
+    assert_eq!(retry["duplicates"], 1);
+    assert!(matches!(
+        changes.try_recv(),
+        Err(tokio::sync::broadcast::error::TryRecvError::Empty)
+    ));
+    let (_, ack) = call(&f.app, "POST", "/api/ingest", &kb, event("one", json!(24))).await;
+    assert_eq!(ack["accepted"], 1);
+    assert_eq!(changes.recv().await.unwrap(), b);
+    let mut invalid = event("invalid", json!(12));
+    invalid["properties"]["nested"] = json!({"invalid": true});
+    assert_eq!(
+        call(&f.app, "POST", "/api/ingest", &retry_key, invalid)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert!(matches!(
+        changes.try_recv(),
+        Err(tokio::sync::broadcast::error::TryRecvError::Empty)
+    ));
+    f.state.writer.stop().await;
+}
+
+#[tokio::test]
+async fn unavailable_change_sink_does_not_change_ingestion_acknowledgments() {
+    use piko::changes::ChangeDelivery;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(4);
+    let sink = Router::new().route(
+        "/changes",
+        axum::routing::post(move || {
+            let tx = tx.clone();
+            async move {
+                let _ = tx.send(()).await;
+                StatusCode::SERVICE_UNAVAILABLE
+            }
+        }),
+    );
+    let server = tokio::spawn(async move {
+        axum::serve(listener, sink).await.unwrap();
+    });
+    let f = Fixture::new(8);
+    let (id, key) = f.product("Unavailable notifications").await;
+    let worker = f
+        .state
+        .changes
+        .start_delivery(
+            ChangeDelivery::new(
+                &format!("http://{address}/changes"),
+                "test-only-token".into(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    rx.recv().await.unwrap();
+    let (status, ack) = call(
+        &f.app,
+        "POST",
+        "/api/ingest",
+        &key,
+        event("committed", json!(42)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(ack["accepted"], 1);
+    let (_, result) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        MANAGEMENT,
+        range(),
+    )
+    .await;
+    assert_eq!(result["summary"]["total"], 1);
+    worker.abort();
+    server.abort();
     f.state.writer.stop().await;
 }

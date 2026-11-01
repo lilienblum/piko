@@ -7,6 +7,7 @@ license = "MIT"
 [dependencies]
 anyhow = "1"
 axum = "0.8"
+tako = { version = "=0.2.1", features = ["axum"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors", "fs", "trace", "limit"] }
 serde = { version = "1", features = ["derive"] }
@@ -18,7 +19,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 sha2 = "0.10"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
 
 [dev-dependencies]
 tempfile = "3"

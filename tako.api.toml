@@ -1,0 +1,17 @@
+name = "piko-api"
+main = "target/release/piko"
+app_root = "apps/api"
+dev = ["cargo", "run", "-p", "piko"]
+start = ["./target/release/piko"]
+
+# Build on Linux matching the destination server architecture and libc.
+[build]
+run = "cargo build --release --locked -p piko"
+include = ["target/release/piko"]
+
+[envs.development]
+route = "piko-api.test"
+
+[vars.development]
+SSL_CERT_FILE = ".tako/dev-ca.pem"
+PIKO_CHANGE_URL = "https://piko.test/_piko/changes"

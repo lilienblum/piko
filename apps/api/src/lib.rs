@@ -1,8 +1,10 @@
+pub mod changes;
 pub mod error;
 pub mod ingest;
 pub mod model;
 pub mod product_db;
 pub mod query;
+pub mod runtime;
 pub mod store;
 pub mod telemetry;
 use crate::{
@@ -28,6 +30,7 @@ use tower_http::cors::{Any, CorsLayer};
 pub struct AppState {
     pub store: Arc<Store>,
     pub writer: Writer,
+    pub changes: changes::Changes,
     ingest_slots: Arc<tokio::sync::Semaphore>,
 }
 pub struct Config {
@@ -45,6 +48,7 @@ impl AppState {
         let store = Store::open(&config.data_dir, config.query_concurrency)?;
         let writer = Writer::start(store.clone(), config.queue_capacity);
         Ok(Self {
+            changes: store.changes.clone(),
             store,
             writer,
             ingest_slots: Arc::new(tokio::sync::Semaphore::new(config.queue_capacity)),
