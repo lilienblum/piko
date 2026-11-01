@@ -1,50 +1,50 @@
 ---
 
 name: "Piko"
-description: "Yuzu: a compact measurement tool in butter yellow, warm ink, and ochre."
+description: "Yuzu: a compact measurement tool with soft stone, deep charcoal, and restrained yellow accents."
 colors:
-  background: "#faf9f2"
-  foreground: "#333326"
-  card: "#fffef9"
-  primary: "#36382b"
-  primary-foreground: "#fff4ac"
-  secondary: "#eae5c5"
-  muted: "#eeecdf"
-  muted-foreground: "#65634e"
-  accent: "#eee8b7"
+  background: "#e7e8e4"
+  foreground: "#2e302c"
+  card: "#eff0eb"
+  primary: "#33362e"
+  primary-foreground: "#eee4a5"
+  secondary: "#dedfd5"
+  muted: "#dddfd8"
+  muted-foreground: "#5d6158"
+  accent: "#dddcc1"
   destructive: "#a33c37"
   destructive-foreground: "#ffffff"
-  border: "#d9d6ba"
-  input: "#8a876d"
+  border: "#c9ccc2"
+  input: "#7a8073"
   success: "#50632d"
-  subtle: "#f2f0e3"
-  data: "#85721b"
-  sidebar: "#f1e68f"
-  sidebar-foreground: "#373727"
-  sidebar-accent: "#e5d971"
-  sidebar-accent-foreground: "#333326"
-  sidebar-border: "#d4c96e"
-  dark-background: "#1e1f19"
-  dark-foreground: "#f2f1da"
-  dark-card: "#27291f"
-  dark-primary: "#e6d766"
-  dark-primary-foreground: "#302f1a"
-  dark-secondary: "#42452f"
-  dark-muted: "#34372a"
-  dark-muted-foreground: "#bcbba1"
-  dark-accent: "#41442e"
+  subtle: "#e1e3dc"
+  data: "#7c691c"
+  sidebar: "#ded9ad"
+  sidebar-foreground: "#34362a"
+  sidebar-accent: "#d2cca0"
+  sidebar-accent-foreground: "#34362a"
+  sidebar-border: "#c5c197"
+  dark-background: "#121416"
+  dark-foreground: "#e2e4de"
+  dark-card: "#1b1d1f"
+  dark-primary: "#d9ca62"
+  dark-primary-foreground: "#272a20"
+  dark-secondary: "#292c2b"
+  dark-muted: "#242728"
+  dark-muted-foreground: "#a5aaa4"
+  dark-accent: "#30322b"
   dark-destructive: "#f2a195"
   dark-destructive-foreground: "#3b211d"
-  dark-border: "#484b37"
-  dark-input: "#7e8066"
-  dark-success: "#b9cd86"
-  dark-subtle: "#24261d"
-  dark-data: "#d9ca58"
-  dark-sidebar: "#303226"
-  dark-sidebar-foreground: "#e8e7c7"
-  dark-sidebar-accent: "#42452f"
-  dark-sidebar-accent-foreground: "#f2f1da"
-  dark-sidebar-border: "#484b37"
+  dark-border: "#353a38"
+  dark-input: "#737b74"
+  dark-success: "#adbf85"
+  dark-subtle: "#17191b"
+  dark-data: "#d1c360"
+  dark-sidebar: "#17191b"
+  dark-sidebar-foreground: "#d4d8d0"
+  dark-sidebar-accent: "#272b29"
+  dark-sidebar-accent-foreground: "#e2e4de"
+  dark-sidebar-border: "#313632"
 typography:
   display:
     fontFamily: "Geist Variable, sans-serif"
@@ -164,20 +164,20 @@ components:
 
 **Creative North Star: "Yuzu"**
 
-Piko is a compact measurement tool with a graphic identity. Butter-yellow navigation, warm ink, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
+Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
 
 Analytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
 
 **Key Characteristics:**
 
-- Warm working ground, butter-yellow orientation, ink actions, ochre measurements.
+- Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.
 - Geist typography with restrained headings and prominent measurements.
 - Flat analytical fields; contained forms and inspection.
 - Squared controls, explicit focus, and stable loading geometry.
 
 ## Colors
 
-The palette combines warm neutral working surfaces, butter yellow, warm ink, and a dedicated ochre data color. Frontmatter values are normative; unprefixed tokens are Light, and matching `dark-` tokens are Dark overrides from the stylesheet. Auto follows the system preference. Components use semantic CSS variables rather than choosing theme values directly.
+The palette uses soft stone working surfaces in Light and deep, nearly neutral charcoal in Dark. Yellow is reserved for navigation tint in Light, dark-mode actions, the mark, and plotted data; it must not wash over dark surfaces or body text. Frontmatter values are normative; unprefixed tokens are Light, and matching `dark-` tokens are Dark overrides from the stylesheet. Auto follows the system preference. Components use semantic CSS variables rather than choosing theme values directly.
 
 ### Primary
 
@@ -188,21 +188,21 @@ The palette combines warm neutral working surfaces, butter yellow, warm ink, and
 
 ### Secondary
 
-- **Butter-yellow ground** (`sidebar`): the persistent navigation region.
+- **Navigation ground** (`sidebar`): muted yellow in Light and deep charcoal in Dark.
 - **Rail hover** (`sidebar-accent`, `sidebar-accent-foreground`): hovered navigation. Active navigation instead uses the solid primary action pair.
-- **Soft yellow field** (`secondary`, `accent`): quiet badges, hover fields, and quantitative breakdown fills. The two roles stay subordinate to primary actions.
+- **Quiet field** (`secondary`, `accent`): low-chroma badges, hover fields, and quantitative breakdown fills. The two roles stay subordinate to primary actions.
 - **Error red** (`destructive`, `destructive-foreground`): invalid fields, error text, and destructive status. It communicates a state rather than introducing another decorative accent.
 
 ### Neutral
 
-- **Warm ground** (`background`): the continuous workspace ground.
-- **Cream working surface** (`card`): fields, editing cards, popovers, and local messages; a darker olive-neutral surface in Dark.
+- **Workspace ground** (`background`): soft stone in Light, deep charcoal in Dark.
+- **Working surface** (`card`): slightly lighter stone or charcoal for fields, editing cards, popovers, and local messages. Avoid near-white glare in Light and olive tint in Dark.
 - **Warm ink** (`foreground`): headings, body text, and values.
 - **Quiet ink** (`muted-foreground`): explanatory text, metadata, axes, and labels.
 - **Muted ground** (`muted`, `subtle`): code/context regions and table headers.
 - **Fine seam** (`border`, `sidebar-border`): analytical divisions and container boundaries.
 - **Field stroke** (`input`): stronger boundaries for interactive fields and outlined buttons.
-- **Navigation ink** (`sidebar-foreground`): labels on the butter-yellow ground.
+- **Navigation ink** (`sidebar-foreground`): readable labels on each navigation ground.
 
 **The Measured Color Rule.** Use ink primary for actions and navigation selection, data ochre for plotted measurements, and semantic success/destructive colors for status; keep surrounding evidence neutral.
 
@@ -228,7 +228,7 @@ The logo is a distinct wordmark treatment, not an additional heading scale. Use 
 
 ## Layout
 
-The persistent shell places a butter-yellow rail beside a continuous workspace. The expanded rail is (13rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
+The persistent shell places a muted yellow rail in Light, or charcoal rail in Dark, beside a continuous workspace. The expanded rail is (13rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
 
 Product and date context precede page-level actions. Overview places related measurements on shared rows; Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
 
@@ -272,7 +272,7 @@ Clear, compact instruments. Text inputs and select triggers use the card surface
 
 ### Navigation
 
-The three destinations sit on the butter-yellow rail. Active links use the solid primary fill and primary foreground with a stronger weight (650). Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
+The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650). Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
 
 ### Tabs
 

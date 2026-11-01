@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T13:32:32.441Z",
+  "generatedAt": "2026-11-01T13:43:58.439412+00:00",
   "title": "Design System: Piko",
   "extensions": {
     "colorMeta": {
@@ -8,126 +8,126 @@
         "role": "neutral",
         "displayName": "Background",
         "tonalRamp": [
-          "oklch(15% 0.00929 99.98)",
-          "oklch(26% 0.00929 99.98)",
-          "oklch(38% 0.00929 99.98)",
-          "oklch(49% 0.00929 99.98)",
-          "oklch(61% 0.00929 99.98)",
-          "oklch(72% 0.00929 99.98)",
-          "oklch(84% 0.00929 99.98)",
-          "oklch(95% 0.00929 99.98)"
+          "oklch(15% 0.00544 117.93)",
+          "oklch(26% 0.00544 117.93)",
+          "oklch(38% 0.00544 117.93)",
+          "oklch(49% 0.00544 117.93)",
+          "oklch(61% 0.00544 117.93)",
+          "oklch(72% 0.00544 117.93)",
+          "oklch(84% 0.00544 117.93)",
+          "oklch(95% 0.00544 117.93)"
         ]
       },
       "foreground": {
         "role": "neutral",
         "displayName": "Foreground",
         "tonalRamp": [
-          "oklch(15% 0.02210 107.60)",
-          "oklch(26% 0.02210 107.60)",
-          "oklch(38% 0.02210 107.60)",
-          "oklch(49% 0.02210 107.60)",
-          "oklch(61% 0.02210 107.60)",
-          "oklch(72% 0.02210 107.60)",
-          "oklch(84% 0.02210 107.60)",
-          "oklch(95% 0.02210 107.60)"
+          "oklch(15% 0.00757 128.74)",
+          "oklch(26% 0.00757 128.74)",
+          "oklch(38% 0.00757 128.74)",
+          "oklch(49% 0.00757 128.74)",
+          "oklch(61% 0.00757 128.74)",
+          "oklch(72% 0.00757 128.74)",
+          "oklch(84% 0.00757 128.74)",
+          "oklch(95% 0.00757 128.74)"
         ]
       },
       "card": {
         "role": "neutral",
         "displayName": "Card",
         "tonalRamp": [
-          "oklch(15% 0.00666 97.35)",
-          "oklch(26% 0.00666 97.35)",
-          "oklch(38% 0.00666 97.35)",
-          "oklch(49% 0.00666 97.35)",
-          "oklch(61% 0.00666 97.35)",
-          "oklch(72% 0.00666 97.35)",
-          "oklch(84% 0.00666 97.35)",
-          "oklch(95% 0.00666 97.35)"
+          "oklch(15% 0.00671 115.71)",
+          "oklch(26% 0.00671 115.71)",
+          "oklch(38% 0.00671 115.71)",
+          "oklch(49% 0.00671 115.71)",
+          "oklch(61% 0.00671 115.71)",
+          "oklch(72% 0.00671 115.71)",
+          "oklch(84% 0.00671 115.71)",
+          "oklch(95% 0.00671 115.71)"
         ]
       },
       "primary": {
         "role": "primary",
         "displayName": "Primary",
         "tonalRamp": [
-          "oklch(15% 0.02212 114.71)",
-          "oklch(26% 0.02212 114.71)",
-          "oklch(38% 0.02212 114.71)",
-          "oklch(49% 0.02212 114.71)",
-          "oklch(61% 0.02212 114.71)",
-          "oklch(72% 0.02212 114.71)",
-          "oklch(84% 0.02212 114.71)",
-          "oklch(95% 0.02212 114.71)"
+          "oklch(15% 0.01437 123.95)",
+          "oklch(26% 0.01437 123.95)",
+          "oklch(38% 0.01437 123.95)",
+          "oklch(49% 0.01437 123.95)",
+          "oklch(61% 0.01437 123.95)",
+          "oklch(72% 0.01437 123.95)",
+          "oklch(84% 0.01437 123.95)",
+          "oklch(95% 0.01437 123.95)"
         ]
       },
       "primary-foreground": {
         "role": "primary",
         "displayName": "Primary Foreground",
         "tonalRamp": [
-          "oklch(15% 0.09134 100.53)",
-          "oklch(26% 0.09134 100.53)",
-          "oklch(38% 0.09134 100.53)",
-          "oklch(49% 0.09134 100.53)",
-          "oklch(61% 0.09134 100.53)",
-          "oklch(72% 0.09134 100.53)",
-          "oklch(84% 0.09134 100.53)",
-          "oklch(95% 0.09134 100.53)"
+          "oklch(15% 0.08142 100.19)",
+          "oklch(26% 0.08142 100.19)",
+          "oklch(38% 0.08142 100.19)",
+          "oklch(49% 0.08142 100.19)",
+          "oklch(61% 0.08142 100.19)",
+          "oklch(72% 0.08142 100.19)",
+          "oklch(84% 0.08142 100.19)",
+          "oklch(95% 0.08142 100.19)"
         ]
       },
       "secondary": {
         "role": "secondary",
         "displayName": "Secondary",
         "tonalRamp": [
-          "oklch(15% 0.04254 99.86)",
-          "oklch(26% 0.04254 99.86)",
-          "oklch(38% 0.04254 99.86)",
-          "oklch(49% 0.04254 99.86)",
-          "oklch(61% 0.04254 99.86)",
-          "oklch(72% 0.04254 99.86)",
-          "oklch(84% 0.04254 99.86)",
-          "oklch(95% 0.04254 99.86)"
+          "oklch(15% 0.01347 111.29)",
+          "oklch(26% 0.01347 111.29)",
+          "oklch(38% 0.01347 111.29)",
+          "oklch(49% 0.01347 111.29)",
+          "oklch(61% 0.01347 111.29)",
+          "oklch(72% 0.01347 111.29)",
+          "oklch(84% 0.01347 111.29)",
+          "oklch(95% 0.01347 111.29)"
         ]
       },
       "muted": {
         "role": "neutral",
         "displayName": "Muted",
         "tonalRamp": [
-          "oklch(15% 0.01739 99.61)",
-          "oklch(26% 0.01739 99.61)",
-          "oklch(38% 0.01739 99.61)",
-          "oklch(49% 0.01739 99.61)",
-          "oklch(61% 0.01739 99.61)",
-          "oklch(72% 0.01739 99.61)",
-          "oklch(84% 0.01739 99.61)",
-          "oklch(95% 0.01739 99.61)"
+          "oklch(15% 0.00965 119.59)",
+          "oklch(26% 0.00965 119.59)",
+          "oklch(38% 0.00965 119.59)",
+          "oklch(49% 0.00965 119.59)",
+          "oklch(61% 0.00965 119.59)",
+          "oklch(72% 0.00965 119.59)",
+          "oklch(84% 0.00965 119.59)",
+          "oklch(95% 0.00965 119.59)"
         ]
       },
       "muted-foreground": {
         "role": "neutral",
         "displayName": "Muted Foreground",
         "tonalRamp": [
-          "oklch(15% 0.03207 102.98)",
-          "oklch(26% 0.03207 102.98)",
-          "oklch(38% 0.03207 102.98)",
-          "oklch(49% 0.03207 102.98)",
-          "oklch(61% 0.03207 102.98)",
-          "oklch(72% 0.03207 102.98)",
-          "oklch(84% 0.03207 102.98)",
-          "oklch(95% 0.03207 102.98)"
+          "oklch(15% 0.01493 126.60)",
+          "oklch(26% 0.01493 126.60)",
+          "oklch(38% 0.01493 126.60)",
+          "oklch(49% 0.01493 126.60)",
+          "oklch(61% 0.01493 126.60)",
+          "oklch(72% 0.01493 126.60)",
+          "oklch(84% 0.01493 126.60)",
+          "oklch(95% 0.01493 126.60)"
         ]
       },
       "accent": {
         "role": "secondary",
         "displayName": "Accent",
         "tonalRamp": [
-          "oklch(15% 0.06394 101.74)",
-          "oklch(26% 0.06394 101.74)",
-          "oklch(38% 0.06394 101.74)",
-          "oklch(49% 0.06394 101.74)",
-          "oklch(61% 0.06394 101.74)",
-          "oklch(72% 0.06394 101.74)",
-          "oklch(84% 0.06394 101.74)",
-          "oklch(95% 0.06394 101.74)"
+          "oklch(15% 0.03604 105.37)",
+          "oklch(26% 0.03604 105.37)",
+          "oklch(38% 0.03604 105.37)",
+          "oklch(49% 0.03604 105.37)",
+          "oklch(61% 0.03604 105.37)",
+          "oklch(72% 0.03604 105.37)",
+          "oklch(84% 0.03604 105.37)",
+          "oklch(95% 0.03604 105.37)"
         ]
       },
       "destructive": {
@@ -162,28 +162,28 @@
         "role": "neutral",
         "displayName": "Border",
         "tonalRamp": [
-          "oklch(15% 0.03762 102.12)",
-          "oklch(26% 0.03762 102.12)",
-          "oklch(38% 0.03762 102.12)",
-          "oklch(49% 0.03762 102.12)",
-          "oklch(61% 0.03762 102.12)",
-          "oklch(72% 0.03762 102.12)",
-          "oklch(84% 0.03762 102.12)",
-          "oklch(95% 0.03762 102.12)"
+          "oklch(15% 0.01405 120.32)",
+          "oklch(26% 0.01405 120.32)",
+          "oklch(38% 0.01405 120.32)",
+          "oklch(49% 0.01405 120.32)",
+          "oklch(61% 0.01405 120.32)",
+          "oklch(72% 0.01405 120.32)",
+          "oklch(84% 0.01405 120.32)",
+          "oklch(95% 0.01405 120.32)"
         ]
       },
       "input": {
         "role": "neutral",
         "displayName": "Input",
         "tonalRamp": [
-          "oklch(15% 0.03769 101.97)",
-          "oklch(26% 0.03769 101.97)",
-          "oklch(38% 0.03769 101.97)",
-          "oklch(49% 0.03769 101.97)",
-          "oklch(61% 0.03769 101.97)",
-          "oklch(72% 0.03769 101.97)",
-          "oklch(84% 0.03769 101.97)",
-          "oklch(95% 0.03769 101.97)"
+          "oklch(15% 0.02062 127.34)",
+          "oklch(26% 0.02062 127.34)",
+          "oklch(38% 0.02062 127.34)",
+          "oklch(49% 0.02062 127.34)",
+          "oklch(61% 0.02062 127.34)",
+          "oklch(72% 0.02062 127.34)",
+          "oklch(84% 0.02062 127.34)",
+          "oklch(95% 0.02062 127.34)"
         ]
       },
       "success": {
@@ -204,224 +204,224 @@
         "role": "neutral",
         "displayName": "Subtle",
         "tonalRamp": [
-          "oklch(15% 0.01734 99.60)",
-          "oklch(26% 0.01734 99.60)",
-          "oklch(38% 0.01734 99.60)",
-          "oklch(49% 0.01734 99.60)",
-          "oklch(61% 0.01734 99.60)",
-          "oklch(72% 0.01734 99.60)",
-          "oklch(84% 0.01734 99.60)",
-          "oklch(95% 0.01734 99.60)"
+          "oklch(15% 0.00962 119.59)",
+          "oklch(26% 0.00962 119.59)",
+          "oklch(38% 0.00962 119.59)",
+          "oklch(49% 0.00962 119.59)",
+          "oklch(61% 0.00962 119.59)",
+          "oklch(72% 0.00962 119.59)",
+          "oklch(84% 0.00962 119.59)",
+          "oklch(95% 0.00962 119.59)"
         ]
       },
       "data": {
         "role": "primary",
         "displayName": "Data",
         "tonalRamp": [
-          "oklch(15% 0.10405 96.07)",
-          "oklch(26% 0.10405 96.07)",
-          "oklch(38% 0.10405 96.07)",
-          "oklch(49% 0.10405 96.07)",
-          "oklch(61% 0.10405 96.07)",
-          "oklch(72% 0.10405 96.07)",
-          "oklch(84% 0.10405 96.07)",
-          "oklch(95% 0.10405 96.07)"
+          "oklch(15% 0.09593 94.62)",
+          "oklch(26% 0.09593 94.62)",
+          "oklch(38% 0.09593 94.62)",
+          "oklch(49% 0.09593 94.62)",
+          "oklch(61% 0.09593 94.62)",
+          "oklch(72% 0.09593 94.62)",
+          "oklch(84% 0.09593 94.62)",
+          "oklch(95% 0.09593 94.62)"
         ]
       },
       "sidebar": {
         "role": "secondary",
         "displayName": "Sidebar",
         "tonalRamp": [
-          "oklch(15% 0.10871 102.02)",
-          "oklch(26% 0.10871 102.02)",
-          "oklch(38% 0.10871 102.02)",
-          "oklch(49% 0.10871 102.02)",
-          "oklch(61% 0.10871 102.02)",
-          "oklch(72% 0.10871 102.02)",
-          "oklch(84% 0.10871 102.02)",
-          "oklch(95% 0.10871 102.02)"
+          "oklch(15% 0.05823 102.12)",
+          "oklch(26% 0.05823 102.12)",
+          "oklch(38% 0.05823 102.12)",
+          "oklch(49% 0.05823 102.12)",
+          "oklch(61% 0.05823 102.12)",
+          "oklch(72% 0.05823 102.12)",
+          "oklch(84% 0.05823 102.12)",
+          "oklch(95% 0.05823 102.12)"
         ]
       },
       "sidebar-foreground": {
         "role": "secondary",
         "displayName": "Sidebar Foreground",
         "tonalRamp": [
-          "oklch(15% 0.02671 107.77)",
-          "oklch(26% 0.02671 107.77)",
-          "oklch(38% 0.02671 107.77)",
-          "oklch(49% 0.02671 107.77)",
-          "oklch(61% 0.02671 107.77)",
-          "oklch(72% 0.02671 107.77)",
-          "oklch(84% 0.02671 107.77)",
-          "oklch(95% 0.02671 107.77)"
+          "oklch(15% 0.02060 115.24)",
+          "oklch(26% 0.02060 115.24)",
+          "oklch(38% 0.02060 115.24)",
+          "oklch(49% 0.02060 115.24)",
+          "oklch(61% 0.02060 115.24)",
+          "oklch(72% 0.02060 115.24)",
+          "oklch(84% 0.02060 115.24)",
+          "oklch(95% 0.02060 115.24)"
         ]
       },
       "sidebar-accent": {
         "role": "secondary",
         "displayName": "Sidebar Accent",
         "tonalRamp": [
-          "oklch(15% 0.12646 102.74)",
-          "oklch(26% 0.12646 102.74)",
-          "oklch(38% 0.12646 102.74)",
-          "oklch(49% 0.12646 102.74)",
-          "oklch(61% 0.12646 102.74)",
-          "oklch(72% 0.12646 102.74)",
-          "oklch(84% 0.12646 102.74)",
-          "oklch(95% 0.12646 102.74)"
+          "oklch(15% 0.05884 101.08)",
+          "oklch(26% 0.05884 101.08)",
+          "oklch(38% 0.05884 101.08)",
+          "oklch(49% 0.05884 101.08)",
+          "oklch(61% 0.05884 101.08)",
+          "oklch(72% 0.05884 101.08)",
+          "oklch(84% 0.05884 101.08)",
+          "oklch(95% 0.05884 101.08)"
         ]
       },
       "sidebar-accent-foreground": {
         "role": "secondary",
         "displayName": "Sidebar Accent Foreground",
         "tonalRamp": [
-          "oklch(15% 0.02210 107.60)",
-          "oklch(26% 0.02210 107.60)",
-          "oklch(38% 0.02210 107.60)",
-          "oklch(49% 0.02210 107.60)",
-          "oklch(61% 0.02210 107.60)",
-          "oklch(72% 0.02210 107.60)",
-          "oklch(84% 0.02210 107.60)",
-          "oklch(95% 0.02210 107.60)"
+          "oklch(15% 0.02060 115.24)",
+          "oklch(26% 0.02060 115.24)",
+          "oklch(38% 0.02060 115.24)",
+          "oklch(49% 0.02060 115.24)",
+          "oklch(61% 0.02060 115.24)",
+          "oklch(72% 0.02060 115.24)",
+          "oklch(84% 0.02060 115.24)",
+          "oklch(95% 0.02060 115.24)"
         ]
       },
       "sidebar-border": {
         "role": "secondary",
         "displayName": "Sidebar Border",
         "tonalRamp": [
-          "oklch(15% 0.11360 102.42)",
-          "oklch(26% 0.11360 102.42)",
-          "oklch(38% 0.11360 102.42)",
-          "oklch(49% 0.11360 102.42)",
-          "oklch(61% 0.11360 102.42)",
-          "oklch(72% 0.11360 102.42)",
-          "oklch(84% 0.11360 102.42)",
-          "oklch(95% 0.11360 102.42)"
+          "oklch(15% 0.05662 103.06)",
+          "oklch(26% 0.05662 103.06)",
+          "oklch(38% 0.05662 103.06)",
+          "oklch(49% 0.05662 103.06)",
+          "oklch(61% 0.05662 103.06)",
+          "oklch(72% 0.05662 103.06)",
+          "oklch(84% 0.05662 103.06)",
+          "oklch(95% 0.05662 103.06)"
         ]
       },
       "dark-background": {
         "role": "neutral",
         "displayName": "Dark Background",
         "tonalRamp": [
-          "oklch(15% 0.01124 114.95)",
-          "oklch(26% 0.01124 114.95)",
-          "oklch(38% 0.01124 114.95)",
-          "oklch(49% 0.01124 114.95)",
-          "oklch(61% 0.01124 114.95)",
-          "oklch(72% 0.01124 114.95)",
-          "oklch(84% 0.01124 114.95)",
-          "oklch(95% 0.01124 114.95)"
+          "oklch(15% 0.00515 248.10)",
+          "oklch(26% 0.00515 248.10)",
+          "oklch(38% 0.00515 248.10)",
+          "oklch(49% 0.00515 248.10)",
+          "oklch(61% 0.00515 248.10)",
+          "oklch(72% 0.00515 248.10)",
+          "oklch(84% 0.00515 248.10)",
+          "oklch(95% 0.00515 248.10)"
         ]
       },
       "dark-foreground": {
         "role": "neutral",
         "displayName": "Dark Foreground",
         "tonalRamp": [
-          "oklch(15% 0.03029 104.93)",
-          "oklch(26% 0.03029 104.93)",
-          "oklch(38% 0.03029 104.93)",
-          "oklch(49% 0.03029 104.93)",
-          "oklch(61% 0.03029 104.93)",
-          "oklch(72% 0.03029 104.93)",
-          "oklch(84% 0.03029 104.93)",
-          "oklch(95% 0.03029 104.93)"
+          "oklch(15% 0.00831 121.64)",
+          "oklch(26% 0.00831 121.64)",
+          "oklch(38% 0.00831 121.64)",
+          "oklch(49% 0.00831 121.64)",
+          "oklch(61% 0.00831 121.64)",
+          "oklch(72% 0.00831 121.64)",
+          "oklch(84% 0.00831 121.64)",
+          "oklch(95% 0.00831 121.64)"
         ]
       },
       "dark-card": {
         "role": "neutral",
         "displayName": "Dark Card",
         "tonalRamp": [
-          "oklch(15% 0.01799 116.78)",
-          "oklch(26% 0.01799 116.78)",
-          "oklch(38% 0.01799 116.78)",
-          "oklch(49% 0.01799 116.78)",
-          "oklch(61% 0.01799 116.78)",
-          "oklch(72% 0.01799 116.78)",
-          "oklch(84% 0.01799 116.78)",
-          "oklch(95% 0.01799 116.78)"
+          "oklch(15% 0.00491 248.04)",
+          "oklch(26% 0.00491 248.04)",
+          "oklch(38% 0.00491 248.04)",
+          "oklch(49% 0.00491 248.04)",
+          "oklch(61% 0.00491 248.04)",
+          "oklch(72% 0.00491 248.04)",
+          "oklch(84% 0.00491 248.04)",
+          "oklch(95% 0.00491 248.04)"
         ]
       },
       "dark-primary": {
         "role": "primary",
         "displayName": "Dark Primary",
         "tonalRamp": [
-          "oklch(15% 0.13480 101.82)",
-          "oklch(26% 0.13480 101.82)",
-          "oklch(38% 0.13480 101.82)",
-          "oklch(49% 0.13480 101.82)",
-          "oklch(61% 0.13480 101.82)",
-          "oklch(72% 0.13480 101.82)",
-          "oklch(84% 0.13480 101.82)",
-          "oklch(95% 0.13480 101.82)"
+          "oklch(15% 0.12630 101.20)",
+          "oklch(26% 0.12630 101.20)",
+          "oklch(38% 0.12630 101.20)",
+          "oklch(49% 0.12630 101.20)",
+          "oklch(61% 0.12630 101.20)",
+          "oklch(72% 0.12630 101.20)",
+          "oklch(84% 0.12630 101.20)",
+          "oklch(95% 0.12630 101.20)"
         ]
       },
       "dark-primary-foreground": {
         "role": "primary",
         "displayName": "Dark Primary Foreground",
         "tonalRamp": [
-          "oklch(15% 0.03478 105.96)",
-          "oklch(26% 0.03478 105.96)",
-          "oklch(38% 0.03478 105.96)",
-          "oklch(49% 0.03478 105.96)",
-          "oklch(61% 0.03478 105.96)",
-          "oklch(72% 0.03478 105.96)",
-          "oklch(84% 0.03478 105.96)",
-          "oklch(95% 0.03478 105.96)"
+          "oklch(15% 0.01827 121.16)",
+          "oklch(26% 0.01827 121.16)",
+          "oklch(38% 0.01827 121.16)",
+          "oklch(49% 0.01827 121.16)",
+          "oklch(61% 0.01827 121.16)",
+          "oklch(72% 0.01827 121.16)",
+          "oklch(84% 0.01827 121.16)",
+          "oklch(95% 0.01827 121.16)"
         ]
       },
       "dark-secondary": {
         "role": "secondary",
         "displayName": "Dark Secondary",
         "tonalRamp": [
-          "oklch(15% 0.03559 114.42)",
-          "oklch(26% 0.03559 114.42)",
-          "oklch(38% 0.03559 114.42)",
-          "oklch(49% 0.03559 114.42)",
-          "oklch(61% 0.03559 114.42)",
-          "oklch(72% 0.03559 114.42)",
-          "oklch(84% 0.03559 114.42)",
-          "oklch(95% 0.03559 114.42)"
+          "oklch(15% 0.00463 174.12)",
+          "oklch(26% 0.00463 174.12)",
+          "oklch(38% 0.00463 174.12)",
+          "oklch(49% 0.00463 174.12)",
+          "oklch(61% 0.00463 174.12)",
+          "oklch(72% 0.00463 174.12)",
+          "oklch(84% 0.00463 174.12)",
+          "oklch(95% 0.00463 174.12)"
         ]
       },
       "dark-muted": {
         "role": "neutral",
         "displayName": "Dark Muted",
         "tonalRamp": [
-          "oklch(15% 0.02244 118.20)",
-          "oklch(26% 0.02244 118.20)",
-          "oklch(38% 0.02244 118.20)",
-          "oklch(49% 0.02244 118.20)",
-          "oklch(61% 0.02244 118.20)",
-          "oklch(72% 0.02244 118.20)",
-          "oklch(84% 0.02244 118.20)",
-          "oklch(95% 0.02244 118.20)"
+          "oklch(15% 0.00474 219.65)",
+          "oklch(26% 0.00474 219.65)",
+          "oklch(38% 0.00474 219.65)",
+          "oklch(49% 0.00474 219.65)",
+          "oklch(61% 0.00474 219.65)",
+          "oklch(72% 0.00474 219.65)",
+          "oklch(84% 0.00474 219.65)",
+          "oklch(95% 0.00474 219.65)"
         ]
       },
       "dark-muted-foreground": {
         "role": "neutral",
         "displayName": "Dark Muted Foreground",
         "tonalRamp": [
-          "oklch(15% 0.03570 105.39)",
-          "oklch(26% 0.03570 105.39)",
-          "oklch(38% 0.03570 105.39)",
-          "oklch(49% 0.03570 105.39)",
-          "oklch(61% 0.03570 105.39)",
-          "oklch(72% 0.03570 105.39)",
-          "oklch(84% 0.03570 105.39)",
-          "oklch(95% 0.03570 105.39)"
+          "oklch(15% 0.01020 140.51)",
+          "oklch(26% 0.01020 140.51)",
+          "oklch(38% 0.01020 140.51)",
+          "oklch(49% 0.01020 140.51)",
+          "oklch(61% 0.01020 140.51)",
+          "oklch(72% 0.01020 140.51)",
+          "oklch(84% 0.01020 140.51)",
+          "oklch(95% 0.01020 140.51)"
         ]
       },
       "dark-accent": {
         "role": "secondary",
         "displayName": "Dark Accent",
         "tonalRamp": [
-          "oklch(15% 0.03566 114.45)",
-          "oklch(26% 0.03566 114.45)",
-          "oklch(38% 0.03566 114.45)",
-          "oklch(49% 0.03566 114.45)",
-          "oklch(61% 0.03566 114.45)",
-          "oklch(72% 0.03566 114.45)",
-          "oklch(84% 0.03566 114.45)",
-          "oklch(95% 0.03566 114.45)"
+          "oklch(15% 0.01249 120.10)",
+          "oklch(26% 0.01249 120.10)",
+          "oklch(38% 0.01249 120.10)",
+          "oklch(49% 0.01249 120.10)",
+          "oklch(61% 0.01249 120.10)",
+          "oklch(72% 0.01249 120.10)",
+          "oklch(84% 0.01249 120.10)",
+          "oklch(95% 0.01249 120.10)"
         ]
       },
       "dark-destructive": {
@@ -456,140 +456,140 @@
         "role": "neutral",
         "displayName": "Dark Border",
         "tonalRamp": [
-          "oklch(15% 0.03222 114.79)",
-          "oklch(26% 0.03222 114.79)",
-          "oklch(38% 0.03222 114.79)",
-          "oklch(49% 0.03222 114.79)",
-          "oklch(61% 0.03222 114.79)",
-          "oklch(72% 0.03222 114.79)",
-          "oklch(84% 0.03222 114.79)",
-          "oklch(95% 0.03222 114.79)"
+          "oklch(15% 0.00761 169.98)",
+          "oklch(26% 0.00761 169.98)",
+          "oklch(38% 0.00761 169.98)",
+          "oklch(49% 0.00761 169.98)",
+          "oklch(61% 0.00761 169.98)",
+          "oklch(72% 0.00761 169.98)",
+          "oklch(84% 0.00761 169.98)",
+          "oklch(95% 0.00761 169.98)"
         ]
       },
       "dark-input": {
         "role": "neutral",
         "displayName": "Dark Input",
         "tonalRamp": [
-          "oklch(15% 0.03810 111.13)",
-          "oklch(26% 0.03810 111.13)",
-          "oklch(38% 0.03810 111.13)",
-          "oklch(49% 0.03810 111.13)",
-          "oklch(61% 0.03810 111.13)",
-          "oklch(72% 0.03810 111.13)",
-          "oklch(84% 0.03810 111.13)",
-          "oklch(95% 0.03810 111.13)"
+          "oklch(15% 0.01424 149.10)",
+          "oklch(26% 0.01424 149.10)",
+          "oklch(38% 0.01424 149.10)",
+          "oklch(49% 0.01424 149.10)",
+          "oklch(61% 0.01424 149.10)",
+          "oklch(72% 0.01424 149.10)",
+          "oklch(84% 0.01424 149.10)",
+          "oklch(95% 0.01424 149.10)"
         ]
       },
       "dark-success": {
         "role": "secondary",
         "displayName": "Dark Success",
         "tonalRamp": [
-          "oklch(15% 0.09620 121.36)",
-          "oklch(26% 0.09620 121.36)",
-          "oklch(38% 0.09620 121.36)",
-          "oklch(49% 0.09620 121.36)",
-          "oklch(61% 0.09620 121.36)",
-          "oklch(72% 0.09620 121.36)",
-          "oklch(84% 0.09620 121.36)",
-          "oklch(95% 0.09620 121.36)"
+          "oklch(15% 0.08082 122.29)",
+          "oklch(26% 0.08082 122.29)",
+          "oklch(38% 0.08082 122.29)",
+          "oklch(49% 0.08082 122.29)",
+          "oklch(61% 0.08082 122.29)",
+          "oklch(72% 0.08082 122.29)",
+          "oklch(84% 0.08082 122.29)",
+          "oklch(95% 0.08082 122.29)"
         ]
       },
       "dark-subtle": {
         "role": "neutral",
         "displayName": "Dark Subtle",
         "tonalRamp": [
-          "oklch(15% 0.01645 117.72)",
-          "oklch(26% 0.01645 117.72)",
-          "oklch(38% 0.01645 117.72)",
-          "oklch(49% 0.01645 117.72)",
-          "oklch(61% 0.01645 117.72)",
-          "oklch(72% 0.01645 117.72)",
-          "oklch(84% 0.01645 117.72)",
-          "oklch(95% 0.01645 117.72)"
+          "oklch(15% 0.00501 248.06)",
+          "oklch(26% 0.00501 248.06)",
+          "oklch(38% 0.00501 248.06)",
+          "oklch(49% 0.00501 248.06)",
+          "oklch(61% 0.00501 248.06)",
+          "oklch(72% 0.00501 248.06)",
+          "oklch(84% 0.00501 248.06)",
+          "oklch(95% 0.00501 248.06)"
         ]
       },
       "dark-data": {
         "role": "primary",
         "displayName": "Dark Data",
         "tonalRamp": [
-          "oklch(15% 0.13512 101.86)",
-          "oklch(26% 0.13512 101.86)",
-          "oklch(38% 0.13512 101.86)",
-          "oklch(49% 0.13512 101.86)",
-          "oklch(61% 0.13512 101.86)",
-          "oklch(72% 0.13512 101.86)",
-          "oklch(84% 0.13512 101.86)",
-          "oklch(95% 0.13512 101.86)"
+          "oklch(15% 0.12148 101.35)",
+          "oklch(26% 0.12148 101.35)",
+          "oklch(38% 0.12148 101.35)",
+          "oklch(49% 0.12148 101.35)",
+          "oklch(61% 0.12148 101.35)",
+          "oklch(72% 0.12148 101.35)",
+          "oklch(84% 0.12148 101.35)",
+          "oklch(95% 0.12148 101.35)"
         ]
       },
       "dark-sidebar": {
         "role": "secondary",
         "displayName": "Dark Sidebar",
         "tonalRamp": [
-          "oklch(15% 0.02082 115.31)",
-          "oklch(26% 0.02082 115.31)",
-          "oklch(38% 0.02082 115.31)",
-          "oklch(49% 0.02082 115.31)",
-          "oklch(61% 0.02082 115.31)",
-          "oklch(72% 0.02082 115.31)",
-          "oklch(84% 0.02082 115.31)",
-          "oklch(95% 0.02082 115.31)"
+          "oklch(15% 0.00501 248.06)",
+          "oklch(26% 0.00501 248.06)",
+          "oklch(38% 0.00501 248.06)",
+          "oklch(49% 0.00501 248.06)",
+          "oklch(61% 0.00501 248.06)",
+          "oklch(72% 0.00501 248.06)",
+          "oklch(84% 0.00501 248.06)",
+          "oklch(95% 0.00501 248.06)"
         ]
       },
       "dark-sidebar-foreground": {
         "role": "secondary",
         "displayName": "Dark Sidebar Foreground",
         "tonalRamp": [
-          "oklch(15% 0.04222 105.73)",
-          "oklch(26% 0.04222 105.73)",
-          "oklch(38% 0.04222 105.73)",
-          "oklch(49% 0.04222 105.73)",
-          "oklch(61% 0.04222 105.73)",
-          "oklch(72% 0.04222 105.73)",
-          "oklch(84% 0.04222 105.73)",
-          "oklch(95% 0.04222 105.73)"
+          "oklch(15% 0.01165 128.61)",
+          "oklch(26% 0.01165 128.61)",
+          "oklch(38% 0.01165 128.61)",
+          "oklch(49% 0.01165 128.61)",
+          "oklch(61% 0.01165 128.61)",
+          "oklch(72% 0.01165 128.61)",
+          "oklch(84% 0.01165 128.61)",
+          "oklch(95% 0.01165 128.61)"
         ]
       },
       "dark-sidebar-accent": {
         "role": "secondary",
         "displayName": "Dark Sidebar Accent",
         "tonalRamp": [
-          "oklch(15% 0.03559 114.42)",
-          "oklch(26% 0.03559 114.42)",
-          "oklch(38% 0.03559 114.42)",
-          "oklch(49% 0.03559 114.42)",
-          "oklch(61% 0.03559 114.42)",
-          "oklch(72% 0.03559 114.42)",
-          "oklch(84% 0.03559 114.42)",
-          "oklch(95% 0.03559 114.42)"
+          "oklch(15% 0.00673 164.51)",
+          "oklch(26% 0.00673 164.51)",
+          "oklch(38% 0.00673 164.51)",
+          "oklch(49% 0.00673 164.51)",
+          "oklch(61% 0.00673 164.51)",
+          "oklch(72% 0.00673 164.51)",
+          "oklch(84% 0.00673 164.51)",
+          "oklch(95% 0.00673 164.51)"
         ]
       },
       "dark-sidebar-accent-foreground": {
         "role": "secondary",
         "displayName": "Dark Sidebar Accent Foreground",
         "tonalRamp": [
-          "oklch(15% 0.03029 104.93)",
-          "oklch(26% 0.03029 104.93)",
-          "oklch(38% 0.03029 104.93)",
-          "oklch(49% 0.03029 104.93)",
-          "oklch(61% 0.03029 104.93)",
-          "oklch(72% 0.03029 104.93)",
-          "oklch(84% 0.03029 104.93)",
-          "oklch(95% 0.03029 104.93)"
+          "oklch(15% 0.00831 121.64)",
+          "oklch(26% 0.00831 121.64)",
+          "oklch(38% 0.00831 121.64)",
+          "oklch(49% 0.00831 121.64)",
+          "oklch(61% 0.00831 121.64)",
+          "oklch(72% 0.00831 121.64)",
+          "oklch(84% 0.00831 121.64)",
+          "oklch(95% 0.00831 121.64)"
         ]
       },
       "dark-sidebar-border": {
         "role": "secondary",
         "displayName": "Dark Sidebar Border",
         "tonalRamp": [
-          "oklch(15% 0.03222 114.79)",
-          "oklch(26% 0.03222 114.79)",
-          "oklch(38% 0.03222 114.79)",
-          "oklch(49% 0.03222 114.79)",
-          "oklch(61% 0.03222 114.79)",
-          "oklch(72% 0.03222 114.79)",
-          "oklch(84% 0.03222 114.79)",
-          "oklch(95% 0.03222 114.79)"
+          "oklch(15% 0.00977 151.55)",
+          "oklch(26% 0.00977 151.55)",
+          "oklch(38% 0.00977 151.55)",
+          "oklch(49% 0.00977 151.55)",
+          "oklch(61% 0.00977 151.55)",
+          "oklch(72% 0.00977 151.55)",
+          "oklch(84% 0.00977 151.55)",
+          "oklch(95% 0.00977 151.55)"
         ]
       }
     },
@@ -726,7 +726,7 @@
       "name": "Workspace navigation",
       "kind": "nav",
       "refersTo": "navigation-active",
-      "description": "Butter-yellow rail with solid ink active navigation.",
+      "description": "Muted yellow rail in Light and charcoal rail in Dark, with solid active navigation.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Workspace\"><a class=\"ds-nav-item\" href=\"#overview\">Overview</a><a class=\"ds-nav-item\" href=\"#explore\" aria-current=\"page\">Explore</a><a class=\"ds-nav-item\" href=\"#settings\">Settings</a></nav>",
       "css": ".ds-nav{width:208px;padding:8px;background:var(--sidebar);font-family:\"Geist Variable\",sans-serif;font-size:14px;}.ds-nav-item{display:flex;align-items:center;height:48px;padding:8px;border-radius:3px;color:var(--sidebar-foreground);text-decoration:none;}.ds-nav-item[aria-current=page]{background:var(--primary);color:var(--primary-foreground);font-weight:650;}.ds-nav-item:hover,.ds-nav-item:active{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);}.ds-nav-item:focus-visible{outline:2px solid var(--primary);outline-offset:3px;box-shadow:none;} .ds-nav-item[aria-current=page]:hover{background:var(--primary);color:var(--primary-foreground);}"
     },
@@ -773,9 +773,9 @@
   ],
   "narrative": {
     "northStar": "Yuzu",
-    "overview": "Piko is a compact measurement tool with a graphic identity. Butter-yellow navigation, warm ink, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.\n\nAnalytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.",
+    "overview": "Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, squared controls, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.\n\nAnalytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.",
     "keyCharacteristics": [
-      "Warm working ground, butter-yellow orientation, ink actions, ochre measurements.",
+      "Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.",
       "Geist typography with restrained headings and prominent measurements.",
       "Flat analytical fields; contained forms and inspection.",
       "Squared controls, explicit focus, and stable loading geometry."

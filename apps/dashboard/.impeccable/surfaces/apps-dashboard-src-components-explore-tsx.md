@@ -11,7 +11,9 @@ related_targets: ["apps/dashboard/src/components/overview.tsx","apps/dashboard/s
 Scope: Overview, Explore, Settings and shared shell. Mode: Operate.
 Audience: developers inspecting website/tool activity. Task: choose product/date, read measurements, refine a server-side query, inspect an event, and manage collection.
 Constraints: preserve all behavior, privacy controls, keyboard navigation, themes, mobile layouts, and stable refresh geometry. No new backend scope or identity collection.
-Direction: user-selected Yuzu from the eight-theme preview. Butter-yellow navigation, warm ink, ochre charting, Geist, squared controls, ink navigation selections and a straight three-bar mark. Preserve the existing compact composition and interactions; the user's request is a visual-system change, not an information-architecture rewrite.
-Memorable moment: the yellow rail and ink selection orient a continuous analytical workspace; charts and proportional bars share a crisp graphic vocabulary.
+Direction: user-selected Yuzu from the eight-theme preview. Muted yellow navigation and stone surfaces in Light, deep charcoal in Dark, restrained yellow accents, ochre charting, Geist, squared controls, ink navigation selections and a straight three-bar mark. Preserve the existing compact composition and interactions; the user's request is a visual-system change, not an information-architecture rewrite.
+Memorable moment: the muted yellow Light rail, charcoal Dark rail, and solid selection orient a continuous analytical workspace; charts and proportional bars share a crisp graphic vocabulary.
 Composition: preserve the shipped shallow query rail, two-thirds trend and one-third breakdown, and dense event stream. Reference: the Yuzu light/dark preview in piko-theme-directions.html; the user explicitly selected it. No further concept selection is needed.
 Unresolved: none. Light, Dark and Auto remain supported, with no new backend or telemetry behavior.
+
+Theme refinement: reduce glare on large Light surfaces; keep Dark surfaces and text nearly neutral. Yuzu yellow is an accent, not a tint applied to every surface. This refinement follows the user’s explicit feedback.
