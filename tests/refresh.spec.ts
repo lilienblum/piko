@@ -1,0 +1,107 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const api = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
+let product: { id: string; name: string };
+async function admin(path: string, body: unknown) {
+  const response = await fetch(`${api}/api${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-piko-admin": "1" },
+    body: JSON.stringify(body),
+  });
+  expect(response.ok).toBe(true);
+  return response.json();
+}
+async function holdQuery(page: Page) {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/products/*/query", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  return release;
+}
+test.beforeAll(async () => {
+  product = await admin("/products", {
+    name: `Refresh ${Date.now()}`,
+    kind: "website",
+    retention_days: 30,
+  });
+  const { key } = await admin(`/products/${product.id}/keys`, { label: "Refresh regression" });
+  const response = await fetch(`${api}/api/ingest`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      events: Array.from({ length: 31 }, (_, i) => ({
+        event_id: crypto.randomUUID(),
+        name: "page_view",
+        source: "browser",
+        actor_id: `visitor-${i}`,
+        identity_kind: "visitor",
+        properties: { path: i % 2 ? "/docs" : "/", referrer: "Direct" },
+      })),
+    }),
+  });
+  expect(response.ok).toBe(true);
+});
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript((id) => localStorage.setItem("piko:product", id), product.id);
+  await page.route("**/_piko/runtime", (route) => route.fulfill({ json: { live: false } }));
+});
+
+test("manual Overview refresh retains cards and chart without layout movement", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator(".metric-value").first()).toHaveText("31");
+  const card = await page.locator(".metric-card").first().elementHandle();
+  const chart = await page.locator(".chart-card").elementHandle();
+  const before = await page.locator(".chart-card").boundingBox();
+  const release = await holdQuery(page);
+  try {
+    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await expect(page.getByRole("button", { name: "Refresh analytics" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(await card?.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
+    await expect(page.locator(".metric-value").first()).toHaveText("31");
+    expect(await page.locator(".chart-card").boundingBox()).toEqual(before);
+    await page.screenshot({ path: test.info().outputPath("overview-refreshing.png") });
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+});
+
+test("manual Explore refresh retains results, rows, and current pagination", async ({ page }) => {
+  await page.goto("/explore");
+  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByText("Page 2 of 3")).toBeVisible();
+  const chart = await page.locator(".chart-card").elementHandle();
+  const stream = await page.locator(".event-card").elementHandle();
+  const row = await page.locator(".event-card tbody tr").first().elementHandle();
+  const before = await page.locator(".event-card").boundingBox();
+  const release = await holdQuery(page);
+  try {
+    await page.getByRole("button", { name: "Refresh analytics" }).click();
+    await expect(page.getByRole("button", { name: "Refresh analytics" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await stream?.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await row?.evaluate((element) => element.isConnected)).toBe(true);
+    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+    await expect(page.getByText("across 31 matching events")).toBeVisible();
+    expect(await page.locator(".event-card").boundingBox()).toEqual(before);
+    await page.screenshot({ path: test.info().outputPath("explore-refreshing.png") });
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+  await expect(page.getByText("Page 2 of 3")).toBeVisible();
+});
