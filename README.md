@@ -1,6 +1,6 @@
 # Piko
 
-Small, self-hosted product analytics for websites, CLIs, and developer tools. MIT licensed.
+Privacy-first, self-hosted product analytics for websites, CLIs, and developer tools. MIT licensed.
 
 Piko has two independent applications, deployed together:
 
@@ -71,6 +71,12 @@ Click an Overview breakdown row to inspect its matching events in Explore. Sourc
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
+## Privacy defaults
+
+Collection starts without visitor, session, or installation identifiers. The browser tracker honors DNT/GPC, leaves campaign capture off until explicitly configured, and offers pre-send filtering plus an opt-out that discards queued data. The CLI example requires an explicit opt-in. New products created in Settings start with 30-day retention.
+
+Piko does not derive analytics identity from IP addresses or user-agent information. Paths, custom properties, and optional persistent IDs are still data you choose to collect; they are not automatically anonymized. Read [the privacy model and collection controls](docs/privacy.md) before integrating private application routes.
+
 ## Checks
 
 ```sh
@@ -99,7 +105,7 @@ See [the verification record](docs/verification.md) for measured checks and thei
 
 - External access control, one local API process, one disk. Tako API updates require a brief maintenance window; normal rolling overlap is unsupported. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
 - Browser ingestion keys are intentionally public and write-only. They are not anti-abuse credentials; a key holder can submit fabricated events. There is global capacity backpressure, but no per-key fairness or bot detection.
-- Identity is explicit, optional, and product-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to anonymous events and respects Do Not Track by default. Installations are distinct from website visitors and sessions.
+- Identity is explicit, optional, and product-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to unidentified events and always honors Do Not Track and Global Privacy Control. Installations are distinct from website visitors and sessions.
 - All dashboard displays and bucket boundaries use UTC in v1. Date ranges are half-open; today is partial. No local-time/DST bucket selection yet.
 - Pagination is bounded offset pagination, ordered by time and event ID. Each query uses a consistent database snapshot, but different pages may shift when new events arrive. Top breakdowns are limited to 12 groups, event-name discovery to 100 names, filters to 8, pages to 10,001, and page size to 100.
 - Delivery from browsers/CLIs is best effort with bounded retries. A flush confirms attempted delivery, not guaranteed delivery. Deduplication lasts while the event remains retained, not forever.

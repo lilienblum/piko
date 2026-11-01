@@ -2,20 +2,20 @@
 
 Verified locally on 1 November 2026 against the two-app Tako architecture, with per-product databases and external access control. Latest toolchain: Bun 1.4.4, Rust 1.95.0, Tako CLI 0.0.0-00ac4d2, JavaScript SDK 0.0.0-9301901, Rust SDK 0.2.1.
 
-| Check                                                      | Result                                                                      |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `bun fmt` and `bun fmt:check`                              | Pass                                                                        |
-| `bun typecheck`                                            | Pass                                                                        |
-| `bun lint`                                                 | Pass, no warnings                                                           |
-| `bun test`                                                 | 5 SDK/notification tests pass                                               |
-| `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route        |
-| `cargo test`                                               | 16 Rust tests pass (6 unit, 8 API, 1 delivery, 1 process runtime)           |
-| `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                        |
-| `cargo build --release -p piko`                            | Pass                                                                        |
-| `bun test:e2e`                                             | 42 Chromium tests pass on Tako; 27 previously passed on compiled standalone |
-| `bun scripts/verify-cli.ts`                                | Actual Rust CLI event committed; correct installation and numeric duration  |
-| `docker compose config --quiet`                            | Pass                                                                        |
-| `bun benchmark`                                            | Completed; exact persisted-count assertion passes                           |
+| Check                                                      | Result                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `bun fmt` and `bun fmt:check`                              | Pass                                                                           |
+| `bun typecheck`                                            | Pass                                                                           |
+| `bun lint`                                                 | Pass, no warnings                                                              |
+| `bun test`                                                 | 9 SDK/gateway/notification tests pass                                          |
+| `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route           |
+| `cargo test`                                               | 17 Rust tests pass (6 unit, 8 API, 2 delivery, 1 process runtime)              |
+| `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                           |
+| `cargo build --release -p piko`                            | Pass                                                                           |
+| `bun test:e2e`                                             | 54 Chromium tests pass on Tako; 27 previously passed on compiled standalone    |
+| `bun scripts/verify-cli.ts`                                | CLI opt-in/opt-out, optional identity, command redaction, and numeric duration |
+| `docker compose config --quiet`                            | Pass                                                                           |
+| `bun benchmark`                                            | Completed; exact persisted-count assertion passes                              |
 
 The API tests exercise single and batch ingestion, invalid batch atomicity, deduplication, separate product credentials/files, first-class typed numeric aggregation, percentiles, boolean filtering, product-specific retention, query admission backpressure, concurrent reads/writes, and restart persistence. Storage tests verify bounded cache behavior, active-connection pins, and idempotent migration from the early shared database. The telemetry test uses a real local TCP peer that hangs, proving bounded shutdown and immediate queue-full rejection.
 
@@ -85,3 +85,14 @@ Four new browser tests verify mixed identities, numeric duration types, and stab
 All **42 Chromium tests passed in 2.7 minutes** with `PIKO_REALTIME=1` against the two running Tako apps. One existing text assertion was scoped to the summary cards because the same metric label now also appears in the chart control. The final suite includes all six durable-channel tests and all five stable-refresh regressions. Temporary screenshot capture for the seeded website and CLI views was removed before committing. Manual browser review covered visitor, duration, and hourly selections with unchanged overview totals.
 
 `bun fmt`, `bun typecheck`, `bun lint`, five Bun unit tests, and `bun run build` passed. The existing large-client-chunk warning remains (950.13 kB, 294.10 kB gzip). This iteration changes the dashboard only; backend behavior and benchmark measurements above are unchanged.
+
+
+## Privacy-first collection
+
+Browser collection now starts without IDs or campaigns, honors DNT/GPC without an override, and exposes explicit path/referrer controls, a pre-send sanitizer, and an opt-out that discards pending events. SDK requests omit cookies and Referer and refuse redirects. The dashboard gateway allows only API/CORS headers, forwards ingestion authorization only on the ingestion route, and keeps server-side Access credentials separate. The Rust CLI example requires explicit telemetry opt-in, honors `DO_NOT_TRACK=1`, and maps unknown commands to `other`.
+
+All **54 Chromium tests passed in 2.7 minutes** against the two Tako apps with durable channels enabled. The twelve new cases exercise anonymous defaults, typed properties, no campaign capture without an allowlist, inert disabled/DNT/GPC startup, sanitization and mutation protection, scoped identity cleanup, changed privacy signals, active-request cancellation, redirect rejection, storage-read/write failure, and Settings defaults. Actual requests show no Cookie or Referer, including the tracker module import. Settings creates products with 30-day retention while preserving an existing 90-day choice. Manual browser review covered both website and CLI integration snippets.
+
+`bun fmt`, `bun typecheck`, `bun lint`, nine Bun tests, `bun run build`, all 17 Rust tests, and strict Clippy passed. The gateway test uses a real local HTTP peer to inspect forwarded headers and bodies. Rust redirect tests cover 307 and 308 with zero requests at the redirect destination; the live CLI verification confirms opt-in, Do Not Track, optional installation identity, command redaction, and numeric duration both directly against the API and through the dashboard proxy used by integration snippets.
+
+The existing client chunk warning remains (950.13 kB, 294.10 kB gzip). API event storage, queries, and benchmark behavior are unchanged. These checks prove collection behavior in the tested clients, not automatic personal-data detection or legal compliance; infrastructure logs, existing explicit identity choices, previously stored events, and backups retain their separately documented boundaries in [the privacy model](privacy.md).

@@ -96,7 +96,7 @@ function ProductFields({
           onChange={(e) => onChange({ ...value, retention_days: Number(e.target.value) })}
         />
         <FieldDescription>
-          Events older than this are deleted by the hourly cleanup job.
+          Automatic cleanup runs hourly. Choose the shortest useful retention window.
         </FieldDescription>
       </Field>
     </FieldGroup>
@@ -105,7 +105,7 @@ function ProductFields({
 export function Settings() {
   const { product, reload } = useWorkspace();
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({ name: "", kind: "website", retention_days: 90 });
+  const [draft, setDraft] = useState({ name: "", kind: "website", retention_days: 30 });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<Product>();
@@ -120,7 +120,7 @@ export function Settings() {
       setCreatedProduct(saved);
       await reload(saved.id);
       setOpen(false);
-      setDraft({ name: "", kind: "website", retention_days: 90 });
+      setDraft({ name: "", kind: "website", retention_days: 30 });
       setCreatedProduct(undefined);
     } catch (e) {
       setError(
@@ -259,10 +259,10 @@ function ProductSettings({ product }: { product: Product }) {
     typeof window !== "undefined" ? window.location.origin : "https://piko.example.com";
   const snippet =
     integration === "browser"
-      ? `<script type="module">\n  import { startBrowserTracker } from "${origin}/tracker.js";\n\n  const tracker = startBrowserTracker({\n    endpoint: "${origin}",\n    key: "${key}",\n    identity: "persistent", // explicit opt-in\n    identityScope: "${product.id}",\n  });\n\n  tracker.track("signup", { plan: "pro", trial: true, seats: 3 });\n</script>`
+      ? `<script type="module" referrerpolicy="no-referrer">\n  import { startBrowserTracker } from "${origin}/tracker.js";\n\n  const tracker = startBrowserTracker({\n    endpoint: "${origin}",\n    key: "${key}",\n    identity: "none",\n  });\n\n  tracker.track("signup", { plan: "pro", trial: true, seats: 3 });\n</script>`
       : integration === "typescript"
         ? `import { Piko } from "./sdk/typescript/client";\n\nconst piko = new Piko({\n  endpoint: "${origin}",\n  key: "${key}",\n  timeoutMs: 800,\n});\n\nawait piko.send({\n  name: "build_complete", source: "server",\n  properties: { duration_ms: 142, success: true, version: "1.2.0" },\n});`
-        : `PIKO_ENDPOINT="${origin}" \\\nPIKO_INGESTION_KEY="${key}" \\\nPIKO_INSTALLATION_ID="optional-random-id" \\\ncargo run -p piko --example cli -- build\n\n// The CLI example uses a bounded background queue,\n// an 800 ms request timeout, and a 900 ms shutdown deadline.\n// See apps/api/examples/cli.rs.`;
+        : `PIKO_TELEMETRY=1 \\\nPIKO_ENDPOINT="${origin}" \\\nPIKO_INGESTION_KEY="${key}" \\\ncargo run -p piko --example cli -- build\n\n# Explicit telemetry opt-in; no installation ID is sent.\n# DO_NOT_TRACK=1 disables collection.\n# Delivery has an 800 ms timeout and 900 ms shutdown deadline.`;
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -465,7 +465,9 @@ function ProductSettings({ product }: { product: Product }) {
                   <HugeiconsIcon icon={SourceCodeIcon} strokeWidth={2} aria-hidden="true" />
                   Connect your product
                 </CardTitle>
-                <CardDescription>A small snippet. A useful starting point.</CardDescription>
+                <CardDescription>
+                  Identity is off by default. You choose what is sent.
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -499,8 +501,10 @@ function ProductSettings({ product }: { product: Product }) {
               </pre>
               <p className="quiet">
                 {integration === "browser"
-                  ? "Persistent identity is opt-in: a random visitor ID per product key, plus a session that expires after 30 minutes of inactivity. Set identity to none for anonymous collection."
-                  : "Identity is optional. Send an explicit anonymous installation ID to measure active installations. No IP or user-agent fingerprinting."}
+                  ? "No cookies or stored visitor IDs. Campaign capture is off, and DNT/GPC stop collection. Map private routes before collecting page views."
+                  : integration === "rust"
+                    ? "Telemetry requires explicit opt-in. No installation ID is created, and unknown command names are reported as other. Never send arguments or output."
+                    : "Send only the properties your product needs. No identity is added automatically. Keep emails, credentials, and private content out of events."}
               </p>
             </TabsContent>
           </CardContent>
