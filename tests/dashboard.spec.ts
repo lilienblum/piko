@@ -181,7 +181,7 @@ test("browser tracker sends page/SPA/custom events, preserves identity, and reta
     hostname: "127.0.0.1",
     fetch: () =>
       new Response(
-        `<html><body>Tracker fixture<script type="module">import {startBrowserTracker} from '${dashboard}/tracker.js'; window.tracker=startBrowserTracker({endpoint:'${apiUrl}',key:'${key}',identity:'persistent',identityScope:'${p.id}'});</script></body></html>`,
+        `<html><body>Tracker fixture<script type="module">import {startBrowserTracker} from '${dashboard}/tracker.js'; window.tracker=startBrowserTracker({endpoint:'${apiUrl}',key:'${key}',identity:'persistent',identityScope:'${p.id}',campaigns:['utm_source','utm_campaign']});</script></body></html>`,
         { headers: { "content-type": "text/html" } },
       ),
   });

@@ -50,3 +50,62 @@ test("retry-after cannot extend total deadline", async () => {
   ).rejects.toThrow();
   expect(performance.now() - start).toBeLessThan(150);
 });
+
+test("delivery does not attach credentials or referrer and rejects redirects", async () => {
+  globalThis.fetch = (async (_input: unknown, init: RequestInit) => {
+    expect(init.credentials).toBe("omit");
+    expect(init.referrerPolicy).toBe("no-referrer");
+    expect(init.redirect).toBe("error");
+    return Response.json({ accepted: 1, duplicates: 0 });
+  }) as typeof fetch;
+  await new Piko({ endpoint: "http://localhost", key: "key" }).send({
+    name: "test",
+    source: "sdk",
+  });
+});
+
+test("aborted delivery never starts a request or retries after cancellation", async () => {
+  const controller = new AbortController();
+  let attempts = 0;
+  globalThis.fetch = (async () => {
+    attempts++;
+    controller.abort();
+    return new Response("{}", { status: 503 });
+  }) as unknown as typeof fetch;
+  const client = new Piko({ endpoint: "http://localhost", key: "key", signal: controller.signal });
+  await expect(client.send({ name: "test", source: "sdk" })).rejects.toThrow();
+  expect(attempts).toBe(1);
+  await expect(client.send({ name: "test", source: "sdk" })).rejects.toThrow();
+  expect(attempts).toBe(1);
+});
+
+test("307 responses cannot forward event bodies to another endpoint", async () => {
+  let received = 0;
+  const destination = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch() {
+      received++;
+      return Response.json({ accepted: 1, duplicates: 0 });
+    },
+  });
+  const redirect = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: () =>
+      new Response(null, { status: 307, headers: { location: String(destination.url) } }),
+  });
+  try {
+    await expect(
+      new Piko({ endpoint: String(redirect.url), key: "key", retries: 0 }).send({
+        name: "private_event",
+        source: "sdk",
+        properties: { confidential: "not forwarded" },
+      }),
+    ).rejects.toThrow();
+    expect(received).toBe(0);
+  } finally {
+    await redirect.stop(true);
+    await destination.stop(true);
+  }
+});

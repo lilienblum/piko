@@ -7,9 +7,22 @@ export async function proxyApi(request: Request): Promise<Response> {
     url.pathname + url.search,
     process.env.PIKO_API_URL ?? "http://127.0.0.1:3001",
   );
-  const headers = new Headers(request.headers);
-  for (const name of ["host", "connection", "transfer-encoding", "upgrade", "content-length"])
-    headers.delete(name);
+  const headers = new Headers();
+  for (const name of [
+    "accept",
+    "content-type",
+    "x-piko-admin",
+    "origin",
+    "access-control-request-method",
+    "access-control-request-headers",
+  ]) {
+    const value = request.headers.get(name);
+    if (value !== null) headers.set(name, value);
+  }
+  if (url.pathname === "/api/ingest") {
+    const key = request.headers.get("authorization");
+    if (key !== null) headers.set("authorization", key);
+  }
   // Dashboard-to-API service credentials remain server-side. Ingestion keeps its own bearer key.
   const credentials = tako.secrets as typeof tako.secrets & {
     readonly PIKO_API_ACCESS_CLIENT_ID?: string;

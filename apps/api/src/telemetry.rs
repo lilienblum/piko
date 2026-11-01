@@ -24,6 +24,7 @@ impl Telemetry {
             "capacity and deadline must be positive"
         );
         let client = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
             .timeout(request_deadline)
             .build()?;
         let (tx, mut rx) = mpsc::channel(capacity);

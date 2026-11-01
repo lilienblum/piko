@@ -16,6 +16,7 @@ export type Options = {
   timeoutMs?: number;
   retries?: number;
   keepalive?: boolean;
+  signal?: AbortSignal;
 };
 export class DeliveryError extends Error {
   constructor(
@@ -45,9 +46,13 @@ export class Piko {
     });
     const timeout = this.options.timeoutMs ?? 800;
     const deadline = Date.now() + timeout;
-    const signal = AbortSignal.timeout(timeout);
+    const timeoutSignal = AbortSignal.timeout(timeout);
+    const signal = this.options.signal
+      ? AbortSignal.any([this.options.signal, timeoutSignal])
+      : timeoutSignal;
     let lastError: unknown;
     for (let attempt = 0; attempt <= (this.options.retries ?? 1); attempt++) {
+      signal.throwIfAborted();
       let backoff = 50 * 2 ** attempt;
       try {
         const response = await fetch(`${this.options.endpoint.replace(/\/$/, "")}/api/ingest`, {
@@ -60,6 +65,8 @@ export class Piko {
           signal,
           keepalive: this.options.keepalive ?? false,
           credentials: "omit",
+          referrerPolicy: "no-referrer",
+          redirect: "error",
         });
         if (response.ok) return (await response.json()) as Ack;
         const message = await response.json().catch(() => ({ error: response.statusText }));

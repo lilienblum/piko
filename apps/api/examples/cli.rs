@@ -12,10 +12,15 @@ async fn main() -> anyhow::Result<()> {
     tokio::time::sleep(Duration::from_millis(75)).await;
     let success = command != "fail";
     println!("{command}: {}", if success { "complete" } else { "failed" });
-    if let (Ok(endpoint), Ok(key)) = (
-        std::env::var("PIKO_ENDPOINT"),
-        std::env::var("PIKO_INGESTION_KEY"),
-    ) {
+    if std::env::var("PIKO_TELEMETRY").as_deref() == Ok("1")
+        && std::env::var("DO_NOT_TRACK").as_deref() != Ok("1")
+        && let (Ok(endpoint), Ok(key)) = (
+            std::env::var("PIKO_ENDPOINT"),
+            std::env::var("PIKO_INGESTION_KEY"),
+        )
+        && !endpoint.trim().is_empty()
+        && !key.trim().is_empty()
+    {
         let deadline = Duration::from_millis(
             std::env::var("PIKO_TELEMETRY_TIMEOUT_MS")
                 .ok()
@@ -27,8 +32,12 @@ async fn main() -> anyhow::Result<()> {
             let actor = std::env::var("PIKO_INSTALLATION_ID")
                 .ok()
                 .filter(|id| !id.is_empty());
+            let command_name = match command.as_str() {
+                "build" | "fail" | "check" | "init" | "dev" | "deploy" => command.as_str(),
+                _ => "other",
+            };
             let properties = BTreeMap::from([
-                ("command", json!(command)),
+                ("command", json!(command_name)),
                 ("version", json!(env!("CARGO_PKG_VERSION"))),
                 ("os", json!(std::env::consts::OS)),
                 ("arch", json!(std::env::consts::ARCH)),
