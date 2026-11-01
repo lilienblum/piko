@@ -72,3 +72,9 @@ Settings lists sources with their name and icon. Automatic chooses an icon from 
 ## Chart inspection
 
 Overview and Explore use official Bklit UI charts. Hover or touch the plot to inspect a bucket. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
+
+## Component foundation
+
+Dashboard primitives use the official shadcn **Base UI** registry (`base-vega`) and `@base-ui/react`, with Hugeicons and Piko’s existing Yuzu classes. Radix is not a dependency. Add or update components from the Base UI registry, merge local styling and behavior, and use `render` composition instead of `asChild`. Buttons rendering navigation links must retain link semantics.
+
+`ValueSelect` supplies value/label items for server-rendered labels and uses a fixed popup positioner so opening a selector cannot scroll the document. Initial chart loading disables its controls until the result is ready; background refresh keeps them mounted. Appearance choices close their menu on selection. Dialogs, mobile navigation, tabs, and the event inspector preserve keyboard navigation and focus restoration. The sidebar continues to store its preference without cookies.

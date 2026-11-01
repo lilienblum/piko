@@ -5,7 +5,7 @@ Privacy-first, self-hosted product analytics for websites, CLIs, and developer t
 Piko has two independent applications, deployed together:
 
 - **`apps/api`** — Rust/Axum/Tokio. Owns products, ingestion keys, ingestion, and queries. SQLite stores the shared catalog; each product gets its own DuckDB event database. It has no dependency on dashboard code, routes, or assets.
-- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui, [Bklit UI charts](https://bklit.com/docs/components/area-chart), and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. Authentication is handled by Cloudflare Access, outside the app.
+- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui on Base UI, [Bklit UI charts](https://bklit.com/docs/components/area-chart), and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. Authentication is handled by Cloudflare Access, outside the app.
 
 This two-process layout supersedes the original single-process concept. There is still one deployment, one persistent data volume, and no external database. You can run the API on its own.
 
@@ -121,7 +121,7 @@ See [the verification record](docs/verification.md) for measured checks and thei
 
 Use the Appearance menu in the top-right corner to choose **Light**, **Dark**, or **Auto**. Auto follows your system setting, including changes while the dashboard is open. The preference persists in this browser and synchronizes across tabs. The saved theme is applied before the application loads.
 
-The sidebar toggle collapses desktop navigation to icons and opens a navigation drawer on mobile. Project, source, and date selectors remain available in the header. Dashboard controls use shadcn/ui Select, Sidebar/Sheet, Collapsible, Tabs, and AlertDialog alongside its buttons, forms, cards, and tables.
+The sidebar toggle collapses desktop navigation to icons and opens a navigation drawer on mobile. Project, source, and date selectors remain available in the header. Dashboard controls use the Base UI version of shadcn/ui Select, Sidebar/Sheet, Collapsible, Tabs, and AlertDialog alongside its buttons, forms, cards, and tables.
 
 The Yuzu visual system uses muted yellow navigation in Light, neutral charcoal in Dark, ochre charts, and locally served Geist (with its [font license](apps/dashboard/public/licenses/geist.txt)). Squared controls, solid active navigation, underline toolbar selectors, and the shared three-bar logo/favicon give the existing shadcn primitives a distinct Piko treatment. Analytical sections stay flat; forms and inspectors retain clear boundaries. [Product context](apps/dashboard/PRODUCT.md) and [design rules](apps/dashboard/DESIGN.md) document the decisions for future UI work.
 

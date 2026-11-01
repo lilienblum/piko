@@ -26,11 +26,11 @@ Overview for regular checks, Explore for server-side queries and event inspectio
 
 Two Tako applications: Rust API and TanStack Start dashboard. Per-product DuckDB analytics; SQLite application state. Preserve bounded ingestion, durable acknowledgments, typed queries, deduplication, and external authentication through Cloudflare Access. No new backend scope for this redesign. Bun tooling only; MIT license.
 
-Light, Dark, and Auto themes, Hugeicons, accessible shadcn primitives, official Bklit UI charts, and server-paginated tables remain. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
+Light, Dark, and Auto themes, Hugeicons, accessible shadcn Base UI primitives, official Bklit UI charts, and server-paginated tables remain. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
 
 ## Brand Commitments
 
-Piko is the working name. The user selected Yuzu: restrained yellow, warm ink, and a sharper graphic feel. Subsequent feedback calls for soft stone Light surfaces with less glare and deeper, nearly neutral charcoal Dark surfaces without a yellow cast. Carry it beyond colors through compact squared controls, Geist typography, a straight three-bar mark and matching favicon, and flat analytical surfaces. Accessible shadcn primitives remain, with a distinct Piko treatment. Use straightforward product language and keep analytics terminology accurate.
+Piko is the working name. The user selected Yuzu: restrained yellow, warm ink, and a sharper graphic feel. Subsequent feedback calls for soft stone Light surfaces with less glare and deeper, nearly neutral charcoal Dark surfaces without a yellow cast. Carry it beyond colors through compact squared controls, Geist typography, a straight three-bar mark and matching favicon, and flat analytical surfaces. Accessible shadcn Base UI primitives remain, with a distinct Piko treatment. Use straightforward product language and keep analytics terminology accurate.
 
 ## Evidence on Hand
 
