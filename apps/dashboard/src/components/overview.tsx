@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewLoading, BreakdownLoading } from "./loading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
-import { number, type Group, type Product } from "@/lib/api";
+import { number, sourceGroups, type Group, type Product } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct, ProductIcon } from "./app-shell";
 import { Breakdown, BreakdownRows, ErrorState, NoEvents, SeriesChart } from "./shared";
@@ -44,19 +44,28 @@ const chartChoices: Record<Product["kind"], ChartChoice[]> = {
     },
     { id: "p95", label: "p95 duration", measure: "p95", property: "duration_ms", unit: "ms" },
   ],
+  mobile: [
+    { id: "count", label: "Events", measure: "count" },
+    { id: "actors", label: "Identified actors", measure: "actors" },
+  ],
   generic: [
     { id: "count", label: "Events", measure: "count" },
     { id: "actors", label: "Identified actors", measure: "actors" },
   ],
 };
 export function Overview() {
-  const { product } = useWorkspace();
-  return product ? <ProductOverview key={product.id} /> : <NoProduct />;
+  const { product, sourceId, dashboardKind } = useWorkspace();
+  return product ? (
+    <ProductOverview key={`${product.id}:${sourceId ?? "all"}:${dashboardKind}`} />
+  ) : (
+    <NoProduct />
+  );
 }
 function ProductOverview() {
-  const { product, range, refresh, refreshKey } = useWorkspace();
-  const web = product?.kind === "website";
-  const tool = product?.kind === "tool";
+  const { product, source, sourceId, dashboardKind, range, refresh, refreshKey } = useWorkspace();
+  const web = dashboardKind === "website";
+  const tool = dashboardKind === "tool";
+  const mobile = dashboardKind === "mobile";
   const dimensions = web
     ? [
         ["referrer", "Referrers"],
@@ -69,11 +78,21 @@ function ProductOverview() {
           ["version", "Versions"],
           ["arch", "Architecture"],
         ]
-      : [["source", "Sources"]];
+      : mobile
+        ? [
+            ["screen", "Screens"],
+            ["version", "Versions"],
+            ["os", "OS"],
+          ]
+        : [
+            ["source_id", "Sources"],
+            ["source", "Clients"],
+          ];
   const [dimension, setDimension] = useState(dimensions[0][0]);
-  const secondaryGroup = web || tool ? `property:${dimension}` : "source";
+  const secondaryGroup = web || tool || mobile ? `property:${dimension}` : dimension;
   const body = {
     ...range,
+    source_id: sourceId,
     event: web ? "page_view" : tool ? "command_run" : undefined,
     measure: "count",
     group_by: web ? "property:path" : tool ? "property:command" : "name",
@@ -89,7 +108,7 @@ function ProductOverview() {
     refreshKey,
     `${backgroundScope}:${secondaryGroup}`,
   );
-  const choices = chartChoices[product?.kind ?? "generic"];
+  const choices = chartChoices[dashboardKind];
   const [chartMetric, setChartMetric] = useState("count");
   const [chartInterval, setChartInterval] = useState("day");
   const [chartRetry, setChartRetry] = useState(0);
@@ -117,7 +136,9 @@ function ProductOverview() {
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
-    const context = { productId: product.id, ...range, event: body.event };
+    const context = { productId: product.id, sourceId, ...range, event: body.event };
+    if (groupBy === "source_id" && typeof group.label === "string")
+      return { ...context, sourceId: group.label };
     if (groupBy === "name" && typeof group.label === "string")
       return { ...context, event: group.label };
     if (groupBy === "source" && typeof group.label === "string")
@@ -127,75 +148,80 @@ function ProductOverview() {
   };
   const refreshError = query.error || (secondary.data && secondary.error);
   const s = query.data?.summary;
-  const metrics = web
-    ? [
-        {
-          label: "Page views",
-          value: number(s?.total),
-          detail: "Every visit to a page",
-        },
-        {
-          label: "Unique visitors",
-          value: s?.total && !s.visitors ? "—" : number(s?.visitors),
-          detail:
-            s?.total && !s.visitors ? "No visitor IDs received" : "With an explicit visitor ID",
-        },
-        {
-          label: "Sessions",
-          value: s?.total && !s.sessions ? "—" : number(s?.sessions),
-          detail: "Distinct visitor + session pairs",
-        },
-        {
-          label: "Views per session",
-          value: s?.sessions ? number((s?.session_views ?? 0) / s.sessions, 1) : "—",
-          detail: "Views with an explicit session ID",
-        },
-      ]
-    : tool
+  const metrics = (
+    web
       ? [
           {
-            label: "Command executions",
+            label: "Page views",
             value: number(s?.total),
-            detail: "Across all commands",
+            detail: "Every visit to a page",
           },
           {
-            label: "Active installations",
-            value: s?.total && !s.installations ? "—" : number(s?.installations),
-            detail: "With an explicit installation ID",
+            label: "Unique visitors",
+            value: s?.total && !s.visitors ? "—" : number(s?.visitors),
+            detail:
+              s?.total && !s.visitors ? "No visitor IDs received" : "With an explicit visitor ID",
           },
           {
-            label: "Success rate",
-            value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
-            detail: "Commands reporting success",
+            label: "Sessions",
+            value: s?.total && !s.sessions ? "—" : number(s?.sessions),
+            detail: "Distinct visitor + session pairs",
           },
           {
-            label: "Average duration",
-            value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
-            detail: `p95 · ${number(s?.p95_duration)} ms`,
+            label: "Views per session",
+            value: s?.sessions ? number((s?.session_views ?? 0) / s.sessions, 1) : "—",
+            detail: "Views with an explicit session ID",
           },
         ]
-      : [
-          {
-            label: "Events",
-            value: number(s?.total),
-            detail: "All sources, one product",
-          },
-          {
-            label: "Identified actors",
-            value: number(s?.actors),
-            detail: "Identity kinds counted separately",
-          },
-          {
-            label: "Website visitors",
-            value: number(s?.visitors),
-            detail: "Explicit visitor identities",
-          },
-          {
-            label: "Installations",
-            value: number(s?.installations),
-            detail: "Explicit installation identities",
-          },
-        ];
+      : tool
+        ? [
+            {
+              label: "Command executions",
+              value: number(s?.total),
+              detail: "Across all commands",
+            },
+            {
+              label: "Active installations",
+              value: s?.total && !s.installations ? "—" : number(s?.installations),
+              detail: "With an explicit installation ID",
+            },
+            {
+              label: "Success rate",
+              value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
+              detail: "Commands reporting success",
+            },
+            {
+              label: "Average duration",
+              value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
+              detail: `p95 · ${number(s?.p95_duration)} ms`,
+            },
+          ]
+        : [
+            {
+              label: "Events",
+              value: number(s?.total),
+              detail: source ? "Events from this source" : "All sources, one project",
+            },
+            {
+              label: "Identified actors",
+              value: mobile && s?.total && !s.actors ? "—" : number(s?.actors),
+              detail:
+                mobile && s?.total && !s.actors
+                  ? "No actor IDs received"
+                  : "Identity kinds counted separately",
+            },
+            {
+              label: "Website visitors",
+              value: number(s?.visitors),
+              detail: "Explicit visitor identities",
+            },
+            {
+              label: "Installations",
+              value: number(s?.installations),
+              detail: "Explicit installation identities",
+            },
+          ]
+  ).slice(0, mobile ? 2 : 4);
   const chart = (
     <SeriesChart
       data={chartResult.data}
@@ -255,19 +281,25 @@ function ProductOverview() {
   return (
     <>
       <PageHeader
-        title={product.name}
+        title={source ? `${product.name} / ${source.name}` : product.name}
         description={
           web
             ? "Page views, visitors, and how people find your website."
             : tool
               ? "See how your tool performs in the hands of developers."
-              : "Event activity across your product."
+              : "Event activity across your project."
         }
       >
         <div className="heading-actions">
           <Badge variant="outline">
-            <ProductIcon kind={product.kind} />
-            {web ? "Website" : tool ? "Developer tool" : "Product"}
+            <ProductIcon kind={dashboardKind} />
+            {web
+              ? "Website"
+              : tool
+                ? "Developer tool"
+                : dashboardKind === "mobile"
+                  ? "Mobile app"
+                  : "Project"}
           </Badge>
           <Button variant="outline" asChild>
             <Link to="/explore">
@@ -290,7 +322,7 @@ function ProductOverview() {
         query.data && (
           <>
             {refreshError && <ErrorState message={refreshError} retry={refresh} />}
-            <div className="metrics">
+            <div className="metrics" data-columns={metrics.length}>
               {metrics.map((m) => (
                 <Card key={m.label} className="metric-card">
                   <CardContent>
@@ -324,14 +356,22 @@ function ProductOverview() {
                     <Card>
                       <CardHeader>
                         <CardTitle>
-                          {web ? "Acquisition" : tool ? "Environment" : "Sources"}
+                          {web
+                            ? "Acquisition"
+                            : tool
+                              ? "Environment"
+                              : mobile
+                                ? "App activity"
+                                : "Sources"}
                         </CardTitle>
                         <CardDescription>
                           {web
                             ? "How visitors find your website"
                             : tool
                               ? "Where your tool is running"
-                              : "Where events are collected"}
+                              : mobile
+                                ? "Screens and app versions"
+                                : "Where events are collected"}
                         </CardDescription>
                         <TabsList
                           variant="line"
@@ -340,7 +380,9 @@ function ProductOverview() {
                               ? "Acquisition breakdown"
                               : tool
                                 ? "Environment breakdown"
-                                : "Source breakdown"
+                                : mobile
+                                  ? "App breakdown"
+                                  : "Source breakdown"
                           }
                           className="breakdown-tabs"
                         >
@@ -362,7 +404,11 @@ function ProductOverview() {
                               title={
                                 dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"
                               }
-                              groups={secondary.data?.groups ?? []}
+                              groups={
+                                secondaryGroup === "source_id"
+                                  ? sourceGroups(secondary.data?.groups ?? [], product.sources)
+                                  : (secondary.data?.groups ?? [])
+                              }
                               total={secondary.data?.summary.total}
                               drilldown={(group) => drilldown(secondaryGroup, group)}
                             />

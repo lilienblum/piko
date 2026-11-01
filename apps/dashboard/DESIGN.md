@@ -1,7 +1,7 @@
 ---
 
 name: "Piko"
-description: "A small measurement workbench for websites and developer tools."
+description: "A small measurement workbench for websites, mobile apps, and developer tools."
 colors:
 background: "#f7f8f4"
 foreground: "#25382e"

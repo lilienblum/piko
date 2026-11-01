@@ -72,7 +72,7 @@ export function OverviewLoading({ labels, chart }: { labels: string[]; chart: Re
   return (
     <section role="status" aria-label="Loading overview" aria-busy="true">
       <span className="sr-only">Loading analytics…</span>
-      <div className="metrics">
+      <div className="metrics" data-columns={labels.length}>
         {labels.map((label) => (
           <Card className="metric-card" key={label}>
             <CardContent>

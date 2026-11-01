@@ -16,11 +16,11 @@ Provide a clear, minimal, self-hosted view of product usage. Success means movin
 
 ## Positioning
 
-Websites and developer tools are equal first-class products, with one typed event model and product-scoped storage. Collection does not require a URL or infer identity from IP/user-agent information.
+Projects group named website, mobile app, developer-tool, and generic sources under one typed event model and project-scoped storage. Sources have separate ingestion keys, combined or filtered analytics, and shared project retention. Collection does not require a URL or infer identity from IP/user-agent information.
 
 ## Operating Context
 
-Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Persistent product/date selection; optional live refresh through Tako durable channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
+Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Persistent project/source/date selection; optional live refresh through Tako durable channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
 
 ## Capabilities and Constraints
 

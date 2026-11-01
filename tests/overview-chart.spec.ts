@@ -150,7 +150,7 @@ test("CLI duration aggregates ignore strings and booleans, and product switches 
   page,
 }) => {
   await page.goto("/");
-  await select(page, "Select product", products.tool.name);
+  await select(page, "Select project", products.tool.name);
   await expect(page.locator(".metric-value").first()).toHaveText("6");
   const average = chartResponse(page, "avg");
   await select(page, "Chart metric", "Average duration");
@@ -167,7 +167,7 @@ test("CLI duration aggregates ignore strings and booleans, and product switches 
   expect((await result(installations)).summary.value).toBe(2);
   expect((await installations).request().postDataJSON().identity_kind).toBe("installation");
   await expect(page.locator(".metric-value").first()).toHaveText("6");
-  await select(page, "Select product", products.generic.name);
+  await select(page, "Select project", products.generic.name);
   await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText("Events");
   const actors = chartResponse(page, "actors");
   await select(page, "Chart metric", "Identified actors");
@@ -226,7 +226,7 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await select(page, "Select product", products.anonymous.name);
+  await select(page, "Select project", products.anonymous.name);
   await select(page, "Chart metric", "Active installations");
   await expect(
     page.getByText("No installation IDs received in this range.", { exact: true }),
@@ -235,7 +235,7 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   await expect(
     page.getByText("No numeric durations received in this range.", { exact: true }),
   ).toBeVisible();
-  await select(page, "Select product", products.tool.name);
+  await select(page, "Select project", products.tool.name);
   await select(page, "Chart metric", "p95 duration");
   await expect(page.locator(".chart-card [data-slot='chart']")).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();

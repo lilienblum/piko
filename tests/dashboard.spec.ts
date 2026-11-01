@@ -12,7 +12,7 @@ async function admin(path: string, body?: unknown) {
 }
 async function openWorkspace(page: Page) {
   await page.goto("/");
-  await expect(page.getByRole("combobox", { name: "Select product" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Select project" })).toBeVisible();
 }
 async function select(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
@@ -91,11 +91,11 @@ test("website and tool overviews, numeric query, filtering and server pagination
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
   await expect(page.getByText("Top pages", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".metric-value").first()).toHaveText("32");
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await expect(
     page.locator(".metrics").getByText("Command executions", { exact: true }),
   ).toBeVisible();
@@ -122,18 +122,18 @@ test("website and tool overviews, numeric query, filtering and server pagination
 test("create product, edit retention, create and revoke a key", async ({ page }) => {
   await openWorkspace(page);
   await page.getByRole("link", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "New product" }).click();
+  await page.getByRole("button", { name: "New project" }).click();
   const dialog = page.getByRole("dialog");
   const name = `UI product ${Date.now()}`;
-  await dialog.getByLabel("Product name").fill(name);
-  await dialog.getByRole("combobox", { name: "Product type" }).click();
-  await page.getByRole("option", { name: "Generic product" }).click();
-  await dialog.getByRole("button", { name: "Create product", exact: true }).click();
+  await dialog.getByLabel("Project name").fill(name);
+  await dialog.getByRole("combobox", { name: "First source type" }).click();
+  await page.getByRole("option", { name: "Other" }).click();
+  await dialog.getByRole("button", { name: "Create project", exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByLabel("Product name")).toHaveValue(name);
+  await expect(page.getByLabel("Project name")).toHaveValue(name);
   await page.getByLabel("Retention (days)").fill("14");
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByText("Product changes saved.")).toBeVisible();
+  await expect(page.getByText("Project changes saved.")).toBeVisible();
   await page.getByLabel("New key label").fill("Temporary key");
   await page.getByRole("button", { name: "Create ingestion key" }).click();
   await expect(page.getByText("Copy your new key")).toBeVisible();
@@ -159,7 +159,7 @@ test("mobile website and tool layouts do not overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
   for (const p of [web, tool]) {
-    await select(page, "Select product", p.name);
+    await select(page, "Select project", p.name);
     await expect(page.getByRole("heading", { name: p.name })).toBeVisible();
     await expect(page.locator(".metric-value").first()).toHaveText("32");
     expect(
@@ -260,7 +260,7 @@ test("light, dark and auto themes persist and follow system changes", async ({ p
   await page.emulateMedia({ colorScheme: "light" });
   await expect(page.locator("html")).toHaveClass("dark");
   await page.getByRole("link", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "New product" }).click();
+  await page.getByRole("button", { name: "New project" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(
     await page.getByRole("dialog").evaluate((el) => getComputedStyle(el).backgroundColor),
@@ -302,7 +302,7 @@ test("mobile drawer navigates and dark selects fit the screen", async ({ page })
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(page.getByRole("heading", { name: "Explore events" })).toBeVisible();
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await select(page, "Measure", "Numeric average");
   await page.getByRole("button", { name: "Run query" }).click();
   await expect(page.locator(".explore-summary strong")).toHaveText("255 ms");
@@ -313,7 +313,7 @@ test("website breakdown links preserve product and dates across reload and histo
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   const docs = page.getByRole("link", { name: "Explore /docs", exact: true });
   await expect(docs).toContainText("50%");
   const clicked = new URL((await docs.getAttribute("href")) ?? "", dashboard);
@@ -336,7 +336,7 @@ test("website breakdown links preserve product and dates across reload and histo
   await page.screenshot({ path: test.info().outputPath("website-drilldown.png"), fullPage: true });
   await page.evaluate((id) => localStorage.setItem("piko:product", id), tool.id);
   await page.reload();
-  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(web.name);
+  await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(web.name);
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   const refresh = page.waitForRequest((r) => r.url().endsWith(`/products/${web.id}/query`));
   await page.getByRole("button", { name: "Refresh analytics" }).click();
@@ -349,7 +349,7 @@ test("website breakdown links preserve product and dates across reload and histo
   await page.goForward();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await page.goBack();
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByRole("region", { name: "Overview selection" })).not.toBeVisible();
   expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
@@ -359,7 +359,7 @@ test("acquisition tabs drill into referrers and campaigns, with missing values i
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await page.getByRole("link", { name: "Explore Direct", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("referrer");
@@ -386,7 +386,7 @@ test("tool command and version links work in the narrow dark layout", async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
   await appearance(page, "Dark");
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await page.getByRole("tab", { name: "Versions", exact: true }).click();
   await expect(page.getByRole("link", { name: "Explore 1.0.0", exact: true })).toBeVisible();
   await page.screenshot({
@@ -408,11 +408,12 @@ test("tool command and version links work in the narrow dark layout", async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("generic source links use envelope filters and shares include groups outside the top twelve", async ({
+test("generic client links use envelope filters and shares include groups outside the top twelve", async ({
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", generic.name);
+  await select(page, "Select project", generic.name);
+  await page.getByRole("tab", { name: "Clients", exact: true }).click();
   const source = page.getByRole("link", { name: "Explore sdk", exact: true });
   await expect(source).toContainText("25%");
   const request = page.waitForRequest(
@@ -421,7 +422,7 @@ test("generic source links use envelope filters and shares include groups outsid
   await source.click();
   expect((await request).postDataJSON()).toMatchObject({ source: "sdk", filters: [] });
   await expect(page.getByText("across 8 matching events")).toBeVisible();
-  await page.getByRole("button", { name: "Remove source filter" }).click();
+  await page.getByRole("button", { name: "Remove client filter" }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await page.getByRole("link", { name: "Explore activity", exact: true }).click();
@@ -482,7 +483,7 @@ test("secondary breakdown tabs show pending and retry states without stale rows"
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).toBeVisible();
   let release = () => {};
   const pending = new Promise<void>((resolve) => {
@@ -514,7 +515,7 @@ test("secondary breakdown tabs show pending and retry states without stale rows"
 
 test("only validated Explore search can change the workspace context", async ({ page }) => {
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await page.goto("/?drilldown=true");
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
   await expect(page.locator(".metric-value").first()).toHaveText("32");
@@ -522,7 +523,7 @@ test("only validated Explore search can change the workspace context", async ({ 
     JSON.stringify({ productId: tool.id, from: "bad", to: "bad" }),
   );
   await page.goto(`/settings?drilldown=${malformed}`);
-  await expect(page.getByLabel("Product name")).toHaveValue(web.name);
+  await expect(page.getByLabel("Project name")).toHaveValue(web.name);
   const queries: string[] = [];
   page.on("request", (request) => {
     if (request.url().endsWith("/query")) queries.push(request.url());
@@ -533,7 +534,7 @@ test("only validated Explore search can change the workspace context", async ({ 
   expect(queries).toEqual([]);
   await page.getByRole("link", { name: "Clear selection", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(web.name);
+  await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(web.name);
 });
 
 async function inspectorJson(page: Page) {
@@ -548,7 +549,7 @@ test("event inspector exposes context, metadata and JSON with keyboard and clipb
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   const stream = page.locator(".event-card");
   const opener = stream.getByRole("button", { name: "Inspect page_view", exact: true }).first();
@@ -593,7 +594,7 @@ test("property inspection filters the server using applied context and retains b
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await page.getByRole("link", { name: "Explore build", exact: true }).click();
   await select(page, "Measure", "Numeric average");
   const stream = page.locator(".event-card");
@@ -628,7 +629,7 @@ test("event pagination fetches server pages and keeps charts stable during loadi
   page,
 }) => {
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   const stream = page.locator(".event-card");
   await expect(stream.getByRole("button", { name: "Inspect page_view", exact: true })).toHaveCount(
@@ -696,7 +697,7 @@ test("inspector preserves numeric and string values and wraps long properties on
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
   await appearance(page, "Dark");
-  await select(page, "Select product", generic.name);
+  await select(page, "Select project", generic.name);
   await page.goto("/explore");
   const stream = page.locator(".event-card");
   await expect(stream.locator("tbody tr").first()).not.toContainText("0 ms");
@@ -747,7 +748,7 @@ test("clipboard failures are visible and inspector scope ends when the product c
     });
   });
   await openWorkspace(page);
-  await select(page, "Select product", web.name);
+  await select(page, "Select project", web.name);
   await page.goto("/explore");
   await page
     .locator(".event-card")
@@ -759,7 +760,7 @@ test("clipboard failures are visible and inspector scope ends when the product c
   await inspector.getByRole("button", { name: "Copy JSON", exact: true }).click();
   await expect(inspector.getByRole("alert")).toContainText(/copy|clipboard/i);
   await page.keyboard.press("Escape");
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(
     page.locator(".event-card").getByRole("button", { name: "Inspect page_view", exact: true }),
@@ -788,10 +789,10 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
     });
   });
   await openWorkspace(page);
-  await expect(page.getByRole("combobox", { name: "Select product" })).toBeEnabled({
+  await expect(page.getByRole("combobox", { name: "Select project" })).toBeEnabled({
     timeout: 3000,
   });
-  await select(page, "Select product", tool.name);
+  await select(page, "Select project", tool.name);
   await select(page, "Date range", "Last 7 days");
   await expect(page.locator(".metric-value").first()).toHaveText("32");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
@@ -802,12 +803,12 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
   await appearance(page, "Dark");
   await expect(page.locator("html")).toHaveClass("dark");
   await page.getByRole("link", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "New product" }).click();
+  await page.getByRole("button", { name: "New project" }).click();
   const dialog = page.getByRole("dialog");
   const name = `Storage denied ${Date.now()}`;
-  await dialog.getByLabel("Product name").fill(name);
-  await dialog.getByRole("button", { name: "Create product", exact: true }).click();
+  await dialog.getByLabel("Project name").fill(name);
+  await dialog.getByRole("button", { name: "Create project", exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByLabel("Product name")).toHaveValue(name);
+  await expect(page.getByLabel("Project name")).toHaveValue(name);
   expect(errors).toEqual([]);
 });

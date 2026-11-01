@@ -15,7 +15,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ValueSelect } from "./value-select";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { number, type QueryResult } from "@/lib/api";
+import { number, sourceGroups, type QueryResult } from "@/lib/api";
 import { EventStream } from "./event-stream";
 import { useQuery } from "@/lib/use-query";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
@@ -43,17 +43,17 @@ const defaultSpec: Spec = {
   filterValue: "",
 };
 export function Explore() {
-  const { product } = useWorkspace();
+  const { product, sourceId } = useWorkspace();
   const { drilldown, invalidDrilldown } = useSearch({ from: "/explore" });
-  if (invalidDrilldown || (drilldown && !product))
+  if (invalidDrilldown || (drilldown && (!product || (drilldown.sourceId && !sourceId))))
     return (
       <>
         <PageHeader
           title="This selection is unavailable"
           description={
             invalidDrilldown
-              ? "The link contains an invalid product, date range, or filter. Clear it to explore your products."
-              : "The product in this link no longer exists in this workspace."
+              ? "The link contains an invalid project, date range, or filter. Clear it to explore your projects."
+              : "The project or source in this link is not available in this workspace."
           }
         />
         <Button asChild variant="outline">
@@ -64,13 +64,16 @@ export function Explore() {
       </>
     );
   return product ? (
-    <ExploreProduct key={`${product.id}:${JSON.stringify(drilldown)}`} drilldown={drilldown} />
+    <ExploreProduct
+      key={`${product.id}:${sourceId ?? "all"}:${JSON.stringify(drilldown)}`}
+      drilldown={drilldown}
+    />
   ) : (
     <NoProduct />
   );
 }
 function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
-  const { product, range, refresh, refreshKey, hasUpdates } = useWorkspace();
+  const { product, source, sourceId, range, refresh, refreshKey, hasUpdates } = useWorkspace();
   const initial: Spec = {
     ...defaultSpec,
     event: drilldown?.event ?? "",
@@ -100,11 +103,12 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     } catch {}
     return [{ property: applied.filterProperty, op: applied.filterOp, value }];
   }, [applied]);
-  const scopeKey = JSON.stringify([product?.id, rangeKey, applied]);
+  const scopeKey = JSON.stringify([product?.id, sourceId, rangeKey, applied]);
   const query = useQuery(
     product?.id,
     {
       ...range,
+      source_id: sourceId,
       event: applied.event || undefined,
       source: applied.source || undefined,
       measure: applied.measure,
@@ -136,7 +140,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     <>
       <PageHeader
         title="Explore events"
-        description={`Query and inspect activity from ${product?.name}.`}
+        description={`Query and inspect activity from ${source ? `${product?.name} / ${source.name}` : product?.name}.`}
       />
       {drilldown && (
         <section className="drilldown-context" aria-label="Overview selection">
@@ -164,10 +168,10 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
               {applied.event && <Badge variant="outline">Event · {applied.event}</Badge>}
               {applied.source && (
                 <Badge variant="outline">
-                  Source · {applied.source}
+                  Client · {applied.source}
                   <button
                     type="button"
-                    aria-label="Remove source filter"
+                    aria-label="Remove client filter"
                     onClick={() => {
                       setDraft((d) => ({ ...d, source: "" }));
                       setApplied((d) => ({ ...d, source: "" }));
@@ -270,7 +274,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                     onValueChange={(value) => update("group", value)}
                     options={[
                       ["name", "Event name"],
-                      ["source", "Source"],
+                      ["source_id", "Source"],
+                      ["source", "Client"],
                       ["identity_kind", "Identity kind"],
                       ["property:path", "Page path"],
                       ["property:referrer", "Referrer"],
@@ -439,7 +444,11 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <Breakdown
                     title="Breakdown"
                     description={`Grouped by ${applied.group.replace("property:", "")}`}
-                    groups={data.groups}
+                    groups={
+                      applied.group === "source_id"
+                        ? sourceGroups(data.groups, product?.sources)
+                        : data.groups
+                    }
                     unit="Value"
                   />
                 </div>

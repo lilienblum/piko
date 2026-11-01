@@ -4,6 +4,7 @@ export type ExploreDrilldown = {
   to: string;
   event?: string;
   source?: string;
+  sourceId?: string;
   filter?: { property: string; value: string | number | boolean };
 };
 export type ExploreSearch = {
@@ -37,7 +38,10 @@ export function validateExploreSearch(search: Record<string, unknown>): ExploreS
     Date.parse(d.to) <= Date.parse(d.from) ||
     Date.parse(d.to) - Date.parse(d.from) > 366 * 86400000 ||
     (d.event !== undefined && !validKey(d.event)) ||
-    (d.source !== undefined && !validKey(d.source))
+    (d.source !== undefined && !validKey(d.source)) ||
+    (d.sourceId !== undefined &&
+      (typeof d.sourceId !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.sourceId)))
   )
     return { drilldown: undefined, invalidDrilldown: true };
   let filter: ExploreDrilldown["filter"];
@@ -65,6 +69,7 @@ export function validateExploreSearch(search: Record<string, unknown>): ExploreS
       to: d.to,
       ...(d.event !== undefined ? { event: d.event as string } : {}),
       ...(d.source !== undefined ? { source: d.source as string } : {}),
+      ...(d.sourceId !== undefined ? { sourceId: d.sourceId as string } : {}),
       ...(filter ? { filter } : {}),
     },
   };

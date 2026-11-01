@@ -37,10 +37,18 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { api, type Product } from "@/lib/api";
+import { api, sourceKinds, type Product } from "@/lib/api";
 import { PageHeader, useWorkspace } from "./app-shell";
 import { ErrorState } from "./shared";
-type KeyInfo = { id: string; label: string; prefix: string; created_at: string; revoked: boolean };
+import { SourceSettings } from "./source-settings";
+type KeyInfo = {
+  source_id: string;
+  id: string;
+  label: string;
+  prefix: string;
+  created_at: string;
+  revoked: boolean;
+};
 function ProductFields({
   value,
   onChange,
@@ -55,34 +63,32 @@ function ProductFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor={`${prefix}-name`}>Product name</FieldLabel>
+        <FieldLabel htmlFor={`${prefix}-name`}>Project name</FieldLabel>
         <Input
           id={`${prefix}-name`}
           disabled={disabled}
           value={value.name}
           maxLength={80}
           required
-          placeholder="e.g. Orbit CLI"
+          placeholder="e.g. Orbit"
           onChange={(e) => onChange({ ...value, name: e.target.value })}
         />
       </Field>
-      <Field>
-        <FieldLabel htmlFor={`${prefix}-kind`}>Product type</FieldLabel>
-        <ValueSelect
-          id={`${prefix}-kind`}
-          disabled={disabled}
-          value={value.kind}
-          onValueChange={(kind) => onChange({ ...value, kind })}
-          options={[
-            ["website", "Website"],
-            ["tool", "Developer tool"],
-            ["generic", "Generic product"],
-          ]}
-        />
-        <FieldDescription>
-          Sets dashboard defaults. Every type can receive events from any source.
-        </FieldDescription>
-      </Field>
+      {prefix === "create" && (
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-kind`}>First source type</FieldLabel>
+          <ValueSelect
+            id={`${prefix}-kind`}
+            disabled={disabled}
+            value={value.kind}
+            onValueChange={(kind) => onChange({ ...value, kind })}
+            options={sourceKinds}
+          />
+          <FieldDescription>
+            Start with one source. Add websites, mobile apps, and tools to this project later.
+          </FieldDescription>
+        </Field>
+      )}
       <Field>
         <FieldLabel htmlFor={`${prefix}-retention`}>Retention (days)</FieldLabel>
         <Input
@@ -125,7 +131,7 @@ export function Settings() {
     } catch (e) {
       setError(
         saved
-          ? `Product created. Could not refresh the workspace. ${(e as Error).message}`
+          ? `Project created. Could not refresh the workspace. ${(e as Error).message}`
           : (e as Error).message,
       );
     } finally {
@@ -135,7 +141,7 @@ export function Settings() {
   return (
     <>
       <PageHeader
-        title="Product settings"
+        title="Project settings"
         description="Manage collection, ingestion keys, and retention."
       >
         <Dialog
@@ -152,12 +158,12 @@ export function Settings() {
                 aria-hidden="true"
                 data-icon="inline-start"
               />
-              New product
+              New project
             </Button>
           </DialogTrigger>
           <DialogContent showCloseButton={!busy}>
             <DialogHeader>
-              <DialogTitle>Create a product</DialogTitle>
+              <DialogTitle>Create a project</DialogTitle>
               <DialogDescription>
                 A separate space for events and ingestion keys. No URL required.
               </DialogDescription>
@@ -174,11 +180,11 @@ export function Settings() {
                 {busy && <Spinner data-icon="inline-start" aria-hidden="true" />}
                 {busy
                   ? createdProduct
-                    ? "Loading product…"
+                    ? "Loading project…"
                     : "Creating…"
                   : createdProduct
-                    ? "Retry loading product"
-                    : "Create product"}
+                    ? "Retry loading project"
+                    : "Create project"}
               </Button>
             </form>
           </DialogContent>
@@ -188,9 +194,9 @@ export function Settings() {
         <ProductSettings key={product.id} product={product} />
       ) : (
         <Alert>
-          <AlertTitle>Create your first product</AlertTitle>
+          <AlertTitle>Create your first project</AlertTitle>
           <AlertDescription>
-            Use New product to connect a website, CLI, or any other application.
+            Use New project to connect a website, CLI, or any other application.
           </AlertDescription>
         </Alert>
       )}
@@ -198,7 +204,11 @@ export function Settings() {
   );
 }
 function ProductSettings({ product }: { product: Product }) {
-  const { reload } = useWorkspace();
+  const { reload, sourceId } = useWorkspace();
+  const [keySourceId, setKeySourceId] = useState(
+    sourceId ?? product.sources?.[0]?.id ?? product.id,
+  );
+  const keySource = product.sources?.find((source) => source.id === keySourceId);
   const [draft, setDraft] = useState({
     name: product.name,
     kind: product.kind as string,
@@ -216,7 +226,9 @@ function ProductSettings({ product }: { product: Product }) {
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState<"save" | "create-key" | "revoke" | null>(null);
   const busy = pending !== null;
-  const [integration, setIntegration] = useState(product.kind === "tool" ? "rust" : "browser");
+  const [integration, setIntegration] = useState(
+    keySource?.kind === "tool" ? "rust" : keySource?.kind === "mobile" ? "http" : "browser",
+  );
   const [copied, setCopied] = useState(false);
   const [revoke, setRevoke] = useState<KeyInfo | null>(null);
   const [revokeError, setRevokeError] = useState("");
@@ -260,9 +272,11 @@ function ProductSettings({ product }: { product: Product }) {
   const snippet =
     integration === "browser"
       ? `<script type="module" referrerpolicy="no-referrer">\n  import { startBrowserTracker } from "${origin}/tracker.js";\n\n  const tracker = startBrowserTracker({\n    endpoint: "${origin}",\n    key: "${key}",\n    identity: "none",\n  });\n\n  tracker.track("signup", { plan: "pro", trial: true, seats: 3 });\n</script>`
-      : integration === "typescript"
-        ? `import { Piko } from "./sdk/typescript/client";\n\nconst piko = new Piko({\n  endpoint: "${origin}",\n  key: "${key}",\n  timeoutMs: 800,\n});\n\nawait piko.send({\n  name: "build_complete", source: "server",\n  properties: { duration_ms: 142, success: true, version: "1.2.0" },\n});`
-        : `PIKO_TELEMETRY=1 \\\nPIKO_ENDPOINT="${origin}" \\\nPIKO_INGESTION_KEY="${key}" \\\ncargo run -p piko --example cli -- build\n\n# Explicit telemetry opt-in; no installation ID is sent.\n# DO_NOT_TRACK=1 disables collection.\n# Delivery has an 800 ms timeout and 900 ms shutdown deadline.`;
+      : integration === "http"
+        ? `POST ${origin}/api/ingest\nAuthorization: Bearer ${key}\nContent-Type: application/json\n\n${JSON.stringify({ event_id: "GENERATE_A_UUID_ONCE", name: "screen_view", source: "mobile", timestamp: "UTC_ISO_TIMESTAMP", properties: { screen: "home", version: "1.0.0", subscribed: false } }, null, 2)}`
+        : integration === "typescript"
+          ? `import { Piko } from "./sdk/typescript/client";\n\nconst piko = new Piko({\n  endpoint: "${origin}",\n  key: "${key}",\n  timeoutMs: 800,\n});\n\nawait piko.send({\n  name: "build_complete", source: "server",\n  properties: { duration_ms: 142, success: true, version: "1.2.0" },\n});`
+          : `PIKO_TELEMETRY=1 \\\nPIKO_ENDPOINT="${origin}" \\\nPIKO_INGESTION_KEY="${key}" \\\ncargo run -p piko --example cli -- build\n\n# Explicit telemetry opt-in; no installation ID is sent.\n# DO_NOT_TRACK=1 disables collection.\n# Delivery has an 800 ms timeout and 900 ms shutdown deadline.`;
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -281,11 +295,12 @@ function ProductSettings({ product }: { product: Product }) {
           <AlertTitle>{notice}</AlertTitle>
         </Alert>
       )}
+      <SourceSettings product={product} />
       <div className="settings-grid">
         <Card>
           <CardHeader>
-            <CardTitle>Product details</CardTitle>
-            <CardDescription>Give this product a name and set its defaults.</CardDescription>
+            <CardTitle>Project details</CardTitle>
+            <CardDescription>One name and retention policy for all your sources.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -293,7 +308,7 @@ function ProductSettings({ product }: { product: Product }) {
                 e.preventDefault();
                 void action("save", async () => {
                   await api(`/products/${product.id}`, "PATCH", draft);
-                  setNotice("Product changes saved.");
+                  setNotice("Project changes saved.");
                   try {
                     await reload();
                   } catch (e) {
@@ -320,7 +335,9 @@ function ProductSettings({ product }: { product: Product }) {
             <div className="card-heading">
               <div>
                 <CardTitle>Ingestion keys</CardTitle>
-                <CardDescription>Write-only keys, scoped to this product.</CardDescription>
+                <CardDescription>
+                  Write-only keys bound to one source. The key determines where events arrive.
+                </CardDescription>
               </div>
               <HugeiconsIcon
                 icon={Key01Icon}
@@ -372,6 +389,10 @@ function ProductSettings({ product }: { product: Product }) {
                     <div>
                       <strong>{k.label}</strong>
                       <code>{k.prefix}••••</code>
+                      <span className="quiet">
+                        {product.sources?.find((source) => source.id === k.source_id)?.name ??
+                          "Initial source"}
+                      </span>
                     </div>
                     {k.revoked ? (
                       <Badge variant="outline">Revoked</Badge>
@@ -404,7 +425,7 @@ function ProductSettings({ product }: { product: Product }) {
                   const result = await api<{ id: string; key: string }>(
                     `/products/${product.id}/keys`,
                     "POST",
-                    { label },
+                    { label, source_id: keySourceId },
                   );
                   setCreatedKey(result);
                   setLabel("");
@@ -417,6 +438,24 @@ function ProductSettings({ product }: { product: Product }) {
               }}
             >
               <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="key-source">Key source</FieldLabel>
+                  <ValueSelect
+                    id="key-source"
+                    value={keySourceId}
+                    disabled={busy}
+                    options={(product.sources ?? []).map((source) => [source.id, source.name])}
+                    onValueChange={(id) => {
+                      setKeySourceId(id);
+                      setCreatedKey(null);
+                      setCopied(false);
+                      const kind = product.sources?.find((source) => source.id === id)?.kind;
+                      setIntegration(
+                        kind === "tool" ? "rust" : kind === "mobile" ? "http" : "browser",
+                      );
+                    }}
+                  />
+                </Field>
                 <Field>
                   <FieldLabel htmlFor="key-label">New key label</FieldLabel>
                   <Input
@@ -451,7 +490,7 @@ function ProductSettings({ product }: { product: Product }) {
             </form>
             <p className="key-note">
               Browser keys are public identifiers. They can send events, but can’t read data or
-              manage your product.
+              manage your project.
             </p>
           </CardContent>
         </Card>
@@ -463,10 +502,11 @@ function ProductSettings({ product }: { product: Product }) {
               <div>
                 <CardTitle>
                   <HugeiconsIcon icon={SourceCodeIcon} strokeWidth={2} aria-hidden="true" />
-                  Connect your product
+                  Connect {keySource?.name ?? "a source"}
                 </CardTitle>
                 <CardDescription>
-                  Identity is off by default. You choose what is sent.
+                  Use a key for this source. Identity is off by default; no users are linked
+                  automatically.
                 </CardDescription>
               </div>
             </div>
@@ -480,6 +520,7 @@ function ProductSettings({ product }: { product: Product }) {
               <TabsTrigger value="browser">Browser</TabsTrigger>
               <TabsTrigger value="typescript">TypeScript</TabsTrigger>
               <TabsTrigger value="rust">Rust CLI</TabsTrigger>
+              <TabsTrigger value="http">HTTP / Mobile</TabsTrigger>
             </TabsList>
             <TabsContent value={integration} key={integration}>
               <div className="code-toolbar">
@@ -488,7 +529,9 @@ function ProductSettings({ product }: { product: Product }) {
                     ? "index.html"
                     : integration === "rust"
                       ? "terminal"
-                      : "analytics.ts"}
+                      : integration === "http"
+                        ? "HTTP request"
+                        : "analytics.ts"}
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => void copy(snippet)}>
                   <HugeiconsIcon
@@ -508,7 +551,9 @@ function ProductSettings({ product }: { product: Product }) {
                   ? "No cookies or stored visitor IDs. Campaign capture is off, and DNT/GPC stop collection. Map private routes before collecting page views."
                   : integration === "rust"
                     ? "Telemetry requires explicit opt-in. No installation ID is created, and unknown command names are reported as other. Never send arguments or output."
-                    : "Send only the properties your product needs. No identity is added automatically. Keep emails, credentials, and private content out of events."}
+                    : integration === "http"
+                      ? "Send this request from your native app’s HTTP client after opt-in. Generate an event ID and UTC timestamp once, and reuse both on retries. Omit advertising IDs, device fingerprints, and personal data."
+                      : "Send only the properties your project needs. No identity is added automatically. Keep emails, credentials, and private content out of events."}
               </p>
             </TabsContent>
           </CardContent>

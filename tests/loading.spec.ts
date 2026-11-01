@@ -75,13 +75,13 @@ test("workspace bootstrap keeps navigation visible with honest pending product s
       page.getByRole("status", { name: "Loading workspace", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Select product" })).toBeDisabled();
-    await expect(page.getByText("No products yet", { exact: true })).not.toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Select project" })).toBeDisabled();
+    await expect(page.getByText("No projects yet", { exact: true })).not.toBeVisible();
     await page.screenshot({ path: test.info().outputPath("workspace-loading.png") });
   } finally {
     release();
   }
-  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(product.name);
+  await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(product.name);
   await expect(
     page.getByRole("status", { name: "Loading workspace", exact: true }),
   ).not.toBeVisible();
@@ -202,7 +202,7 @@ test("key loading never flashes empty and failed requests have a working local r
   const release = await hold(page, "**/api/products/*/keys");
   try {
     await page.goto("/settings");
-    await expect(page.getByText("Product details", { exact: true })).toBeVisible();
+    await expect(page.getByText("Project details", { exact: true })).toBeVisible();
     await page.screenshot({ path: test.info().outputPath("keys-pending.png") });
     await expect(
       page.getByText("No keys yet. Create one to start sending events."),
@@ -227,7 +227,7 @@ test("key loading never flashes empty and failed requests have a working local r
         })
       : route.continue(),
   );
-  await page.getByRole("combobox", { name: "Select product" }).click();
+  await page.getByRole("combobox", { name: "Select project" }).click();
   await page.getByRole("option", { name: other.name, exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Keys temporarily unavailable");
   await expect(page.getByText("Loading fixture", { exact: true })).not.toBeVisible();
@@ -258,7 +258,7 @@ test("settings mutations show the active operation and retain a key after list r
   } finally {
     releaseSave();
   }
-  await expect(page.getByText("Product changes saved.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Project changes saved.", { exact: true })).toBeVisible();
   const releaseCreate = await hold(
     page,
     `**/api/products/${product.id}/keys`,
@@ -377,25 +377,25 @@ test("product creation stays pending and retries catalog reload without duplicat
   });
   await page.goto("/settings");
   await expect(page.getByText("Loading fixture", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New product", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Create a product", exact: true });
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Create a project", exact: true });
   const name = `Loading create ${Date.now()}`;
-  await dialog.getByLabel("Product name").fill(name);
+  await dialog.getByLabel("Project name").fill(name);
   try {
-    await dialog.getByRole("button", { name: "Create product", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create project", exact: true }).click();
     await expect(dialog.getByRole("button", { name: "Creating…", exact: true })).toBeDisabled();
-    await expect(dialog.getByLabel("Product name")).toBeDisabled();
+    await expect(dialog.getByLabel("Project name")).toBeDisabled();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeVisible();
   } finally {
     releasePost();
   }
   await expect(dialog.getByRole("alert")).toContainText(
-    "Product created. Could not refresh the workspace.",
+    "Project created. Could not refresh the workspace.",
   );
-  await expect(dialog.getByLabel("Product name")).toBeDisabled();
-  await dialog.getByRole("button", { name: "Retry loading product", exact: true }).click();
+  await expect(dialog.getByLabel("Project name")).toBeDisabled();
+  await dialog.getByRole("button", { name: "Retry loading project", exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Select product" })).toContainText(name);
+  await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(name);
   expect(createdPosts).toBe(1);
 });

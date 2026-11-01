@@ -18,15 +18,15 @@ test("Settings defaults minimize collection without changing existing retention"
   await page.addInitScript((id) => localStorage.setItem("piko:product", id), existing.id);
   await page.goto("/settings");
   await expect(page.getByLabel("Retention (days)")).toHaveValue("90");
-  await page.getByRole("button", { name: "New product", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Create a product" });
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Create a project" });
   await expect(dialog.getByLabel("Retention (days)")).toHaveValue("30");
-  await dialog.getByLabel("Product name").fill(`Privacy default ${Date.now()}`);
+  await dialog.getByLabel("Project name").fill(`Privacy default ${Date.now()}`);
   const created = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/products") && response.request().method() === "POST",
   );
-  await dialog.getByRole("button", { name: "Create product", exact: true }).click();
+  await dialog.getByRole("button", { name: "Create project", exact: true }).click();
   expect((await (await created).json()).retention_days).toBe(30);
   await expect(dialog).toHaveCount(0);
   await expect(page.getByLabel("Retention (days)")).toHaveValue("30");
@@ -42,7 +42,7 @@ test("Settings defaults minimize collection without changing existing retention"
   await expect(snippet).toContainText("PIKO_TELEMETRY=1");
   await expect(snippet).toContainText("DO_NOT_TRACK=1");
   await expect(snippet).not.toContainText("PIKO_INSTALLATION_ID");
-  await page.getByRole("combobox", { name: "Select product", exact: true }).click();
+  await page.getByRole("combobox", { name: "Select project", exact: true }).click();
   await page.getByRole("option", { name: existing.name, exact: true }).click();
   await expect(page.getByLabel("Retention (days)")).toHaveValue("90");
 });

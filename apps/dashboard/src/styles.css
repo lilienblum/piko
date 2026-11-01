@@ -344,6 +344,9 @@ h1 {
   padding-block: 20px;
   border-top: 1px solid var(--border);
 }
+.metrics[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .metric-card {
   padding: 0;
   min-height: 108px;
@@ -705,6 +708,8 @@ h1 {
   border-bottom: 1px solid var(--border);
 }
 .key-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -1551,5 +1556,80 @@ h1 {
   .stream-identity,
   .stream-time {
     gap: 2px;
+  }
+}
+
+/* Project and source context stays together when the toolbar wraps. */
+.source-select {
+  width: 148px;
+}
+.sources-card {
+  margin-bottom: 24px;
+}
+.source-list {
+  margin-bottom: 16px;
+}
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.source-row:last-child {
+  border-bottom: 0;
+}
+.source-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--primary);
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+.source-mark :where(svg) {
+  width: 20px;
+  height: 20px;
+}
+.source-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.source-copy strong {
+  overflow-wrap: anywhere;
+}
+.source-copy span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+@media (max-width: 1150px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .topbar-left {
+    flex-wrap: wrap;
+  }
+  .topbar-controls {
+    margin-left: auto;
+  }
+  .breadcrumbs {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .topbar-left {
+    width: 100%;
+    flex: auto;
+  }
+  .source-select {
+    flex: 1;
+    min-width: 120px;
+  }
+  .sources-card .card-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

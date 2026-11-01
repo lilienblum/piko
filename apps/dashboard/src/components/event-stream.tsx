@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { number, type EventRow, type Properties } from "@/lib/api";
 import { ErrorState } from "./shared";
 import { ValueSelect } from "./value-select";
+import { useWorkspace } from "./app-shell";
 
 type EventStreamProps = {
   events: EventRow[];
@@ -119,6 +120,7 @@ export function EventStream({
   onPageSizeChange,
   onFilterProperty,
 }: EventStreamProps) {
+  const { product } = useWorkspace();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const focusId = useRef<string | null>(null);
@@ -181,7 +183,8 @@ export function EventStream({
               </Button>
               <div className="stream-event-meta">
                 <Badge variant="outline" title={event.source}>
-                  {event.source}
+                  {product?.sources?.find((source) => source.id === event.source_id)?.name ??
+                    event.source}
                 </Badge>
                 <time
                   className="stream-mobile-time"
@@ -254,7 +257,7 @@ export function EventStream({
         ),
       },
     ],
-    [],
+    [product?.sources],
   );
   const table = useReactTable({
     data: events,
@@ -493,6 +496,7 @@ function EventInspector({
   event: EventRow;
   onFilter: EventStreamProps["onFilterProperty"];
 }) {
+  const { product } = useWorkspace();
   const [search, setSearch] = useState("");
   const [feedback, setFeedback] = useState<{ error: boolean; message: string }>();
   const properties = Object.entries(event.properties).sort(([a], [b]) => a.localeCompare(b));
@@ -599,7 +603,13 @@ function EventInspector({
           {[
             ["Event ID", event.event_id],
             ["Event name", event.name],
-            ["Source", event.source],
+            [
+              "Source",
+              product?.sources?.find((source) => source.id === event.source_id)?.name ??
+                "Unknown source",
+            ],
+            ["Source ID", event.source_id ?? "Not provided"],
+            ["Client", event.source],
             ["Event time (UTC)", new Date(event.timestamp).toISOString()],
             ["Received at (UTC)", new Date(event.received_at).toISOString()],
             ["Identity kind", event.identity_kind ?? "Not provided"],

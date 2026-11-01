@@ -24,6 +24,7 @@ import {
   RefreshIcon,
   Search01Icon,
   Settings02Icon,
+  SmartPhone01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
@@ -46,7 +47,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { api, type Product } from "@/lib/api";
+import { api, type Product, type Source, type SourceKind } from "@/lib/api";
 import { readPreference, savePreference } from "@/lib/preferences";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
@@ -56,6 +57,9 @@ import { LiveUpdates } from "./live-updates";
 type Context = {
   products: Product[];
   product?: Product;
+  source?: Source;
+  sourceId?: string;
+  dashboardKind: SourceKind;
   reload: (select?: string) => Promise<void>;
   range: { from: string; to: string };
   refresh: () => void;
@@ -77,7 +81,14 @@ export function useAnalyticsPending(pending: boolean) {
   }, [pending, setAnalyticsPending]);
 }
 export function ProductIcon({ kind }: { kind: string }) {
-  const icon = kind === "website" ? Globe02Icon : kind === "tool" ? CommandLineIcon : CubeIcon;
+  const icon =
+    kind === "website"
+      ? Globe02Icon
+      : kind === "tool"
+        ? CommandLineIcon
+        : kind === "mobile"
+          ? SmartPhone01Icon
+          : CubeIcon;
   return <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />;
 }
 export function Logo() {
@@ -102,6 +113,7 @@ export function AppShell() {
   const [analyticsPending, setAnalyticsPending] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
+  const [sourceSelection, setSourceSelection] = useState<Record<string, string>>({});
   const [days, setDays] = useState(30);
   const [now, setNow] = useState(Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
@@ -130,7 +142,17 @@ export function AppShell() {
     const controller = new AbortController();
     api<Product[]>("/products", "GET", undefined, controller.signal)
       .then((result) => {
-        if (!controller.signal.aborted) setProducts(result);
+        if (!controller.signal.aborted) {
+          setProducts(result);
+          setSourceSelection(
+            Object.fromEntries(
+              result.map((product) => [
+                product.id,
+                readPreference(`piko:source:${product.id}`) ?? "",
+              ]),
+            ),
+          );
+        }
       })
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
@@ -152,6 +174,15 @@ export function AppShell() {
   const product = drilldown
     ? products.find((p) => p.id === drilldown.productId)
     : (products.find((p) => p.id === selected) ?? products[0]);
+  const requestedSource = drilldown
+    ? (drilldown.sourceId ?? "")
+    : (sourceSelection[product?.id ?? ""] ?? "");
+  const source = product?.sources?.find((source) => source.id === requestedSource);
+  const sourceId = source?.id;
+  const kinds = new Set(product?.sources?.map((source) => source.kind));
+  const projectKind =
+    kinds.size > 1 ? "generic" : (product?.sources?.[0]?.kind ?? product?.kind ?? "generic");
+  const dashboardKind = source?.kind ?? projectKind;
   const defaultRange = useMemo(() => {
     const end = new Date(now);
     const start = new Date(now);
@@ -177,6 +208,9 @@ export function AppShell() {
       value={{
         products,
         product,
+        source,
+        sourceId,
+        dashboardKind,
         reload,
         range,
         refresh,
@@ -203,18 +237,18 @@ export function AppShell() {
               <SidebarTrigger />
               <Separator orientation="vertical" className="h-5" />
               <ValueSelect
-                label="Select product"
+                label="Select project"
                 value={product?.id ?? ""}
                 disabled={!products.length}
                 placeholder={
                   loading
-                    ? "Loading products…"
+                    ? "Loading projects…"
                     : drilldown
-                      ? "Product unavailable"
-                      : "No products yet"
+                      ? "Project unavailable"
+                      : "No projects yet"
                 }
                 className="product-select"
-                icon={<ProductIcon kind={product?.kind ?? "generic"} />}
+                icon={<ProductIcon kind={projectKind} />}
                 onValueChange={(value) => {
                   clearDrilldown();
                   setSelected(value);
@@ -222,6 +256,25 @@ export function AppShell() {
                 }}
                 options={products.map((p) => [p.id, p.name])}
               />
+              {path !== "/settings" && (
+                <ValueSelect
+                  label="Select source"
+                  value={sourceId ?? "all"}
+                  disabled={!product || loading}
+                  className="source-select"
+                  onValueChange={(value) => {
+                    if (!product) return;
+                    clearDrilldown();
+                    const id = value === "all" ? "" : value;
+                    setSourceSelection((current) => ({ ...current, [product.id]: id }));
+                    savePreference(`piko:source:${product.id}`, id);
+                  }}
+                  options={[
+                    ["all", "All sources"],
+                    ...(product?.sources ?? []).map((source) => [source.id, source.name] as const),
+                  ]}
+                />
+              )}
               <div className="breadcrumbs">
                 <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" />
                 <strong>{label}</strong>
@@ -231,7 +284,7 @@ export function AppShell() {
               <LiveUpdates
                 productId={product?.id}
                 view={path}
-                scopeKey={JSON.stringify([product?.id, days, drilldown, refreshKey])}
+                scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, refreshKey])}
                 busy={loading || analyticsPending}
                 onPending={setHasUpdates}
                 onRefresh={refreshBackground}
@@ -389,14 +442,14 @@ export function NoProduct() {
   return (
     <>
       <PageHeader
-        title="Create your first product"
+        title="Create your first project"
         description="Websites, CLIs, and everything you’re building."
       />
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>One workspace for every product</EmptyTitle>
+          <EmptyTitle>One workspace for every project</EmptyTitle>
           <EmptyDescription>
-            Create a product to get its own analytics and ingestion keys.
+            Create a project to get its own analytics and ingestion keys.
           </EmptyDescription>
         </EmptyHeader>
         <Button asChild>
@@ -407,7 +460,7 @@ export function NoProduct() {
               aria-hidden="true"
               data-icon="inline-start"
             />
-            Create a product
+            Create a project
           </Link>
         </Button>
       </Empty>

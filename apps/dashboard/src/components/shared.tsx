@@ -52,7 +52,7 @@ export function NoEvents() {
         </EmptyMedia>
         <EmptyTitle>No events in this range</EmptyTitle>
         <EmptyDescription>
-          No events match this date range. Try a wider range or connect your product in Settings.
+          No events match this date range. Try a wider range or connect your project in Settings.
         </EmptyDescription>
       </EmptyHeader>
       <Button variant="outline" asChild>
@@ -280,14 +280,15 @@ export function BreakdownRows({
       {groups.length ? (
         groups.map((g) => {
           const target = drilldown?.(g);
+          const label = g.display ?? groupLabel(g.label);
           const content = (
             <>
               <div
                 className="breakdown-fill"
                 style={{ width: `${Math.max(0, (g.value ?? 0) / max) * 85}%` }}
               />
-              <span className="breakdown-label" title={groupLabel(g.label)}>
-                {groupLabel(g.label)}
+              <span className="breakdown-label" title={label}>
+                {label}
               </span>
               <span className="breakdown-values">
                 <span className="breakdown-value">{number(g.value, 1)}</span>
@@ -313,7 +314,7 @@ export function BreakdownRows({
               to="/explore"
               search={{ drilldown: target }}
               key={JSON.stringify(g.label)}
-              aria-label={`Explore ${groupLabel(g.label)}`}
+              aria-label={`Explore ${label}`}
             >
               {content}
             </Link>

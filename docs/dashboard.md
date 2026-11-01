@@ -1,10 +1,10 @@
 # Exploring from the overview
 
-Select a product and date range in the header. Website overviews show page views. Tool overviews show command executions. Generic products include every event name and source.
+Select a project, source, and date range in the header. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Website sources show page views; tool sources show command executions. Mobile/other sources and projects mixing source types include all event names. Source selection is remembered per project. Settings manages every source regardless of the analytics selection.
 
-Click a page, command, event, referrer, or other breakdown row to open its matching events in Explore. Each link carries the product, exact UTC interval, and selected value. It works after reload and through browser history, even when the browser previously had a different product selected.
+Click a page, command, event, referrer, or other breakdown row to open its matching events in Explore. Each link carries the project, selected source when applicable, exact UTC interval, and selected value. A source breakdown link uses its stable ID, so renaming does not break links. It works after reload and through browser history, even when the browser previously had a different product selected.
 
-Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Those edits apply to the current view; reloading the URL restores the original clicked selection. Clear the drilldown to return to the normal date range. Selecting another product or date range also clears the linked selection. A missing product or malformed drilldown shows an error instead of querying another product.
+Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Those edits apply to the current view; reloading the URL restores the original clicked selection. Clear the drilldown to return to the normal date range. Selecting another project, source, or date range also clears the linked selection. A missing project/source or malformed drilldown shows an error instead of querying another product.
 
 ## Overview chart
 
@@ -12,7 +12,7 @@ Use the chart's metric and interval controls to ask a different question without
 
 - **Websites.** Chart page views or unique visitors with an explicit visitor ID.
 - **Developer tools.** Chart command executions, active installations with an explicit installation ID, average duration, or p95 duration.
-- **Generic products.** Chart event counts or identified actors. Identity kinds remain distinct.
+- **Mobile/other sources and mixed projects.** Chart event counts or identified actors. Identity kinds remain distinct.
 
 Daily buckets are the default. Hourly buckets are available for ranges of 31 days or less; longer ranges use daily buckets. Labels and bucket boundaries use UTC. The first or last bucket is marked partial when the selected range cuts through it. A partial bucket should not be interpreted as a complete day or hour.
 
@@ -24,7 +24,7 @@ Changing a chart selection loads only the plot while its controls, summary cards
 
 - **Websites.** Switch the source card between referrers, UTM sources, and campaigns. These use `referrer`, `utm_source`, and `utm_campaign` properties from the browser tracker.
 - **Developer tools.** Switch the environment card between operating systems, application versions, and architectures. These use `os`, `version`, and `arch` from the CLI example.
-- **Generic products.** Explore event names and collection sources directly.
+- **Mobile/other sources and mixed projects.** Explore event names and managed sources directly. The Clients tab groups the original envelope `source` label; it is distinct from the trusted source attributed by the ingestion key.
 
 The count and percentage describe the selected row's share of all matching events. Percentages use the full result count, including groups outside the top 12. They are event shares, not visitor shares.
 
@@ -68,3 +68,9 @@ Placeholders follow the selected theme and respect reduced-motion preferences. R
 ## Interface icons
 
 Piko uses the free Stroke Rounded set from [Hugeicons](https://hugeicons.com/), rendered with `@hugeicons/react`. Import named icon data from `@hugeicons/core-free-icons` and pass it directly to `HugeiconsIcon`. Navigation, metric cards, controls, and installed shadcn primitives share this set. `apps/dashboard/components.json` also selects `hugeicons` for future generated components.
+
+Mobile source overviews focus on events and explicitly identified actors, with screen, version, and OS breakdowns when those properties are provided. They do not show website visitor/session or CLI installation cards.
+
+## Source management
+
+Settings lists sources with their name and type. Add or edit a source there, then choose it in **Key source** before creating an ingestion key. Each key belongs permanently to one source. Integration snippets use the selected source's key; mobile sources start on the HTTP example. Renaming a source changes its display name without moving historical events. Sources share the project's retention policy and optional identity namespace. Revoke its keys to stop intake; source deletion and merging are outside v1.

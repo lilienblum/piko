@@ -1,7 +1,22 @@
+export type SourceKind = "website" | "mobile" | "tool" | "generic";
+export type Source = {
+  id: string;
+  product_id: string;
+  name: string;
+  kind: SourceKind;
+  created_at: string;
+};
+export const sourceKinds = [
+  ["website", "Website"],
+  ["mobile", "Mobile app"],
+  ["tool", "Developer tool"],
+  ["generic", "Other"],
+] as const;
 export type Product = {
   id: string;
   name: string;
-  kind: "website" | "tool" | "generic";
+  kind: SourceKind;
+  sources: Source[];
   retention_days: number;
   created_at: string;
 };
@@ -10,6 +25,7 @@ export type EventRow = {
   event_id: string;
   name: string;
   source: string;
+  source_id: string;
   timestamp: number;
   received_at: number;
   actor_id: string | null;
@@ -18,6 +34,7 @@ export type EventRow = {
   properties: Properties;
 };
 export type Group = {
+  display?: string;
   label: string | number | boolean | null;
   value: number | null;
   count: number;
@@ -73,4 +90,11 @@ export const number = (n: number | null | undefined, digits = 0) =>
   n == null ? "—" : new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(n);
 export function groupLabel(value: Group["label"]) {
   return value === null ? "Not provided" : value === "" ? "Empty string" : String(value);
+}
+
+export function sourceGroups(groups: Group[], sources: Source[] = []): Group[] {
+  return groups.map((group) => ({
+    ...group,
+    display: sources.find((source) => source.id === group.label)?.name ?? "Unknown source",
+  }));
 }
