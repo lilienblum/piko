@@ -7,4 +7,4 @@
 - MIT license. Keep documentation and collection examples aligned with API changes.
 - For dashboard UI work, read `apps/dashboard/PRODUCT.md` and `apps/dashboard/DESIGN.md`; the normative design sidecar is `apps/dashboard/.impeccable/design.json`.
 
-- Two Tako apps use root tako.api.toml / tako.dashboard.toml. Keep Tako itself unchanged. API post-commit webhook hints feed the dashboard durable channel; never place raw events or credentials in channel messages. API data belongs under TAKO_DATA_DIR, with one process owning the directory. Do not claim overlapping API rolling updates are safe.
+- Two Tako apps use root tako.api.toml / tako.dashboard.toml. Keep Tako itself unchanged. API post-commit webhook hints feed the dashboard ephemeral channel; never place raw events or credentials in channel messages. API data belongs under TAKO_DATA_DIR, with one process owning the directory. Do not claim overlapping API rolling updates are safe.

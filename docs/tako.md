@@ -1,6 +1,6 @@
 # Two Tako applications
 
-Piko uses the published Rust SDK for the API and the JavaScript SDK for TanStack Start. Tako itself is unchanged. The API has no dashboard imports: it can optionally emit generic post-commit change hints to a configured HTTP endpoint. The dashboard turns those hints into a durable Tako channel.
+Piko uses the published Rust SDK for the API and the JavaScript SDK for TanStack Start. Tako itself is unchanged. The API has no dashboard imports: it can optionally emit generic post-commit change hints to a configured HTTP endpoint. The dashboard turns those hints into an ephemeral Tako channel. Use CLI/server release `0.0.0-9ae824f` or later with ephemeral support; the JavaScript SDK is pinned to that release.
 
 ## Local development
 
@@ -11,6 +11,8 @@ SSL_CERT_FILE=.tako/dev-ca.pem PIKO_API_URL=https://piko-api.test bun seed
 # Stop only these two apps:
 bun run dev:stop
 ```
+
+After upgrading Tako, restart any existing dev daemon as well as the apps. An app-only `tako dev --restart` does not replace an older daemon. Stop Piko’s apps before restarting it so database owners close cleanly.
 
 The root configs select independent app identities and hosts: `tako.api.toml` is `piko-api` at `https://piko-api.test`; `tako.dashboard.toml` is `piko` at `https://piko.test`. The dashboard's same-origin `/api/*` route forwards requests to the API. The returned Tako HTTPS URLs are the supported development entrypoints. The runner links the public local Tako CA at `.tako/dev-ca.pem`; development-only `SSL_CERT_FILE` settings let Bun and Rust verify it even when their default trust stores differ from macOS. Certificate verification stays enabled.
 
@@ -28,9 +30,11 @@ The API stores its catalog and product databases under `$TAKO_DATA_DIR`, locally
 4. `POST /_piko/changes` validates the secret, content type, an 8 KiB body limit, UUIDs, and the version. It publishes a `changed` message on `analytics-changes` and acknowledges only when channel publication succeeds.
 5. One receive-only browser connection serves the workspace. Messages contain no event payloads, properties, names, or credentials. The selected product scopes refresh behavior in the client. Channel parameters are **not** used as a security partition.
 
-Tako channels are durable with a 60-second replay window. Local development keeps replay in the dev daemon's memory; that is not a production durability test. Piko's API-to-channel queue is intentionally bounded and **not a durable event outbox**. Lost intermediate notifications are harmless because they invalidate queries rather than represent events. Restart/global hints, reconnect reconciliation (including a fresh subscription after HTTP 410 replay expiry), visibility restoration, and manual refresh recover canonical database state.
+The channel declares `ephemeral: true`: hints stay in memory, have no replay cursor, and never enter a channel message database. Only currently connected subscribers on the same Tako server receive them. The runtime buffers at most 64 messages per active channel; slow subscribers may miss evicted hints. Messages sent without subscribers or during a disconnect are lost, and restarting the server discards the buffer. See [Tako’s channel semantics](https://github.com/tako-sh/tako/blob/9ae824f876ea74456ed695b1cb5efb577735e960/website/docs/channels.mdx).
 
-Overview keeps its existing cards and charts while refreshing, coalescing bursts and allowing at most one foreground query plus one pending refresh. Explore leaves results, pagination, query drafts, and the open event inspector in place until **Refresh results** is clicked. Fixed drilldown date intervals remain fixed; live updates do not silently expand a shared historical selection. Hidden tabs pause query refreshes and catch up on return. The connection indicator shows Live, Reconnecting, or Paused.
+Piko’s API-to-channel queue is also bounded and is **not a durable event outbox**. Analytics commits and ingestion acknowledgments remain durable. Notifications invalidate queries rather than represent events. On every connection, including the first, Overview queries canonical API state and Explore offers a refresh without changing its current results. Restart/global hints, visibility restoration, later notifications, and manual refresh also recover missed changes. A connected client can temporarily show stale data if it misses a hint; channel delivery is not a correctness boundary for stored analytics.
+
+Overview keeps its existing cards and charts while refreshing, coalescing bursts and allowing at most one foreground query plus one pending refresh. Explore leaves results, pagination, query drafts, and the open event inspector in place until **Refresh results** is clicked. Fixed drilldown date intervals remain fixed; live updates do not silently expand a shared historical selection. Hidden tabs pause query refreshes and catch up on return. The connection indicator shows Live, Reconnecting, or Paused. Analytical queries retry a capacity response once when the API supplies a numeric `Retry-After` of at most five seconds; changing scope cancels that wait. Longer or unadvertised delays surface a retryable error. Management mutations are never automatically retried.
 
 ## Production and updates
 
@@ -58,7 +62,7 @@ PIKO_API_URL = "https://piko-api.example.com"
 
 Set `PIKO_CHANGE_TOKEN` for production through `tako -c tako.dashboard.toml secrets set PIKO_CHANGE_TOKEN --env production`; the two root configs share this secret store. If the API hostname uses Cloudflare Access service authentication, also configure `PIKO_API_ACCESS_CLIENT_ID` and `PIKO_API_ACCESS_CLIENT_SECRET` in the dashboard SDK secret bag. See [the exact external access boundary](access.md).
 
-Use one server and exactly **one API instance**. The native Rust build must run on Linux with the target server's architecture and libc; a macOS binary is not a Linux deployment artifact. Tako does not cross-compile Rust for this config. Build/deploy the two configs **sequentially** because their local staging directory is shared. Deployment artifacts include the compiled dashboard and the API binary, not local databases.
+Use one server and exactly **one API instance**. The dashboard’s ephemeral channel also requires all subscribers and publishers to share that Tako server process. Do not configure a shared `postgres_url` credential: Tako currently rejects ephemeral subscriptions and publications in that mode. The native Rust build must run on Linux with the target server's architecture and libc; a macOS binary is not a Linux deployment artifact. Tako does not cross-compile Rust for this config. Build/deploy the two configs **sequentially** because their local staging directory is shared. Deployment artifacts include the compiled dashboard and the API binary, not local databases.
 
 The API holds an OS lock on its entire persistent directory before opening databases. A second process fails immediately. This protects files but does not make overlapping rolling releases work: Tako normally starts and health-checks the replacement before draining the old process, and DuckDB rejects that overlap.
 

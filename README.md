@@ -11,7 +11,7 @@ This two-process layout supersedes the original single-process concept. There is
 
 ## Run locally with Tako
 
-Requires [Tako](https://tako.sh/), Bun 1.4+, a current stable Rust toolchain (tested with 1.95.0), a C++17 compiler, and local disk. DuckDB is compiled into the API; the first build takes several minutes. No npm or Node runtime is required.
+Requires [Tako](https://tako.sh/) `0.0.0-9ae824f` or a later release with ephemeral channels, Bun 1.4+, a current stable Rust toolchain (tested with 1.95.0), a C++17 compiler, and local disk. DuckDB is compiled into the API; the first build takes several minutes. No npm or Node runtime is required.
 
 ```sh
 git clone git@github.com:lilienblum/piko.git
@@ -26,13 +26,13 @@ Open **https://piko.test**. The independent API runs at **https://piko-api.test*
 SSL_CERT_FILE=.tako/dev-ca.pem PIKO_API_URL=https://piko-api.test bun seed
 ```
 
-This creates one **Orbit** project with **Website**, **iOS app**, and **CLI** sources, with 30 days of sample page views, signups, mobile screens/subscriptions, commands, and configuration events. Earlier demo projects remain untouched. Overview refreshes through Tako channels after new events commit. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
+This creates one **Orbit** project with **Website**, **iOS app**, and **CLI** sources, with 30 days of sample page views, signups, mobile screens/subscriptions, commands, and configuration events. Earlier demo projects remain untouched. Overview refreshes through ephemeral Tako channels after new events commit; reconnects query the API to catch up. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
 
 See [Tako setup, deployment, and realtime delivery](docs/tako.md). Development uses Tako's trusted local HTTPS proxy. If the CLI reports missing host prerequisites, complete `tako doctor` / Tako's local setup first.
 
 ## Deployment
 
-The primary deployment consists of **two native Tako apps** described by `tako.api.toml` and `tako.dashboard.toml`. Configure separate production hostnames, a shared notification secret, external access control, and exactly one API instance. The API uses Tako's persistent data directory. DuckDB requires a **stop-before-start API update**, including an ingress gate to prevent cold starts; see the [deployment procedure](docs/tako.md#production-and-updates).
+The primary deployment consists of **two native Tako apps** described by `tako.api.toml` and `tako.dashboard.toml`. Configure separate production hostnames, a shared notification secret, external access control, and exactly one API instance. Ephemeral channels require one Tako server without a shared Postgres credential. The API uses Tako's persistent data directory. DuckDB requires a **stop-before-start API update**, including an ingress gate to prevent cold starts; see the [deployment procedure](docs/tako.md#production-and-updates).
 
 A standalone alternative remains available, without live channels:
 

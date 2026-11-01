@@ -20,7 +20,7 @@ Projects group named website, mobile app, developer-tool, and generic sources un
 
 ## Operating Context
 
-Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Persistent project/source/date selection; optional live refresh through Tako durable channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
+Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Persistent project/source/date selection; optional live refresh through Tako ephemeral channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
 
 ## Capabilities and Constraints
 
