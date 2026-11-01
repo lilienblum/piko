@@ -51,7 +51,7 @@
   --destructive: #ad353e;
   --destructive-foreground: #ffffff;
   --border: #d6ddd2;
-  --input: #8b998c;
+  --input: #859283;
   --success: #286449;
   --subtle: #f1f4ed;
   --radius: 12px;
@@ -363,12 +363,6 @@ h1 {
   font-weight: 550;
   color: var(--muted-foreground);
 }
-/* biome-ignore lint/style/noDescendingSpecificity: these selectors target disjoint component regions. */
-.metric-label svg {
-  width: 14px;
-  height: 14px;
-  color: var(--muted-foreground);
-}
 .metric-value {
   font-weight: 620;
   letter-spacing: -0.025em;
@@ -553,11 +547,6 @@ h1 {
   display: flex;
   align-items: center;
   gap: 7px;
-}
-/* biome-ignore lint/style/noDescendingSpecificity: these selectors target disjoint component regions. */
-.page-footer svg {
-  width: 12px;
-  height: 12px;
 }
 .quiet {
   font-size: 12px;
@@ -1367,7 +1356,6 @@ h1 {
 }
 .chart-card > [data-slot="card-header"],
 .chart-card > [data-slot="card-content"],
-.query-builder > [data-slot="card-header"],
 .query-builder > [data-slot="card-content"] {
   padding-inline: 0;
 }
@@ -1504,5 +1492,64 @@ h1 {
   }
   .stream-mobile-time {
     font-size: 11px;
+  }
+}
+
+@media (min-width: 1151px) {
+  .page-content:has(.query-builder) {
+    padding-top: 20px;
+  }
+  .page-content:has(.query-builder) .page-heading {
+    margin-bottom: 14px;
+  }
+  .query-builder {
+    padding-bottom: 12px;
+  }
+  .explore-summary {
+    margin-block: 12px;
+  }
+  .explore-charts {
+    padding-block: 12px;
+    margin-bottom: 16px;
+  }
+  .explore-charts .chart-card {
+    gap: 10px;
+  }
+  .explore-charts .series-chart {
+    height: 180px;
+  }
+  .event-stream {
+    margin-top: 16px;
+    gap: 10px;
+  }
+  .stream-table th {
+    height: 34px;
+  }
+  .stream-table td {
+    height: 56px;
+  }
+  .stream-event {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .stream-inspect {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+  }
+  .stream-event-meta {
+    max-width: 35%;
+  }
+  .stream-event-meta > [data-slot="badge"] {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stream-context,
+  .stream-identity,
+  .stream-time {
+    gap: 2px;
   }
 }

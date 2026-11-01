@@ -137,6 +137,8 @@ test("date changes use stable placeholders and breakdown loading stays local", a
 });
 
 test("explore loading matches results and pending query recovers after error", async ({ page }) => {
+  const viewport = page.viewportSize();
+  let pendingStreamY: number | undefined;
   const release = await hold(page, "**/api/products/*/query");
   try {
     await page.goto("/explore");
@@ -152,6 +154,7 @@ test("explore loading matches results and pending query recovers after error", a
     );
     await expect(page.getByText("across 0 matching events")).not.toBeVisible();
     await page.screenshot({ path: test.info().outputPath("explore-loading.png") });
+    pendingStreamY = (await pending.locator(".event-stream").boundingBox())?.y;
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Appearance", exact: true }).click();
@@ -170,6 +173,11 @@ test("explore loading matches results and pending query recovers after error", a
     release();
   }
   await expect(page.getByText("across 8 matching events")).toBeVisible();
+  if (!viewport || pendingStreamY === undefined) throw new Error("Expected initial query geometry");
+  await page.setViewportSize(viewport);
+  const loadedStream = await page.locator(".event-stream").boundingBox();
+  if (!loadedStream) throw new Error("Expected loaded query geometry");
+  expect(Math.abs(loadedStream.y - pendingStreamY)).toBeLessThanOrEqual(12);
   await expect(page.getByRole("button", { name: "Run query", exact: true })).toBeEnabled();
   await page.route(
     "**/api/products/*/query",

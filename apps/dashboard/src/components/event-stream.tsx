@@ -180,7 +180,9 @@ export function EventStream({
                 />
               </Button>
               <div className="stream-event-meta">
-                <Badge variant="outline">{event.source}</Badge>
+                <Badge variant="outline" title={event.source}>
+                  {event.source}
+                </Badge>
                 <time
                   className="stream-mobile-time"
                   dateTime={new Date(event.timestamp).toISOString()}

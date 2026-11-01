@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function BreakdownLoading() {
+export function BreakdownLoading({ rows = 5 }: { rows?: number }) {
   return (
     <div role="status" aria-label="Loading breakdown" aria-busy="true">
       <span className="sr-only">Loading breakdown…</span>
@@ -19,7 +19,7 @@ export function BreakdownLoading() {
         <Skeleton className="h-3 w-20" />
         <Skeleton className="h-3 w-12" />
       </div>
-      {[72, 58, 42, 64, 35].map((width) => (
+      {[72, 58, 42, 64, 35].slice(0, rows).map((width) => (
         <div className="breakdown-row" key={width} aria-hidden="true">
           <Skeleton className="h-3" style={{ width: `${width}%` }} />
           <Skeleton className="ml-auto h-3 w-8" />
@@ -53,7 +53,7 @@ function ChartLoading({ title }: { title: string }) {
     </Card>
   );
 }
-function BreakdownCardLoading({ title }: { title: string }) {
+function BreakdownCardLoading({ title, rows }: { title: string; rows?: number }) {
   return (
     <Card aria-hidden="true">
       <CardHeader>
@@ -63,7 +63,7 @@ function BreakdownCardLoading({ title }: { title: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <BreakdownLoading />
+        <BreakdownLoading rows={rows} />
       </CardContent>
     </Card>
   );
@@ -109,7 +109,7 @@ export function ExploreLoading() {
       </div>
       <div className="explore-charts">
         <ChartLoading title="Results over time" />
-        <BreakdownCardLoading title="Breakdown" />
+        <BreakdownCardLoading title="Breakdown" rows={3} />
       </div>
       <Card className="event-card event-stream">
         <CardHeader>
