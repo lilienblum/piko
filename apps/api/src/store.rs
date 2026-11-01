@@ -2,13 +2,13 @@ use crate::{
     error::{ApiError, ApiResult},
     model::{KeyInfo, Product, ProductInput},
 };
-use anyhow::{Context, Result};
+use anyhow::Result;
 use duckdb::Connection;
 use rusqlite::{OptionalExtension, params};
 use sha2::{Digest, Sha256};
 use std::{
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::Duration,
 };
 
@@ -24,37 +24,45 @@ pub fn secret(prefix: &str) -> String {
 }
 pub struct Store {
     pub sqlite_path: PathBuf,
-    pub readers: Mutex<Vec<Connection>>,
+    pub analytics: crate::product_db::ProductDatabases,
     pub query_slots: Arc<tokio::sync::Semaphore>,
     pub state_slots: Arc<tokio::sync::Semaphore>,
 }
 impl Store {
-    pub fn open(path: &Path, queries: usize) -> Result<(Arc<Self>, Connection)> {
+    pub fn open(path: &Path, queries: usize) -> Result<Arc<Self>> {
         std::fs::create_dir_all(path)?;
         let sqlite_path = path.join("state.sqlite");
         let sql = rusqlite::Connection::open(&sqlite_path)?;
         sql.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
           CREATE TABLE IF NOT EXISTS products(id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, retention_days INTEGER NOT NULL, created_at TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS ingestion_keys(id TEXT PRIMARY KEY, product_id TEXT NOT NULL REFERENCES products(id), label TEXT NOT NULL, prefix TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked INTEGER NOT NULL DEFAULT 0);
-          CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY, expires INTEGER NOT NULL);
+          DROP TABLE IF EXISTS sessions; CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
           PRAGMA user_version=1;")?;
-        let db = Connection::open(path.join("events.duckdb"))?;
-        db.execute_batch("SET threads=2; SET memory_limit='512MB'; SET enable_external_access=false;
-          CREATE TABLE IF NOT EXISTS events(product_id VARCHAR NOT NULL, event_id VARCHAR NOT NULL, name VARCHAR NOT NULL, source VARCHAR NOT NULL,
-          event_time BIGINT NOT NULL, received_at BIGINT NOT NULL, actor_id VARCHAR, identity_kind VARCHAR, session_id VARCHAR, properties JSON NOT NULL,
-          PRIMARY KEY(product_id,event_id));")?;
-        let readers = (0..queries)
-            .map(|_| db.try_clone())
-            .collect::<duckdb::Result<Vec<_>>>()?;
-        Ok((
-            Arc::new(Self {
-                sqlite_path,
-                readers: Mutex::new(readers),
-                query_slots: Arc::new(tokio::sync::Semaphore::new(queries)),
-                state_slots: Arc::new(tokio::sync::Semaphore::new(16)),
-            }),
-            db,
-        ))
+        let analytics = crate::product_db::ProductDatabases::new(path.join("products"))?;
+        let migrated = sql
+            .query_row(
+                "SELECT value FROM settings WHERE key='product_databases_migrated'",
+                [],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()?;
+        if path.join("events.duckdb").exists() && migrated.is_none() {
+            let imported = analytics.import_legacy(&path.join("events.duckdb"))?;
+            sql.execute(
+                "INSERT INTO settings VALUES ('product_databases_migrated','1')",
+                [],
+            )?;
+            tracing::info!(
+                imported,
+                "Migrated analytics to separate product databases; original file retained"
+            );
+        }
+        Ok(Arc::new(Self {
+            sqlite_path,
+            analytics,
+            query_slots: Arc::new(tokio::sync::Semaphore::new(queries)),
+            state_slots: Arc::new(tokio::sync::Semaphore::new(16)),
+        }))
     }
     pub fn sqlite(&self) -> Result<rusqlite::Connection> {
         let conn = rusqlite::Connection::open(&self.sqlite_path)?;
@@ -82,6 +90,7 @@ impl Store {
     }
     pub async fn query<T: Send + 'static>(
         self: &Arc<Self>,
+        product_id: String,
         f: impl FnOnce(&mut Connection) -> ApiResult<T> + Send + 'static,
     ) -> ApiResult<T> {
         let permit = self
@@ -92,20 +101,9 @@ impl Store {
         let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let _permit = permit;
-            let mut db = store
-                .readers
-                .lock()
-                .map_err(|_| anyhow::anyhow!("Reader pool poisoned"))?
-                .pop()
-                .context("Reader pool empty")?;
-            // The permit remains held until actual query completion, even if HTTP is canceled.
-            let result = f(&mut db);
-            store
-                .readers
-                .lock()
-                .map_err(|_| anyhow::anyhow!("Reader pool poisoned"))?
-                .push(db);
-            result
+            let mut lease = store.analytics.connection(&product_id)?;
+            // Pin the product instance and admission permit until actual completion.
+            f(&mut lease.connection)
         })
         .await
         .map_err(|e| ApiError::from(anyhow::anyhow!(e)))?

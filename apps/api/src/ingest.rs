@@ -33,12 +33,11 @@ pub struct Writer {
     tx: SyncSender<Write>,
 }
 impl Writer {
-    pub fn start(db: Connection, store: Arc<Store>, capacity: usize) -> Self {
+    pub fn start(store: Arc<Store>, capacity: usize) -> Self {
         let (tx, rx) = mpsc::sync_channel::<Write>(capacity);
         std::thread::Builder::new()
             .name("piko-writer".into())
             .spawn(move || {
-                let mut db = db;
                 while let Ok(first) = rx.recv() {
                     let mut batch = vec![first];
                     let deadline = Instant::now() + Duration::from_millis(8);
@@ -57,19 +56,33 @@ impl Writer {
                         }
                     }
                     if !events.is_empty() {
-                        persist(&mut db, events);
+                        let mut products = std::collections::BTreeMap::<String, Vec<Write>>::new();
+                        for item in events {
+                            if let Write::Events { ref product_id, .. } = item {
+                                products.entry(product_id.clone()).or_default().push(item);
+                            }
+                        }
+                        for (id, batch) in products {
+                            match store.analytics.connection(&id) {
+                                Ok(mut lease) => persist(&mut lease.connection, batch),
+                                Err(error) => {
+                                    for item in batch {
+                                        if let Write::Events { ack, .. } = item {
+                                            let _ =
+                                                ack.send(Err(ApiError(error.0, error.1.clone())));
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                     for item in controls {
                         match item {
                             Write::Cleanup { ack } => {
-                                let _ = ack.send(cleanup(
-                                    &mut db,
-                                    &store,
-                                    Utc::now().timestamp_millis(),
-                                ));
+                                let _ = ack.send(cleanup(&store, Utc::now().timestamp_millis()));
                             }
                             Write::Stop { ack } => {
-                                let _ = db.execute_batch("CHECKPOINT;");
+                                let _ = store.analytics.checkpoint();
                                 let _ = ack.send(());
                                 return;
                             }
@@ -194,21 +207,26 @@ fn persist(db: &mut Connection, batch: Vec<Write>) {
     }
 }
 use anyhow::Context;
-pub fn cleanup(db: &mut Connection, store: &Store, now: i64) -> ApiResult<usize> {
+pub fn cleanup(store: &Store, now: i64) -> ApiResult<usize> {
     let sql = store.sqlite()?;
     let products = crate::store::products(&sql)?;
-    let tx = db.transaction().map_err(anyhow::Error::from)?;
     let mut removed = 0;
     for p in products {
+        if !store.analytics.path(&p.id)?.exists() {
+            continue;
+        }
+        let mut lease = store.analytics.connection(&p.id)?;
+        let tx = lease
+            .connection
+            .transaction()
+            .map_err(anyhow::Error::from)?;
         removed += tx
             .execute(
                 "DELETE FROM events WHERE product_id=? AND event_time<?",
                 params![p.id, now - p.retention_days * 86_400_000],
             )
             .map_err(anyhow::Error::from)?;
+        tx.commit().map_err(anyhow::Error::from)?;
     }
-    tx.commit().map_err(anyhow::Error::from)?;
-    sql.execute("DELETE FROM sessions WHERE expires<?", [now])
-        .map_err(anyhow::Error::from)?;
     Ok(removed)
 }

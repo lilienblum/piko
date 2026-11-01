@@ -1,6 +1,7 @@
 pub mod error;
 pub mod ingest;
 pub mod model;
+pub mod product_db;
 pub mod query;
 pub mod store;
 pub mod telemetry;
@@ -15,72 +16,50 @@ use axum::{
     extract::{DefaultBodyLimit, Path, Request, State},
     http::{HeaderMap, StatusCode, header},
     middleware::{self, Next},
-    response::{IntoResponse, Response},
+    response::Response,
     routing::{delete, get, patch, post},
 };
-use rusqlite::OptionalExtension;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-    time::{Duration, Instant},
-};
-use subtle::ConstantTimeEq;
+use std::{path::PathBuf, sync::Arc, time::Duration};
 use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Clone)]
 pub struct AppState {
     pub store: Arc<Store>,
     pub writer: Writer,
-    admin_hash: String,
-    secure_cookie: bool,
     ingest_slots: Arc<tokio::sync::Semaphore>,
-    login_attempts: Arc<Mutex<(Instant, u32)>>,
 }
 pub struct Config {
     pub data_dir: PathBuf,
-    pub admin_token: String,
     pub query_concurrency: usize,
     pub queue_capacity: usize,
-    pub secure_cookie: bool,
 }
 impl AppState {
     pub fn open(config: &Config) -> anyhow::Result<Self> {
-        anyhow::ensure!(
-            config.admin_token.len() >= 16,
-            "PIKO_ADMIN_TOKEN must be at least 16 characters"
-        );
         anyhow::ensure!(
             (1..=16).contains(&config.query_concurrency)
                 && (1..=1024).contains(&config.queue_capacity),
             "query concurrency must be 1–16 and queue capacity 1–1024"
         );
-        let (store, db) = Store::open(&config.data_dir, config.query_concurrency)?;
-        let writer = Writer::start(db, store.clone(), config.queue_capacity);
+        let store = Store::open(&config.data_dir, config.query_concurrency)?;
+        let writer = Writer::start(store.clone(), config.queue_capacity);
         Ok(Self {
             store,
             writer,
-            admin_hash: store::hash(&config.admin_token),
-            secure_cookie: config.secure_cookie,
             ingest_slots: Arc::new(tokio::sync::Semaphore::new(config.queue_capacity)),
-            login_attempts: Arc::new(Mutex::new((Instant::now(), 0))),
         })
     }
 }
 pub fn router(state: AppState) -> Router {
     let admin = Router::new()
-        .route(
-            "/api/session",
-            get(|| async { Json(json!({"authenticated":true})) }).delete(logout),
-        )
         .route("/api/products", get(list_products).post(create_product))
         .route("/api/products/{id}", patch(update_product))
         .route("/api/products/{id}/keys", get(list_keys).post(create_key))
         .route("/api/products/{id}/keys/{key}", delete(revoke_key))
         .route("/api/products/{id}/query", post(query_product))
         .route("/api/cleanup", post(run_cleanup))
-        .route_layer(middleware::from_fn_with_state(state.clone(), auth));
+        .route_layer(middleware::from_fn(management_request));
     let ingest = Router::new()
         .route("/api/ingest", post(ingest_events))
         .layer(middleware::from_fn_with_state(state.clone(), ingest_limit))
@@ -93,7 +72,6 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .merge(admin)
         .merge(ingest)
-        .route("/api/login", post(login))
         .route("/api/{*path}", get(|| async { ApiError::missing() }))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
         .layer(DefaultBodyLimit::max(256 * 1024))
@@ -122,121 +100,21 @@ fn bearer(headers: &HeaderMap) -> Option<&str> {
         .ok()?
         .strip_prefix("Bearer ")
 }
-fn cookie(headers: &HeaderMap) -> Option<String> {
-    headers
-        .get(header::COOKIE)?
-        .to_str()
-        .ok()?
-        .split(';')
-        .find_map(|s| s.trim().strip_prefix("piko_session=").map(str::to_string))
-}
-async fn auth(State(state): State<AppState>, req: Request, next: Next) -> ApiResult<Response> {
-    let authorized = bearer(req.headers())
-        .is_some_and(|s| bool::from(store::hash(s).as_bytes().ct_eq(state.admin_hash.as_bytes())));
-    if !authorized {
-        let token = cookie(req.headers()).ok_or_else(ApiError::unauthorized)?;
-        // A custom header prevents form-based cross-site mutations; admin CORS is disabled.
-        if req.method() != axum::http::Method::GET
-            && req
-                .headers()
-                .get("x-piko-admin")
-                .and_then(|v| v.to_str().ok())
-                != Some("1")
-        {
-            return Err(ApiError::unauthorized());
-        }
-        let valid = state
-            .store
-            .state(move |db| {
-                Ok(db
-                    .query_row(
-                        "SELECT 1 FROM sessions WHERE hash=? AND expires>?",
-                        rusqlite::params![
-                            store::hash(&token),
-                            chrono::Utc::now().timestamp_millis()
-                        ],
-                        |r| r.get::<_, i32>(0),
-                    )
-                    .optional()
-                    .map_err(anyhow::Error::from)?
-                    .is_some())
-            })
-            .await?;
-        if !valid {
-            return Err(ApiError::unauthorized());
-        }
+// This is a CSRF request marker, not authentication. Network/edge access controls are required.
+async fn management_request(req: Request, next: Next) -> ApiResult<Response> {
+    if req.method() != axum::http::Method::GET
+        && req
+            .headers()
+            .get("x-piko-admin")
+            .and_then(|v| v.to_str().ok())
+            != Some("1")
+    {
+        return Err(ApiError(
+            StatusCode::FORBIDDEN,
+            "Management requests require X-Piko-Admin: 1".into(),
+        ));
     }
     Ok(next.run(req).await)
-}
-#[derive(Deserialize)]
-struct Login {
-    token: String,
-}
-async fn login(State(state): State<AppState>, Json(input): Json<Login>) -> ApiResult<Response> {
-    {
-        let mut rate = state.login_attempts.lock().map_err(|_| ApiError::busy())?;
-        if rate.0.elapsed() > Duration::from_secs(60) {
-            *rate = (Instant::now(), 0);
-        }
-        if rate.1 >= 20 {
-            return Err(ApiError(
-                StatusCode::TOO_MANY_REQUESTS,
-                "Too many sign-in attempts; retry in one minute".into(),
-            ));
-        }
-        rate.1 += 1;
-    }
-    if !bool::from(
-        store::hash(&input.token)
-            .as_bytes()
-            .ct_eq(state.admin_hash.as_bytes()),
-    ) {
-        return Err(ApiError::unauthorized());
-    }
-    let session = store::secret("ps_");
-    let hashed = store::hash(&session);
-    state
-        .store
-        .state(move |db| {
-            db.execute(
-                "INSERT INTO sessions VALUES (?,?)",
-                rusqlite::params![hashed, chrono::Utc::now().timestamp_millis() + 86_400_000],
-            )
-            .map_err(anyhow::Error::from)?;
-            Ok(())
-        })
-        .await?;
-    Ok((
-        [(
-            header::SET_COOKIE,
-            format!(
-                "piko_session={session}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400{}",
-                if state.secure_cookie { "; Secure" } else { "" }
-            ),
-        )],
-        Json(json!({"authenticated":true})),
-    )
-        .into_response())
-}
-async fn logout(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
-    if let Some(session) = cookie(&headers) {
-        state
-            .store
-            .state(move |db| {
-                db.execute("DELETE FROM sessions WHERE hash=?", [store::hash(&session)])
-                    .map_err(anyhow::Error::from)?;
-                Ok(())
-            })
-            .await?;
-    }
-    Ok((
-        [(
-            header::SET_COOKIE,
-            "piko_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0",
-        )],
-        StatusCode::NO_CONTENT,
-    )
-        .into_response())
 }
 async fn ingest_limit(
     State(state): State<AppState>,
@@ -349,7 +227,11 @@ async fn query_product(
     q.validate()?;
     let lookup = id.clone();
     s.store.state(move |db| store::product(db, &lookup)).await?;
-    Ok(Json(s.store.query(move |db| query::run(db, &id, q)).await?))
+    Ok(Json(
+        s.store
+            .query(id.clone(), move |db| query::run(db, &id, q))
+            .await?,
+    ))
 }
 async fn run_cleanup(State(s): State<AppState>) -> ApiResult<Json<Value>> {
     Ok(Json(json!({"removed":s.writer.cleanup().await?})))

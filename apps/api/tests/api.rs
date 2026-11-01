@@ -7,7 +7,7 @@ use http_body_util::BodyExt;
 use piko::{AppState, Config, router};
 use serde_json::{Value, json};
 use tower::ServiceExt;
-const ADMIN: &str = "integration-test-admin-token";
+const MANAGEMENT: &str = "";
 struct Fixture {
     app: Router,
     state: AppState,
@@ -25,7 +25,7 @@ impl Fixture {
             &self.app,
             "POST",
             "/api/products",
-            ADMIN,
+            MANAGEMENT,
             json!({"name":name,"kind":"tool","retention_days":30}),
         )
         .await;
@@ -35,7 +35,7 @@ impl Fixture {
             &self.app,
             "POST",
             &format!("/api/products/{id}/keys"),
-            ADMIN,
+            MANAGEMENT,
             json!({"label":"test"}),
         )
         .await;
@@ -45,10 +45,8 @@ impl Fixture {
 fn config(path: &std::path::Path, capacity: usize) -> Config {
     Config {
         data_dir: path.into(),
-        admin_token: ADMIN.into(),
         query_concurrency: 2,
         queue_capacity: capacity,
-        secure_cookie: false,
     }
 }
 async fn call(
@@ -65,6 +63,7 @@ async fn call(
                 .method(method)
                 .uri(path)
                 .header("content-type", "application/json")
+                .header("x-piko-admin", "1")
                 .header("authorization", format!("Bearer {token}"))
                 .body(Body::from(body.to_string()))
                 .unwrap(),
@@ -112,7 +111,7 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &f.app,
         "POST",
         &format!("/api/products/{a}/query"),
-        ADMIN,
+        MANAGEMENT,
         q.clone(),
     )
     .await;
@@ -127,7 +126,7 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &f.app,
         "POST",
         &format!("/api/products/{a}/query"),
-        ADMIN,
+        MANAGEMENT,
         q.clone(),
     )
     .await;
@@ -137,7 +136,7 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &f.app,
         "POST",
         &format!("/api/products/{a}/query"),
-        ADMIN,
+        MANAGEMENT,
         q.clone(),
     )
     .await;
@@ -147,7 +146,7 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &f.app,
         "POST",
         &format!("/api/products/{a}/query"),
-        ADMIN,
+        MANAGEMENT,
         q,
     )
     .await;
@@ -156,17 +155,11 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &f.app,
         "POST",
         &format!("/api/products/{b}/query"),
-        ADMIN,
+        MANAGEMENT,
         range(),
     )
     .await;
     assert_eq!(r["summary"]["total"], 1);
-    assert_eq!(
-        call(&f.app, "GET", "/api/products", &key_a, Value::Null)
-            .await
-            .0,
-        StatusCode::UNAUTHORIZED
-    );
     let mut invalid = event("forged", json!(1));
     invalid["product_id"] = json!(b);
     assert_eq!(
@@ -184,7 +177,7 @@ async fn durable_deduplicated_scoped_typed_queries() {
         &app,
         "POST",
         &format!("/api/products/{a}/query"),
-        ADMIN,
+        MANAGEMENT,
         range(),
     )
     .await;
@@ -213,7 +206,7 @@ async fn invalid_batch_is_atomic_and_keys_are_revocable() {
         &f.app,
         "POST",
         &format!("/api/products/{id}/query"),
-        ADMIN,
+        MANAGEMENT,
         range(),
     )
     .await;
@@ -222,7 +215,7 @@ async fn invalid_batch_is_atomic_and_keys_are_revocable() {
         &f.app,
         "GET",
         &format!("/api/products/{id}/keys"),
-        ADMIN,
+        MANAGEMENT,
         Value::Null,
     )
     .await;
@@ -235,7 +228,7 @@ async fn invalid_batch_is_atomic_and_keys_are_revocable() {
             &f.app,
             "DELETE",
             &format!("/api/products/{other}/keys/{kid}"),
-            ADMIN,
+            MANAGEMENT,
             Value::Null
         )
         .await
@@ -247,7 +240,7 @@ async fn invalid_batch_is_atomic_and_keys_are_revocable() {
             &f.app,
             "DELETE",
             &format!("/api/products/{id}/keys/{kid}"),
-            ADMIN,
+            MANAGEMENT,
             Value::Null
         )
         .await
@@ -281,18 +274,18 @@ async fn retention_is_product_specific_and_uses_event_time() {
         &f.app,
         "PATCH",
         &format!("/api/products/{a}"),
-        ADMIN,
+        MANAGEMENT,
         json!({"name":"Short","kind":"tool","retention_days":1}),
     )
     .await;
-    let (_, r) = call(&f.app, "POST", "/api/cleanup", ADMIN, Value::Null).await;
+    let (_, r) = call(&f.app, "POST", "/api/cleanup", MANAGEMENT, Value::Null).await;
     assert_eq!(r["removed"], 1);
     for (id, total) in [(&a, 0), (&b, 1)] {
         let (_, r) = call(
             &f.app,
             "POST",
             &format!("/api/products/{id}/query"),
-            ADMIN,
+            MANAGEMENT,
             range(),
         )
         .await;
@@ -339,7 +332,7 @@ async fn concurrent_ingestion_queries_and_controlled_overload() {
         &f.app,
         "POST",
         &format!("/api/products/{id}/query"),
-        ADMIN,
+        MANAGEMENT,
         range(),
     )
     .await;
@@ -357,7 +350,7 @@ async fn concurrent_ingestion_queries_and_controlled_overload() {
             &f.app,
             "POST",
             &format!("/api/products/{id}/query"),
-            ADMIN,
+            MANAGEMENT,
             range()
         )
         .await
@@ -372,7 +365,7 @@ async fn concurrent_ingestion_queries_and_controlled_overload() {
             &app,
             "POST",
             &format!("/api/products/{id2}/query"),
-            ADMIN,
+            MANAGEMENT,
             range(),
         )
         .await
@@ -413,11 +406,95 @@ async fn visitor_and_installation_ids_do_not_collapse() {
         &f.app,
         "POST",
         &format!("/api/products/{id}/query"),
-        ADMIN,
+        MANAGEMENT,
         range(),
     )
     .await;
     assert_eq!(r["summary"]["actors"], 2);
     assert_eq!(r["summary"]["sessions"], 1);
+    f.state.writer.stop().await;
+}
+
+#[tokio::test]
+async fn management_has_no_app_auth_but_rejects_cross_site_mutations() {
+    let f = Fixture::new(8);
+    let response = f
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/products")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let response = f
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/products")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    json!({"name":"CSRF","kind":"generic","retention_days":30}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    let response = f
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/session")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let (a, key) = f.product("Public ingestion").await;
+    let response = f
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("OPTIONS")
+                .uri("/api/ingest")
+                .header("origin", "https://website.example")
+                .header("access-control-request-method", "POST")
+                .header(
+                    "access-control-request-headers",
+                    "authorization,content-type",
+                )
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.headers()["access-control-allow-origin"], "*");
+    let (_, result) = call(
+        &f.app,
+        "POST",
+        "/api/ingest",
+        &key,
+        event("no-management-secret", json!(42)),
+    )
+    .await;
+    assert_eq!(result["accepted"], 1);
+    let (_, result) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{a}/query"),
+        MANAGEMENT,
+        range(),
+    )
+    .await;
+    assert_eq!(result["summary"]["total"], 1);
     f.state.writer.stop().await;
 }

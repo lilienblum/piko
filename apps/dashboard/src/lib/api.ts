@@ -65,8 +65,6 @@ export async function api<T>(
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    if (response.status === 401 && path !== "/login")
-      window.dispatchEvent(new Event("piko:unauthorized"));
     throw new ApiError(payload.error ?? `Request failed (${response.status})`, response.status);
   }
   return response.status === 204 ? (undefined as T) : response.json();

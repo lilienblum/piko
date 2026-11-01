@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-  type FormEvent,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import {
   ArrowUpRight,
@@ -17,20 +9,15 @@ import {
   Command,
   Globe2,
   LayoutDashboard,
-  LogOut,
   Plus,
   RefreshCw,
   Search,
   Settings2,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { api, type Product } from "@/lib/api";
 import { ErrorState, Loading } from "./shared";
@@ -63,71 +50,8 @@ export function Logo() {
     </span>
   );
 }
-function Login({ onSuccess }: { onSuccess: () => void }) {
-  const [token, setToken] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      await api("/login", "POST", { token });
-      onSuccess();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <main className="login">
-      <div className="login-brand">
-        <Logo />
-        <span>Small footprint. Clear picture.</span>
-      </div>
-      <Card className="login-card">
-        <CardHeader>
-          <span className="eyebrow">YOUR PRODUCTS, IN FOCUS</span>
-          <CardTitle>Welcome to Piko</CardTitle>
-          <CardDescription>Sign in to your private analytics workspace.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="admin-token">Admin token</FieldLabel>
-                <Input
-                  id="admin-token"
-                  type="password"
-                  autoComplete="current-password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  required
-                  autoFocus
-                />
-                <FieldDescription>
-                  Use the PIKO_ADMIN_TOKEN configured on your server.
-                </FieldDescription>
-              </Field>
-              {error && <ErrorState message={error} />}
-              <Button disabled={busy || !token} type="submit">
-                {busy ? "Signing in…" : "Open workspace"}
-                <ArrowUpRight data-icon="inline-end" />
-              </Button>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
-      <p className="login-note">
-        <ShieldCheck />
-        Self-hosted. Your data stays with you.
-      </p>
-    </main>
-  );
-}
 export function AppShell() {
-  const [authenticated, setAuthenticated] = useState<boolean>();
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
   const [days, setDays] = useState(30);
@@ -138,15 +62,14 @@ export function AppShell() {
     setSelected(localStorage.getItem("piko:product") ?? "");
     const saved = Number(localStorage.getItem("piko:days"));
     if ([7, 30, 90].includes(saved)) setDays(saved);
-    const unauthorized = () => setAuthenticated(false);
-    window.addEventListener("piko:unauthorized", unauthorized);
-    api("/session")
-      .then(() => setAuthenticated(true))
+    const controller = new AbortController();
+    api<Product[]>("/products", "GET", undefined, controller.signal)
+      .then(setProducts)
       .catch((e) => {
-        if (e.status !== 401) setError(e.message);
-        else setAuthenticated(false);
-      });
-    return () => window.removeEventListener("piko:unauthorized", unauthorized);
+        if (e.name !== "AbortError") setError(e.message);
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
   async function reload(select?: string) {
     const result = await api<Product[]>("/products");
@@ -157,12 +80,6 @@ export function AppShell() {
     }
     setError("");
   }
-  useEffect(() => {
-    if (authenticated)
-      api<Product[]>("/products")
-        .then(setProducts)
-        .catch((e) => setError(e.message));
-  }, [authenticated]);
   const product = products.find((p) => p.id === selected) ?? products[0];
   const range = useMemo(() => {
     const end = new Date(now);
@@ -175,27 +92,18 @@ export function AppShell() {
     setNow(Date.now());
     if (error) void reload().catch((e) => setError(e.message));
   };
-  if (error && authenticated === undefined)
+  if (error && !products.length)
     return (
-      <main className="login">
+      <main className="initial-loading">
         <ErrorState message={error} retry={() => window.location.reload()} />
       </main>
     );
-  if (authenticated === undefined)
+  if (loading)
     return (
       <main className="initial-loading">
         <Logo />
         <p>Opening your workspace…</p>
       </main>
-    );
-  if (!authenticated)
-    return (
-      <Login
-        onSuccess={() => {
-          setError("");
-          setAuthenticated(true);
-        }}
-      />
     );
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
   return (
@@ -263,20 +171,6 @@ export function AppShell() {
               Documentation
               <ArrowUpRight />
             </a>
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                try {
-                  await api("/session", "DELETE");
-                  setAuthenticated(false);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
-              <LogOut data-icon="inline-start" />
-              Sign out
-            </Button>
             <div className="sidebar-footer">
               Piko <span>v0.1 · MIT</span>
             </div>

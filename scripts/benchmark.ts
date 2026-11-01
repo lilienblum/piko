@@ -7,12 +7,10 @@ const preload = Number(process.env.BENCH_PRELOAD ?? 10000);
 const port = Number(process.env.BENCH_PORT ?? 3199);
 const dir = await mkdtemp(join(tmpdir(), "piko-bench-"));
 const endpoint = `http://127.0.0.1:${port}`;
-const token = crypto.randomUUID();
 const log = Bun.file(join(dir, "server.log"));
 const processHandle = Bun.spawn([resolve("target/release/piko")], {
   env: {
     ...process.env,
-    PIKO_ADMIN_TOKEN: token,
     PIKO_DATA_DIR: dir,
     PIKO_BIND: `127.0.0.1:${port}`,
     PIKO_QUERY_CONCURRENCY: "4",
@@ -45,7 +43,7 @@ const percentile = (values: number[], p: number) => {
 async function request(path: string, body?: unknown) {
   const r = await fetch(`${endpoint}/api${path}`, {
     method: body ? "POST" : "GET",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    headers: { "x-piko-admin": "1", "content-type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(15000),
   });
@@ -167,7 +165,9 @@ try {
       query_connections: 4,
       queue_batches: 64,
       duckdb_threads: 2,
-      duckdb_memory_limit: "512MB",
+      duckdb_memory_limit_per_product: "64MB",
+      max_open_product_databases: 8,
+      layout: "one DuckDB file per product",
     },
     workload: {
       preload_events: preload,

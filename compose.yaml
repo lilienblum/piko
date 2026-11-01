@@ -4,8 +4,6 @@ services:
       context: .
       target: api
     environment:
-      PIKO_ADMIN_TOKEN: ${PIKO_ADMIN_TOKEN:?Set a random PIKO_ADMIN_TOKEN in .env}
-      PIKO_SECURE_COOKIE: ${PIKO_SECURE_COOKIE:-false}
       PIKO_QUERY_CONCURRENCY: 4
       PIKO_QUEUE_CAPACITY: 64
     volumes:

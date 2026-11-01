@@ -12,16 +12,12 @@ async fn main() -> anyhow::Result<()> {
         data_dir: env::var("PIKO_DATA_DIR")
             .unwrap_or_else(|_| "data".into())
             .into(),
-        admin_token: env::var("PIKO_ADMIN_TOKEN").map_err(|_| {
-            anyhow::anyhow!("Set PIKO_ADMIN_TOKEN to a random secret of at least 16 characters")
-        })?,
         query_concurrency: env::var("PIKO_QUERY_CONCURRENCY")
             .unwrap_or_else(|_| "4".into())
             .parse()?,
         queue_capacity: env::var("PIKO_QUEUE_CAPACITY")
             .unwrap_or_else(|_| "64".into())
             .parse()?,
-        secure_cookie: env::var("PIKO_SECURE_COOKIE").as_deref() == Ok("true"),
     };
     let state = AppState::open(&config)?;
     let cleanup_writer = state.writer.clone();

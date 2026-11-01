@@ -4,8 +4,8 @@ Small, self-hosted product analytics for websites, CLIs, and developer tools. MI
 
 Piko has two independent applications, deployed together:
 
-- **`apps/api`** — Rust/Axum/Tokio. Owns authentication, products, keys, ingestion, and queries. SQLite stores management state; DuckDB stores events. It has no dependency on dashboard code, routes, or assets.
-- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui, Recharts, and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. No management secret is shipped to the browser bundle.
+- **`apps/api`** — Rust/Axum/Tokio. Owns products, ingestion keys, ingestion, and queries. SQLite stores the shared catalog; each product gets its own DuckDB event database. It has no dependency on dashboard code, routes, or assets.
+- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui, Recharts, and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. Authentication is handled by Cloudflare Access, outside the app.
 
 This two-process layout supersedes the original single-process concept. There is still one deployment, one persistent data volume, and no external database. You can run the API on its own.
 
@@ -17,12 +17,11 @@ Requires Bun 1.4+, a current stable Rust toolchain (tested with 1.99.1), a C++17
 git clone git@github.com:lilienblum/piko.git
 cd piko
 bun install --frozen-lockfile
-cp .env.example .env
-# Edit .env and replace PIKO_ADMIN_TOKEN with a random secret.
+cp .env.example .env # optional development overrides
 bun dev
 ```
 
-Open **http://127.0.0.1:3000** and sign in with that token. The API listens on **127.0.0.1:3001**. `bun dev` passes the `.env` configuration to both child processes. In a second terminal:
+Open **http://127.0.0.1:3000**. There is no application login. The API listens on **127.0.0.1:3001**. `bun dev` passes the `.env` configuration to both child processes. In a second terminal:
 
 ```sh
 bun seed
@@ -33,8 +32,7 @@ This creates **Orbit website** and **Orbit CLI**, with 30 days of sample page vi
 For independent processes:
 
 ```sh
-# Terminal 1: Cargo does not load .env itself.
-export PIKO_ADMIN_TOKEN='your-random-admin-token'
+# Terminal 1
 cargo run -p piko
 
 # Terminal 2: Bun loads .env automatically.
@@ -44,40 +42,40 @@ bun dev:dashboard
 ## Production
 
 ```sh
-# With the edited .env file:
+# No application secrets are needed:
 docker compose up --build -d
 ```
 
-Docker builds separate API and dashboard targets from [Dockerfile](Dockerfile). Only the dashboard is published on loopback port 3000; the API is private to the Compose network. Put an HTTPS reverse proxy in front of the dashboard and set `PIKO_SECURE_COOKIE=true` for remote use. Browser trackers can ingest through `https://your-piko-host/api/ingest`. The admin token must be random, not a memorable password.
+Docker builds separate API and dashboard targets from [Dockerfile](Dockerfile). Only the dashboard is published on loopback port 3000; the API is private to the Compose network. Use Cloudflare Tunnel and Access to protect the dashboard and management API before exposing them. Public collectors need narrowly scoped Access bypasses for ingestion and the tracker; see [the access boundary](docs/access.md). Piko does not validate Access JWTs or provide fallback authentication: a publicly reachable origin would expose management.
 
 Without Docker:
 
 ```sh
 bun run build
 cargo build --locked --release -p piko
-PIKO_ADMIN_TOKEN='your-random-admin-token' ./target/release/piko
+./target/release/piko
 # In another terminal:
 bun run --cwd apps/dashboard start
 ```
 
-Data lives in `./data` by default (`state.sqlite`, SQLite WAL files, `events.duckdb`, and DuckDB WAL). Mount `PIKO_DATA_DIR` on durable local storage. Run exactly **one API process per data directory**. Stop the API before copying the entire directory for backup; restore the whole directory together. Do not share the files over a network filesystem. Cleanup logically deletes rows; disk files need not shrink immediately.
+Data lives in `./data` by default (`state.sqlite`, SQLite WAL files, and `products/<product-id>.duckdb` with their WAL files). Mount `PIKO_DATA_DIR` on durable local storage. Run exactly **one API process per data directory**. Stop the API before copying the entire directory for backup; restore the whole directory together. Do not share the files over a network filesystem. Cleanup logically deletes rows; disk files need not shrink immediately. An eight-instance LRU cache bounds open product databases; active connections pin their instance against eviction. Each instance has a 64 MB DuckDB buffer limit. Query concurrency is bounded globally. Early shared-database MVP data is imported idempotently at startup; the original `events.duckdb` remains as a backup, outside active retention, and can be removed after verifying the import.
 
-| Setting                  | Default                 | Purpose                                   |
-| ------------------------ | ----------------------- | ----------------------------------------- |
-| `PIKO_ADMIN_TOKEN`       | Required, ≥16 bytes     | Single-admin management secret            |
-| `PIKO_DATA_DIR`          | `data`                  | Durable database directory                |
-| `PIKO_BIND`              | `127.0.0.1:3001`        | API address                               |
-| `PIKO_QUERY_CONCURRENCY` | `4` (1–16)              | Independent DuckDB query connections      |
-| `PIKO_QUEUE_CAPACITY`    | `64` (1–1024)           | Bounded ingestion request slots/queue     |
-| `PIKO_SECURE_COOKIE`     | `false`                 | Add Secure to the HttpOnly session cookie |
-| `PIKO_API_URL`           | `http://127.0.0.1:3001` | Dashboard-to-API origin                   |
-| `HOST`, `PORT`           | `127.0.0.1`, `3000`     | Production Bun dashboard listener         |
+| Setting                  | Default                 | Purpose                               |
+| ------------------------ | ----------------------- | ------------------------------------- |
+| `PIKO_DATA_DIR`          | `data`                  | Durable database directory            |
+| `PIKO_BIND`              | `127.0.0.1:3001`        | API address                           |
+| `PIKO_QUERY_CONCURRENCY` | `4` (1–16)              | Independent DuckDB query connections  |
+| `PIKO_QUEUE_CAPACITY`    | `64` (1–1024)           | Bounded ingestion request slots/queue |
+| `PIKO_API_URL`           | `http://127.0.0.1:3001` | Dashboard-to-API origin               |
+| `HOST`, `PORT`           | `127.0.0.1`, `3000`     | Production Bun dashboard listener     |
 
 ## Use it
 
 1. **Settings:** create a website, developer tool, or generic product; no URL is needed. Create an ingestion key and copy it while visible. Only its SHA-256 hash and display prefix are stored.
 2. **Overview:** select a product and date range. Websites default to `page_view`; tools default to `command_run`; generic products show all events. Any product may receive any source. Missing identity or duration is shown honestly as unavailable.
 3. **Explore:** select an event, measure, grouping, and optional typed property filter. Counts, distinct actors, numeric sum/average, and duration p50/p95 run in DuckDB. Charts, grouping, filtering, and event pagination are server-side. Click an event for its original typed envelope.
+
+There is no built-in login, admin token, password, or admin session cookie. Management mutations use an `X-Piko-Admin: 1` request marker to prevent cross-site form submissions; it is not a secret or authorization mechanism. Cloudflare Access is the authentication boundary.
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
@@ -94,7 +92,7 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-`bun test:e2e` runs real Chromium browser tests against local processes on ports 3000/3001. Start the app, run `bun seed`, and export the same `PIKO_ADMIN_TOKEN` first. If Chromium is absent, install it with `bun x --bun playwright install chromium`.
+`bun test:e2e` runs real Chromium browser tests against local processes on ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun x --bun playwright install chromium`.
 
 ```sh
 cargo build --release -p piko
@@ -105,7 +103,7 @@ The benchmark starts its own API process with a temporary data directory and del
 
 ## Scope and limitations
 
-- Single admin, one local API process, one disk. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
+- External access control, one local API process, one disk. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
 - Browser ingestion keys are intentionally public and write-only. They are not anti-abuse credentials; a key holder can submit fabricated events. There is global capacity backpressure, but no per-key fairness or bot detection.
 - Identity is explicit, optional, and product-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to anonymous events and respects Do Not Track by default. Installations are distinct from website visitors and sessions.
 - All dashboard displays and bucket boundaries use UTC in v1. Date ranges are half-open; today is partial. No local-time/DST bucket selection yet.

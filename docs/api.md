@@ -1,22 +1,20 @@
 # API and semantics
 
-The dashboard talks to this API over HTTP; the API does not serve frontend files. All management endpoints require `Authorization: Bearer <PIKO_ADMIN_TOKEN>` or an authenticated browser session. Ingestion requires a separate product-scoped ingestion key. Neither credential can be substituted for the other.
+The dashboard talks to this API over HTTP; the API does not serve frontend files. There is no application login, admin token, or admin session. Protect management access with Cloudflare Access and keep the origin private; see [access configuration](access.md). Ingestion still requires a product-scoped write-only ingestion key. Its key resolves the target product; its events go to `products/<product-id>.duckdb`. SQLite holds the shared product/key catalog and settings.
 
 ## Management
 
-| Method       | Path                            | Body/result                                                                 |
-| ------------ | ------------------------------- | --------------------------------------------------------------------------- |
-| POST         | `/api/login`                    | `{ "token": "admin secret" }` → HttpOnly SameSite=Strict cookie, 24h expiry |
-| GET / DELETE | `/api/session`                  | Check / revoke current session                                              |
-| GET / POST   | `/api/products`                 | List / create `{ name, kind, retention_days }`                              |
-| PATCH        | `/api/products/:id`             | Edit name, kind, and retention (1–3650 days)                                |
-| GET / POST   | `/api/products/:id/keys`        | List metadata / create `{ label }` → full key shown once                    |
-| DELETE       | `/api/products/:id/keys/:keyId` | Revoke key, scoped to product                                               |
-| POST         | `/api/products/:id/query`       | Parameterized analytics query below                                         |
-| POST         | `/api/cleanup`                  | Run the same retention cleanup as the hourly job                            |
-| GET          | `/health`                       | Process health, no credentials required                                     |
+| Method     | Path                            | Body/result                                              |
+| ---------- | ------------------------------- | -------------------------------------------------------- |
+| GET / POST | `/api/products`                 | List / create `{ name, kind, retention_days }`           |
+| PATCH      | `/api/products/:id`             | Edit name, kind, and retention (1–3650 days)             |
+| GET / POST | `/api/products/:id/keys`        | List metadata / create `{ label }` → full key shown once |
+| DELETE     | `/api/products/:id/keys/:keyId` | Revoke key, scoped to product                            |
+| POST       | `/api/products/:id/query`       | Parameterized analytics query below                      |
+| POST       | `/api/cleanup`                  | Run the same retention cleanup as the hourly job         |
+| GET        | `/health`                       | Process health, no credentials required                  |
 
-Cookie-authenticated mutations need `X-Piko-Admin: 1`; the API does not grant management CORS access. Login attempts are globally limited to 20/minute. Use a high-entropy random admin token. Sessions are hashed in SQLite and survive restarts until logout or expiry. Rotating the environment token does not revoke existing sessions; to revoke all sessions, stop the API and delete session rows from SQLite before restarting.
+Management mutations require `X-Piko-Admin: 1`. This public request marker prevents cross-site form submissions; it is **not authentication**. The API grants no management CORS access. Network access to management must be controlled by Cloudflare Access (or a trusted private network). Ingestion keys grant no bypass through Access and are never used as management credentials.
 
 ## Ingestion
 
@@ -79,8 +77,8 @@ Response includes `summary`, zero-filled `series`, top-12 `groups`, paginated `e
 
 ## Resource model
 
-A dedicated writer thread drains up to 16 requests over an 8 ms window, appends typed rows into temporary DuckDB staging, deduplicates, and commits one set-based insert. Both the queue and concurrent ingestion body-processing slots default to 64. Envelopes are capped at 100 per request. Queue/body capacity exhaustion returns 503 with `Retry-After: 1`.
+A dedicated writer thread groups requests by product and drains up to 16 requests over an 8 ms window, appends typed rows into temporary DuckDB staging, deduplicates, and commits one set-based insert. Both the queue and concurrent ingestion body-processing slots default to 64. Envelopes are capped at 100 per request. Queue/body capacity exhaustion returns 503 with `Retry-After: 1`.
 
-Four independent cloned DuckDB query connections are guarded by a semaphore. Queries run in `spawn_blocking`; the permit stays held until the actual query finishes even if the client disconnects. SQLite operations also run in bounded `spawn_blocking` tasks, using independent WAL connections and a 2-second busy timeout. DuckDB uses two execution threads and a 512 MB buffer memory limit; total process RSS can exceed this limit because not every allocation is tracked by DuckDB. Query admission fails fast with 503. There is no unbounded wait queue for queries.
+Up to four query connections are globally admitted by a semaphore, each cloned from the selected product’s DuckDB instance. At most eight product instances are cached; the least recently used inactive instance is closed when opening another. Active query/writer leases prevent eviction. If all eight are pinned, opening another returns 503. Queries run in `spawn_blocking`; the permit stays held until the actual query finishes even if the client disconnects. SQLite operations also run in bounded `spawn_blocking` tasks, using independent WAL connections and a 2-second busy timeout. Each product instance uses two execution threads and a 64 MB buffer memory limit; total process RSS can exceed this limit because not every allocation is tracked by DuckDB. Query admission fails fast with 503. There is no unbounded wait queue for queries.
 
-Retention runs at startup and hourly, serialized through the writer. It deletes `event_time < now - retention_days` independently for each product. It also removes expired admin sessions. SIGINT/SIGTERM stop accepting HTTP work, finish accepted requests, drain the writer, and checkpoint DuckDB.
+Retention runs at startup and hourly, serialized through the writer. It deletes `event_time < now - retention_days` independently for each product. SIGINT/SIGTERM stop accepting HTTP work, finish accepted requests, drain the writer, and checkpoint the open product databases. Each product transaction commits independently; there are no cross-product write transactions.

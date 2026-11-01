@@ -1,21 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
-const token = process.env.PIKO_ADMIN_TOKEN;
-if (!token) throw new Error("Set the local PIKO_ADMIN_TOKEN before running E2E tests");
 const apiUrl = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
 const dashboard = "http://127.0.0.1:3000";
 async function admin(path: string, body?: unknown) {
   const response = await fetch(`${apiUrl}/api${path}`, {
     method: body ? "POST" : "GET",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    headers: { "x-piko-admin": "1", "content-type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
   expect(response.ok).toBe(true);
   return response.json();
 }
-async function login(page: Page) {
+async function openWorkspace(page: Page) {
   await page.goto("/");
-  await page.getByLabel("Admin token").fill(token as string);
-  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
 }
 let web: { id: string; name: string; key: string };
@@ -63,7 +59,7 @@ test("website and tool overviews, numeric query, filtering and server pagination
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await login(page);
+  await openWorkspace(page);
   await page.getByRole("combobox", { name: "Select product" }).selectOption(web.id);
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
   await expect(page.getByText("Top pages", { exact: true }).first()).toBeVisible();
@@ -88,7 +84,7 @@ test("website and tool overviews, numeric query, filtering and server pagination
   expect(errors).toEqual([]);
 });
 test("create product, edit retention, create and revoke a key", async ({ page }) => {
-  await login(page);
+  await openWorkspace(page);
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "New product" }).click();
   const dialog = page.getByRole("dialog");
@@ -120,7 +116,7 @@ test("create product, edit retention, create and revoke a key", async ({ page })
 });
 test("mobile website and tool layouts do not overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await login(page);
+  await openWorkspace(page);
   for (const p of [web, tool]) {
     await page.getByRole("combobox", { name: "Select product" }).selectOption(p.id);
     await expect(page.getByRole("heading", { name: p.name })).toBeVisible();

@@ -1,11 +1,9 @@
 import { Piko, type Event } from "../sdk/typescript/client";
 const endpoint = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
-const token = process.env.PIKO_ADMIN_TOKEN;
-if (!token) throw new Error("Set PIKO_ADMIN_TOKEN before seeding");
 async function admin<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${endpoint}/api${path}`, {
     method: body ? "POST" : "GET",
-    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    headers: { "content-type": "application/json", "x-piko-admin": "1" },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) throw new Error(await response.text());
