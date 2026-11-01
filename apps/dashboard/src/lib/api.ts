@@ -63,6 +63,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public retryAfterMs?: number,
   ) {
     super(message);
   }
@@ -82,10 +83,44 @@ export async function api<T>(
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new ApiError(payload.error ?? `Request failed (${response.status})`, response.status);
+    const seconds = Number(response.headers.get("retry-after") ?? NaN);
+    throw new ApiError(
+      payload.error ?? `Request failed (${response.status})`,
+      response.status,
+      Number.isFinite(seconds) && seconds >= 0 && seconds <= 5 ? seconds * 1000 : undefined,
+    );
   }
   return response.status === 204 ? (undefined as T) : response.json();
 }
+// Analytical queries are read-only; retry one short server-requested capacity delay.
+export async function queryProduct(
+  product: string,
+  body: Record<string, unknown>,
+  signal: AbortSignal,
+) {
+  const request = () => api<QueryResult>(`/products/${product}/query`, "POST", body, signal);
+  try {
+    return await request();
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 503 || error.retryAfterMs === undefined)
+      throw error;
+    signal.throwIfAborted();
+    await new Promise<void>((resolve, reject) => {
+      const abort = () => {
+        clearTimeout(timer);
+        reject(signal.reason);
+      };
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", abort);
+        resolve();
+      }, error.retryAfterMs);
+      signal.addEventListener("abort", abort, { once: true });
+    });
+    signal.throwIfAborted();
+    return request();
+  }
+}
+
 export const number = (n: number | null | undefined, digits = 0) =>
   n == null ? "—" : new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(n);
 export function groupLabel(value: Group["label"]) {

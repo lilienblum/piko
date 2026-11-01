@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type QueryResult } from "./api";
+import { queryProduct, type QueryResult } from "./api";
 export function useQuery(
   product: string | undefined,
   body: Record<string, unknown>,
@@ -19,7 +19,7 @@ export function useQuery(
   useEffect(() => {
     if (!product) return;
     const controller = new AbortController();
-    api<QueryResult>(`/products/${product}/query`, "POST", JSON.parse(key), controller.signal)
+    queryProduct(product, JSON.parse(key), controller.signal)
       .then((data) => {
         if (!controller.signal.aborted) setResult({ key: requestKey, scope, data });
       })
