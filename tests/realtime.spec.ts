@@ -73,7 +73,7 @@ test("committed website events refresh without replacing charts; retries and oth
   await ingest(other, "tool");
   await page.waitForTimeout(2000);
   expect(queries).toBe(0);
-  const chart = await page.locator(".recharts-wrapper").first().elementHandle();
+  const chart = await page.locator(".bklit-plot").first().elementHandle();
   const item = event("website");
   const result = await send(web, [item]);
   expect(result.accepted).toBe(1);

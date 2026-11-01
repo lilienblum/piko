@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AnalyticsUpIcon,
@@ -7,7 +7,7 @@ import {
   RefreshIcon,
 } from "@hugeicons/core-free-icons";
 import { Link } from "@tanstack/react-router";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { AnalyticsChart } from "@/components/analytics-chart";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,7 +19,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { groupLabel, number, type Group, type QueryResult } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {
@@ -109,7 +108,6 @@ export function SeriesChart({
         : partialLast
           ? `Last ${bucket} is partial.`
           : `Complete UTC ${bucket}s.`;
-  const gradientId = useId().replace(/:/g, "");
   return (
     <Card className={`chart-card${controls ? " chart-card-interactive" : ""}`}>
       <CardHeader>
@@ -142,82 +140,13 @@ export function SeriesChart({
               {emptyMessage ?? "Chart unavailable."}
             </div>
           ) : (
-            <ChartContainer
-              className="series-chart"
-              aria-label={`${label} by UTC ${bucket === "hour" ? "hour" : "date"}`}
-              config={{ value: { label, color: "var(--data)" } }}
-            >
-              <AreaChart
-                accessibilityLayer
-                data={data.series}
-                margin={{ top: 12, right: 14, bottom: 0, left: unit ? -4 : -20 }}
-              >
-                <defs>
-                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--data)" stopOpacity={0.08} />
-                    <stop offset="95%" stopColor="var(--data)" stopOpacity={0.01} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="2 5" />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={(time: number) =>
-                    new Date(time).toLocaleString("en-US", {
-                      ...(bucket === "hour"
-                        ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }
-                        : {}),
-                      month: "short",
-                      day: "numeric",
-                      timeZone: "UTC",
-                    })
-                  }
-                  tickLine={false}
-                  axisLine={false}
-                  minTickGap={40}
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  dy={10}
-                />
-                <YAxis
-                  width={unit ? 82 : 60}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  tickFormatter={(value: number) => `${number(value, 1)}${unit ? ` ${unit}` : ""}`}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(_, payload) => {
-                        const time = Number(payload[0]?.payload.time);
-                        const partial =
-                          (from !== undefined && time < from) ||
-                          (to !== undefined && time + bucketWidth > to);
-                        return `${new Date(time).toLocaleString("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} UTC${partial ? ` · partial ${bucket}` : ""}`;
-                      }}
-                      formatter={(value) => (
-                        <>
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className="ml-auto font-mono font-medium tabular-nums">
-                            {number(Number(value), 2)}
-                            {unit ? ` ${unit}` : ""}
-                          </span>
-                        </>
-                      )}
-                    />
-                  }
-                />
-                <Area
-                  type="linear"
-                  dataKey="value"
-                  stroke="var(--data)"
-                  fill={`url(#${gradientId})`}
-                  strokeWidth={2}
-                  dot={unit ? { r: 2, fill: "var(--data)", strokeWidth: 0 } : false}
-                  isAnimationActive={false}
-                  connectNulls={false}
-                />
-              </AreaChart>
-            </ChartContainer>
+            <AnalyticsChart
+              series={data.series}
+              label={label}
+              bucket={bucket}
+              unit={unit}
+              range={range}
+            />
           )}
           {error && (
             <div className="chart-error" role="alert">
