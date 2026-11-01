@@ -7,12 +7,12 @@ Verified locally on 1 November 2026 against the two-app Tako architecture, with 
 | `bun fmt` and `bun fmt:check`                              | Pass                                                                           |
 | `bun typecheck`                                            | Pass                                                                           |
 | `bun lint`                                                 | Pass, no warnings                                                              |
-| `bun test`                                                 | 9 SDK/gateway/notification tests pass                                          |
+| `bun test`                                                 | 16 SDK/gateway/notification/benchmark tests pass                               |
 | `bun run build`                                            | TanStack Start client/server, Tako entry wrapper, CORS tracker route           |
-| `cargo test`                                               | 17 Rust tests pass (6 unit, 8 API, 2 delivery, 1 process runtime)              |
+| `cargo test`                                               | 21 Rust tests pass (8 unit, 10 API, 2 delivery, 1 process runtime)             |
 | `cargo clippy --all-targets --all-features -- -D warnings` | Pass                                                                           |
 | `cargo build --release -p piko`                            | Pass                                                                           |
-| `bun test:e2e`                                             | 54 Chromium tests pass on Tako; 27 previously passed on compiled standalone    |
+| `bun test:e2e`                                             | 60 Chromium tests pass on Tako; 27 previously passed on compiled standalone    |
 | `bun scripts/verify-cli.ts`                                | CLI opt-in/opt-out, optional identity, command redaction, and numeric duration |
 | `docker compose config --quiet`                            | Pass                                                                           |
 | `bun benchmark`                                            | Completed; exact persisted-count assertion passes                              |
@@ -123,3 +123,15 @@ Reviewed API storage/ingestion/query paths, collectors, gateway/realtime handlin
 A separate two-second benchmark smoke run with 1,000 preloaded events committed 34,200 new events, acknowledged 3,200 duplicates, verified 35,200 stored rows, completed 222 queries, and reported no request errors. This only verifies the runner; the existing longer benchmark measurements remain unchanged. The client chunk is now 924.06 kB (283.27 kB gzip); Vite's size warning remains.
 
 Production deployment, Cloudflare policy enforcement, and Docker startup were not re-tested. Browser delivery remains best effort; ordinary fetch cannot outlive page unload. No long-running performance claim is added by this review.
+
+## Project sources — 2026-11-01
+
+The final **60-test Chromium suite passed in 3.3 minutes** against the final API under Tako HTTPS. Two new browser tests cover source creation/editing, source-bound website/mobile keys, combined metrics, numeric sums scoped to a source, source grouping, remembered selection, stable renamed-source links, invalid source links without fallback queries, mobile-source defaults, and 390 px Settings/Explore layouts. A catalog failure after source creation is injected to verify retry does not create a second source. Existing privacy, theme, chart, realtime, loading, and stable-refresh checks also pass. An early source-count test assumed an order for tied groups; it now verifies both names without assuming UUID order. The multi-step source workflow has a 60-second overall test budget.
+
+The **21 Rust tests** include two new source/migration tests: independent source credentials, source filters and numeric totals, project-wide retry deduplication, rejected source-ID overrides and cross-project references, case-insensitive duplicate names, source renaming, isolated key revocation, and migration of a real pre-source SQLite/DuckDB layout across repeated opens. `cargo test --all-targets`, strict all-feature Clippy, the release build, 16 Bun tests, format checks, typecheck, lint, and the production dashboard build pass. The client retains the existing large-chunk build warning (925.79 kB minified / 283.92 kB gzip).
+
+The local API was stopped before a full data-directory backup, then restarted for the additive migration. The original Orbit website and CLI counts remained **7,236** and **3,694**, including after a second API restart. The combined Orbit demo contains **14,624 events across Website, iOS app, and CLI sources**. A repeated seed committed zero new events in all three sources. Browser inspection covered combined Overview, mobile and CLI defaults, source Settings, and the narrow Settings screenshot.
+
+An immediate post-restart test setup encountered controlled 503 ingestion responses while startup retention swept the accumulated local project files. The final suite ran after that sweep completed. `/health` reports process health; it is not a promise that ingestion cannot encounter backpressure. Retry semantics still apply during maintenance. The [source-schema benchmark](benchmark.md#project-source-schema-follow-up--2026-11-01) measured 13,721 committed events/sec and 107.1 ms query p95 on the shared development host; its explicit workload and concurrency limitations are recorded there.
+
+Source deletion/merging and native Swift/Kotlin SDKs are not implemented; mobile has HTTP examples. Retention and optional identity remain project-scoped. This update was not deployed to production. Pre-source binaries require restoration of the complete pre-upgrade backup to write again; this is documented in the API migration notes.

@@ -26,7 +26,7 @@ Open **https://piko.test**. The independent API runs at **https://piko-api.test*
 SSL_CERT_FILE=.tako/dev-ca.pem PIKO_API_URL=https://piko-api.test bun seed
 ```
 
-This creates **Orbit website** and **Orbit CLI**, with 30 days of sample page views, signups, commands, and configuration events. Overview refreshes through Tako channels after new events commit. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
+This creates one **Orbit** project with **Website**, **iOS app**, and **CLI** sources, with 30 days of sample page views, signups, mobile screens/subscriptions, commands, and configuration events. Earlier demo projects remain untouched. Overview refreshes through Tako channels after new events commit. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
 
 See [Tako setup, deployment, and realtime delivery](docs/tako.md). Development uses Tako's trusted local HTTPS proxy. If the CLI reports missing host prerequisites, complete `tako doctor` / Tako's local setup first.
 
@@ -61,8 +61,8 @@ Under Tako, data lives in `$TAKO_DATA_DIR` (locally `.tako/data/app`); standalon
 
 ## Use it
 
-1. **Settings:** create a website, developer tool, or generic product; no URL is needed. Create an ingestion key and copy it while visible. Only its SHA-256 hash and display prefix are stored.
-2. **Overview:** select a product and date range. Websites default to `page_view`; tools default to `command_run`; generic products show all events. Any product may receive any source. Missing identity or duration is shown honestly as unavailable.
+1. **Settings:** create a project, then add named **sources** such as Website, iOS app, or CLI. Source types are website, mobile app, developer tool, and other; no URL is needed. Create a key for a specific source and copy it while visible. Only its SHA-256 hash and display prefix are stored.
+2. **Overview:** select a project, source (or **All sources**), and date range. Website sources default to `page_view`; tools to `command_run`; mobile/other sources and mixed projects show all events. A combined project shares storage and retention. Missing identity or duration is shown honestly as unavailable.
 3. **Explore:** select an event, measure, grouping, and optional typed property filter. Counts, distinct actors, numeric sum/average, and duration p50/p95 run in DuckDB. Charts, grouping, filtering, and event pagination are server-side. Click an event for its original typed envelope.
 
 There is no built-in login, admin token, password, or admin session cookie. Management mutations use an `X-Piko-Admin: 1` request marker to prevent cross-site form submissions; it is not a secret or authorization mechanism. Cloudflare Access is the authentication boundary.
@@ -71,9 +71,11 @@ Click an Overview breakdown row to inspect its matching events in Explore. Sourc
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
+Existing projects migrate automatically to an initial source; existing keys and counts remain valid. Back up the stopped API's entire data directory before upgrading. Restoring that backup is required to downgrade to a pre-source binary. See [source and migration semantics](docs/api.md#projects-and-sources). The HTTP paths still use `/products` for existing integrations.
+
 ## Privacy defaults
 
-Collection starts without visitor, session, or installation identifiers. The browser tracker honors DNT/GPC, leaves campaign capture off until explicitly configured, and offers pre-send filtering plus an opt-out that discards queued data. The CLI example requires an explicit opt-in. New products created in Settings start with 30-day retention.
+Collection starts without visitor, session, or installation identifiers. The browser tracker honors DNT/GPC, leaves campaign capture off until explicitly configured, and offers pre-send filtering plus an opt-out that discards queued data. The CLI example requires an explicit opt-in. New projects created in Settings start with 30-day retention.
 
 Piko does not derive analytics identity from IP addresses or user-agent information. Paths, custom properties, and optional persistent IDs are still data you choose to collect; they are not automatically anonymized. Read [the privacy model and collection controls](docs/privacy.md) before integrating private application routes.
 
@@ -105,7 +107,7 @@ See [the verification record](docs/verification.md) for measured checks and thei
 
 - External access control, one local API process, one disk. Tako API updates require a brief maintenance window; normal rolling overlap is unsupported. No replication, multi-user permissions, automatic backups, or online schema migration framework yet.
 - Browser ingestion keys are intentionally public and write-only. They are not anti-abuse credentials; a key holder can submit fabricated events. There is global capacity backpressure, but no per-key fairness or bot detection.
-- Identity is explicit, optional, and product-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to unidentified events and always honors Do Not Track and Global Privacy Control. Installations are distinct from website visitors and sessions.
+- Identity is explicit, optional, and project-scoped. There is no IP/user-agent fingerprinting. The browser tracker defaults to unidentified events and always honors Do Not Track and Global Privacy Control. Installations are distinct from website visitors and sessions.
 - All dashboard displays and bucket boundaries use UTC in v1. Date ranges are half-open; today is partial. No local-time/DST bucket selection yet.
 - Pagination is bounded offset pagination, ordered by time and event ID. Each query uses a consistent database snapshot, but different pages may shift when new events arrive. Top breakdowns are limited to 12 groups, event-name discovery to 100 names, filters to 8, pages to 10,001, and page size to 100.
 - Delivery from browsers/CLIs is best effort with bounded retries. A flush confirms attempted delivery, not guaranteed delivery. Deduplication lasts while the event remains retained, not forever.
@@ -117,6 +119,6 @@ See [the verification record](docs/verification.md) for measured checks and thei
 
 Use the Appearance menu in the top-right corner to choose **Light**, **Dark**, or **Auto**. Auto follows your system setting, including changes while the dashboard is open. The preference persists in this browser and synchronizes across tabs. The saved theme is applied before the application loads.
 
-The sidebar toggle collapses desktop navigation to icons and opens a navigation drawer on mobile. Product and date selectors remain available in the header. Dashboard controls use shadcn/ui Select, Sidebar/Sheet, Collapsible, Tabs, AlertDialog, and Chart alongside its buttons, forms, cards, and tables.
+The sidebar toggle collapses desktop navigation to icons and opens a navigation drawer on mobile. Project, source, and date selectors remain available in the header. Dashboard controls use shadcn/ui Select, Sidebar/Sheet, Collapsible, Tabs, AlertDialog, and Chart alongside its buttons, forms, cards, and tables.
 
 The visual system uses pine and citron accents, stone surfaces, and locally served Public Sans (with its [font license](apps/dashboard/public/licenses/public-sans.txt)). Analytical sections share flat measurement fields; forms and inspectors retain clear boundaries. [Product context](apps/dashboard/PRODUCT.md) and [design rules](apps/dashboard/DESIGN.md) document the decisions for future UI work.

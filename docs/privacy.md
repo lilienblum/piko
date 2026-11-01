@@ -44,3 +44,7 @@ Changing identity to `none` stops using IDs but does not itself erase IDs from a
 Retention is per product; the internal cleanup job runs hourly. Changing the default for new products does not shorten existing products' configured retention. Cleanup logically removes expired rows from the active databases; it is not a secure disk erase. Old backups, snapshots, and migration files require their own retention policy. The original shared `events.duckdb` file retained during migration is outside active cleanup.
 
 There is no automatic personal-data classification or per-person erasure workflow in v1. Minimize collection up front, keep retention short, and verify the stored events in Explore before rolling out a collector broadly.
+
+## Multiple sources
+
+Project sources are named integration metadata, not device or person identifiers. A write-only key attributes an event to exactly one source; callers cannot override it in the payload. Combined analytics do not infer cross-device identity. If collectors deliberately reuse an opaque actor ID with the same identity kind within a project, distinct-actor counts deduplicate it across sources. Use independent random IDs when that linkage is unwanted, or omit identity entirely. Retention applies to the whole project, including all its sources.

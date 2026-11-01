@@ -9,18 +9,24 @@ async function admin<T>(path: string, body?: unknown): Promise<T> {
   if (!response.ok) throw new Error(await response.text());
   return response.json() as Promise<T>;
 }
-const existing = await admin<{ id: string; name: string }[]>("/products");
+type DemoProject = { id: string; name: string; sources: { id: string; name: string }[] };
+const existing = await admin<DemoProject[]>("/products");
+const product =
+  existing.find((p) => p.name === "Orbit") ??
+  (await admin<DemoProject>("/products", { name: "Orbit", kind: "website", retention_days: 90 }));
 const today = new Date();
 today.setUTCHours(0, 0, 0, 0);
 for (const [name, kind] of [
-  ["Orbit website", "website"],
-  ["Orbit CLI", "tool"],
+  ["Website", "website"],
+  ["iOS app", "mobile"],
+  ["CLI", "tool"],
 ] as const) {
-  const product =
-    existing.find((p) => p.name === name) ??
-    (await admin<{ id: string }>("/products", { name, kind, retention_days: 90 }));
+  const source =
+    product.sources.find((source) => source.name === name) ??
+    (await admin<{ id: string }>(`/products/${product.id}/sources`, { name, kind }));
   const { key } = await admin<{ key: string }>(`/products/${product.id}/keys`, {
     label: "Sample data generator",
+    source_id: source.id,
   });
   const client = new Piko({ endpoint, key, timeoutMs: 10000, retries: 2 });
   let events: Event[] = [];
@@ -57,22 +63,36 @@ for (const [name, kind] of [
                 subscribed: i % 19 === 0,
               },
             }
-          : {
-              event_id: `demo-cli-${timestamp.toISOString().slice(0, 10)}-${i}`,
-              name: i % 23 === 0 ? "config_updated" : "command_run",
-              source: "cli",
-              timestamp: timestamp.toISOString(),
-              actor_id: `installation-${i % 86}`,
-              identity_kind: "installation",
-              properties: {
-                command: ["build", "dev", "deploy", "init", "check"][i % 5],
-                version: i % 8 === 0 ? "1.3.0" : "1.4.2",
-                os: ["macos", "linux", "windows"][i % 7 < 4 ? 0 : (i % 2) + 1],
-                arch: i % 3 === 0 ? "x86_64" : "aarch64",
-                success: i % 17 !== 0,
-                duration_ms: 80 + ((i * 37 + day * 19) % 2400),
+          : kind === "mobile"
+            ? {
+                event_id: `demo-mobile-${timestamp.toISOString().slice(0, 10)}-${i}`,
+                name: i % 17 === 0 ? "subscription_started" : "screen_view",
+                source: "ios",
+                timestamp: timestamp.toISOString(),
+                properties: {
+                  screen: ["home", "activity", "settings", "subscription"][i % 4],
+                  version: "2.1.0",
+                  os: "iOS",
+                  paid: i % 17 === 0,
+                  amount: i % 17 === 0 ? 9.99 : 0,
+                },
+              }
+            : {
+                event_id: `demo-cli-${timestamp.toISOString().slice(0, 10)}-${i}`,
+                name: i % 23 === 0 ? "config_updated" : "command_run",
+                source: "cli",
+                timestamp: timestamp.toISOString(),
+                actor_id: `installation-${i % 86}`,
+                identity_kind: "installation",
+                properties: {
+                  command: ["build", "dev", "deploy", "init", "check"][i % 5],
+                  version: i % 8 === 0 ? "1.3.0" : "1.4.2",
+                  os: ["macos", "linux", "windows"][i % 7 < 4 ? 0 : (i % 2) + 1],
+                  arch: i % 3 === 0 ? "x86_64" : "aarch64",
+                  success: i % 17 !== 0,
+                  duration_ms: 80 + ((i * 37 + day * 19) % 2400),
+                },
               },
-            },
       );
       if (events.length === 100) {
         const ack = await client.sendBatch(events);
@@ -82,5 +102,5 @@ for (const [name, kind] of [
     }
   }
   if (events.length) total += (await client.sendBatch(events)).accepted;
-  console.log(`${name}: ${total} committed sample events (${product.id})`);
+  console.log(`Orbit / ${name}: ${total} committed sample events (${product.id})`);
 }

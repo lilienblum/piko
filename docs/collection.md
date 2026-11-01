@@ -1,8 +1,12 @@
 # Collecting events
 
+A project can combine multiple collectors: for example, Website, iOS app, and CLI. Each source gets separate write-only keys; the key sets both project and source on the server. Do not send `product_id` or `source_id` in the event envelope. The existing `source` string describes the client/transport and does not change attribution. UUID event IDs must be unique across all sources in a project.
+
+Identity remains optional and scoped to the project and identity kind. No person is automatically linked across web/mobile/tool sources. If you explicitly send the same opaque actor ID and identity kind from two sources, combined distinct-actor queries count it once. Use source-specific random IDs if that linkage is not intended. Visitor and installation identities remain distinct.
+
 ## TypeScript client
 
-Copy `sdk/typescript/client.ts` into a website, Bun tool, or server. It has no dependencies. Create a product and ingestion key in Settings. Use only product-scoped ingestion keys in collectors; management access remains separate. For websites, use the browser tracker below to apply privacy signals and opt-out behavior. The generic client sends explicit calls and does not manage collection preferences.
+Copy `sdk/typescript/client.ts` into a website, Bun tool, or server. It has no dependencies. Create a project and choose or add a source in Settings, then create an ingestion key for that source. Use only source-scoped ingestion keys in collectors; management access remains separate. For websites, use the browser tracker below to apply privacy signals and opt-out behavior. The generic client sends explicit calls and does not manage collection preferences.
 
 ```ts
 import { Piko } from "./sdk/typescript/client";
@@ -81,3 +85,18 @@ The example sends only when `PIKO_TELEMETRY=1`, an endpoint, and a key are confi
 `track` is nonblocking and returns false if its 32-slot channel is full. A worker sends batches of up to 50, refusing redirects and using one retry with the original IDs, honoring Retry-After (skipping the retry if its delay exceeds the request timeout), and a configurable request timeout (800 ms by default in the example). `flush(deadline)` waits for previous attempts; it does not claim server delivery. `shutdown(deadline)` includes queueing and network work and aborts the worker when the total deadline expires. The example permits at most the configured timeout +100 ms for shutdown, capped at 5100 ms. Dropping the client also aborts its task. Analytics failure never changes the CLI result or indefinitely delays exit.
 
 To exercise the actual Rust example and verify its stored types locally, run `bun scripts/verify-cli.ts` while the API is running. It creates a small **Rust CLI example** product visible in the dashboard.
+
+## Mobile / HTTP collectors
+
+Create a mobile source and use its key with `POST /api/ingest`, from a native app's HTTP client or any other SDK. No device identifier or advertising ID is needed. For example:
+
+```json
+{
+  "event_id": "GENERATE_ONE_UUID_PER_EVENT",
+  "name": "screen_view",
+  "source": "ios",
+  "properties": { "screen": "home", "version": "2.1.0", "subscribed": false }
+}
+```
+
+Supply `Authorization: Bearer pk_...` and `Content-Type: application/json`. Replace the example event ID with a real UUID. Set an explicit HTTP deadline, retain the exact envelope for bounded retries, and only send after your app's collection preference permits it. For retries, include the original UTC RFC3339 `timestamp` too. The server's 200 response acknowledges persistence. These are HTTP integration examples, not native Swift/Kotlin SDKs; see [retry and validation semantics](api.md#ingestion).

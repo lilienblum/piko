@@ -18,7 +18,7 @@ Management mutations require `X-Piko-Admin: 1`. This public request marker preve
 
 ## Projects and sources
 
-A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. Its `kind` is `website`, `mobile`, `tool`, or `generic` and determines dashboard defaults. Source names are unique within a project (case-insensitive). Creating a project automatically creates an initial source using the requested `kind`. Project responses include `sources` with `id`, `product_id`, `name`, `kind`, and `created_at`.
+A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. Its `kind` is `website`, `mobile`, `tool`, or `generic` and determines dashboard defaults. Source names are unique within a project (ASCII case-insensitive). Creating a project automatically creates an initial source using the requested `kind`. Project responses include `sources` with `id`, `product_id`, `name`, `kind`, and `created_at`.
 
 - `GET /api/products/:id/sources`: list sources.
 - `POST /api/products/:id/sources` with `{ "name": "iOS app", "kind": "mobile" }`: create a source.
