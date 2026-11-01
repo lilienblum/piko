@@ -51,3 +51,12 @@ Verification reproduced and corrected lost readiness descriptors from an indirec
 The release benchmark was rerun after the runtime fix: **15,142 newly committed events/sec**, query p95 **105.4 ms**, sampled peak API RSS **252.5 MiB**, zero request failures, and exactly 238,300 persisted events. See [the benchmark report](benchmark.md) for hardware, workload, raw measurements, and exclusions. This is the standalone Rust path, not a production Tako/channel throughput measurement.
 
 Production deployment, Linux artifact execution, Cloudflare policies, and Docker image startup were not exercised on this host. Compose syntax and the compiled standalone runtime were verified. The documented API maintenance procedure is required because DuckDB cannot overlap old and new processes during a rolling release. No claim of power-loss durability or long-running production capacity is made.
+
+
+## Stable manual refresh
+
+Manual refresh previously detached Overview cards/charts and Explore results while loading, and reset Explore pagination as the rolling interval advanced. Browser tests reproduced both detachments before the fix. Refresh now preserves the current result scope and page, with activity icons in place. The live-data action occupies a fixed-size button in the query header, so announcing or acknowledging new data does not insert or remove a banner. A failed refresh retains known results and offers retry feedback.
+
+All **38 Chromium tests passed in 2.1 minutes** against the two running Tako apps. Five refresh regressions hold responses to check retained DOM nodes and identical card geometry, page-two preservation, 503 recovery, and a 390 px layout. The live CLI test also checks stable query-card geometry when new data arrives and while refreshing. Existing tests continue to verify that changed dates/queries use placeholders and pagination loads the requested server rows. Manual in-app browser review covered both sample products, including CLI page-two refresh and website Explore.
+
+`bun fmt`, `bun fmt:check`, `bun typecheck`, `bun lint`, `bun test` (five tests), and `bun run build` passed. The build retains its existing large-client-chunk warning. This iteration changes frontend state and presentation only; the Rust backend, persistence behavior, and benchmark measurements above are unchanged.
