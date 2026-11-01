@@ -12,7 +12,7 @@
     "lint": "bun node_modules/@biomejs/biome/bin/biome lint .",
     "typecheck": "bun node_modules/typescript/bin/tsc --noEmit",
     "test": "bun test sdk scripts",
-    "test:e2e": "bun node_modules/@playwright/test/cli.js test",
+    "test:e2e": "bun scripts/e2e.ts",
     "benchmark": "bun scripts/benchmark.ts",
     "seed": "bun scripts/seed.ts",
     "dev:dashboard": "bun run --cwd apps/dashboard dev",

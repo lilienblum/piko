@@ -13,3 +13,6 @@
 # Local visual studies and review captures
 **/.impeccable/mocks/
 **/.impeccable/screenshots/
+
+# Disposable browser-test Tako configs
+/.tako-e2e-*.toml
