@@ -46,6 +46,7 @@ impl Telemetry {
                                 .json(&json!({"events":batch}))
                                 .send()
                                 .await;
+                            let mut delay = Duration::from_millis(40);
                             match result {
                                 Ok(r) if r.status().is_success() => break,
                                 Ok(r)
@@ -54,10 +55,23 @@ impl Telemetry {
                                 {
                                     break;
                                 }
-                                _ => {}
+                                Ok(r) => {
+                                    if let Some(seconds) = r
+                                        .headers()
+                                        .get("retry-after")
+                                        .and_then(|v| v.to_str().ok())
+                                        .and_then(|v| v.parse::<u64>().ok())
+                                    {
+                                        delay = Duration::from_secs(seconds).max(delay);
+                                        if delay > request_deadline {
+                                            break;
+                                        }
+                                    }
+                                }
+                                Err(_) => {}
                             }
                             if attempt == 0 {
-                                tokio::time::sleep(Duration::from_millis(40)).await;
+                                tokio::time::sleep(delay).await;
                             }
                         }
                     }

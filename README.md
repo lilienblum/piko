@@ -92,7 +92,7 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-`bun test:e2e` runs real Chromium browser tests against local processes on ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun x --bun playwright install chromium`.
+`bun test` runs the dependency-free SDK tests (scoped by `bunfig.toml`). `bun test:e2e` runs real Chromium browser tests against local processes on ports 3000/3001. Start the app first. The browser suite creates its own small fixtures; no login or seed is needed. If Chromium is absent, install it with `bun x --bun playwright install chromium`.
 
 ```sh
 cargo build --release -p piko
@@ -100,6 +100,8 @@ bun benchmark
 ```
 
 The benchmark starts its own API process with a temporary data directory and deletes only that directory afterward. It never writes to your running workspace. See its report for **measured** throughput, latency, and memory; no production capacity claim is implied.
+
+See [the verification record](docs/verification.md) for measured checks and their limits.
 
 ## Scope and limitations
 

@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-11-01T03:23:10.765Z",
+  "measured_at": "2026-11-01T03:37:13.989Z",
   "hardware": {
     "cpu": "Apple M1 Pro",
     "logical_cpus": 10,
@@ -15,7 +15,9 @@
     "query_connections": 4,
     "queue_batches": 64,
     "duckdb_threads": 2,
-    "duckdb_memory_limit": "512MB"
+    "duckdb_memory_limit_per_product": "64MB",
+    "max_open_product_databases": 8,
+    "layout": "one DuckDB file per product"
   },
   "workload": {
     "preload_events": 10000,
@@ -24,28 +26,29 @@
     "ingest_workers": 4,
     "query_workers": 2,
     "requested_seconds": 15,
-    "actual_seconds": 15.037727000000002,
+    "actual_seconds": 15.062225209000001,
     "dedup_retry_every_batches": 10,
     "notes": "Closed-loop localhost HTTP. 30-day dataset; query computes summary, daily buckets, top groups, count, and 25 events. Timer includes final request drain. RSS sampled every 250 ms; API process only."
   },
   "results": {
-    "accepted_events": 222600,
-    "duplicate_events": 22000,
-    "events_per_second": 14802.76906210626,
-    "successful_queries": 696,
-    "queries_per_second": 46.28359059849935,
+    "accepted_events": 233000,
+    "verified_stored_events": 243000,
+    "duplicate_events": 23200,
+    "events_per_second": 15469.161877939358,
+    "successful_queries": 687,
+    "queries_per_second": 45.61079060147785,
     "ingestion_ms": {
-      "p50": 24.31774999999834,
-      "p95": 30.78008300000147,
-      "p99": 34.495750000000044
+      "p50": 23.12695799999983,
+      "p95": 28.287709000000177,
+      "p99": 32.54837499999849
     },
     "query_ms": {
-      "p50": 37.85437499999898,
-      "p95": 91.98612500000127,
-      "p99": 106.41533300000083
+      "p50": 37.36187500000051,
+      "p95": 105.87362500000017,
+      "p99": 137.21329100000003
     },
-    "baseline_rss_bytes": 67076096,
-    "peak_rss_bytes": 289652736,
+    "baseline_rss_bytes": 63160320,
+    "peak_rss_bytes": 247005184,
     "errors": {}
   }
 }

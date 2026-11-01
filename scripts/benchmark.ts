@@ -148,6 +148,16 @@ try {
   );
   await Promise.all([...ingestWorkers, ...queryWorkers]);
   const elapsed = (performance.now() - started) / 1000;
+  let stored = 0;
+  for (const product of products) {
+    const result = await request(`/products/${product.id}/query`, {
+      from: new Date(Date.now() - 31 * 86400000).toISOString(),
+      to: new Date(Date.now() + 1000).toISOString(),
+    });
+    stored += result.summary.total;
+  }
+  if (stored !== preload + accepted)
+    throw new Error(`Persisted count mismatch: ${stored} vs ${preload + accepted}`);
   const report = {
     measured_at: new Date().toISOString(),
     hardware: {
@@ -183,6 +193,7 @@ try {
     },
     results: {
       accepted_events: accepted,
+      verified_stored_events: stored,
       duplicate_events: duplicates,
       events_per_second: accepted / elapsed,
       successful_queries: queries,
