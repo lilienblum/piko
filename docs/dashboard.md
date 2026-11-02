@@ -11,11 +11,11 @@ Explore shows the linked interval and applied filters. Use its query controls to
 Projects have stable, unique slugs. An example Overview link is `/projects/orbit?source=all&days=30&interval=week`. A renamed project keeps its slug. Explicit URL selections win over browser preferences; unavailable projects/sources and malformed scope parameters show an error instead of querying a fallback project. Links do not change access permissions.
 
 - Project paths: `/projects/<slug>`, `/projects/<slug>/explore`, and `/projects/<slug>/settings`. Bare `/`, `/explore`, and `/settings` open the saved project and replace the URL with its canonical path.
-- Shared query parameters: `source` (`all` or a source UUID), `days` (7, 30, or 90), and optional `snapshot` (an exact UTC ISO timestamp).
+- Shared query parameters: `source` (`all` or a source UUID), `days` (7, 30, or 90), and optional `from` / `to` (a complete pair of exact UTC ISO timestamps, start inclusive and end exclusive).
 - Overview parameters: `metric`, `interval` (`hour`, `day`, `week`, `month`), `breakdown`, and `duration` (`avg` or `p95`).
 - Explore parameters: `query` (TanStack Router's JSON-encoded applied configuration), `page` (one-based), and `pageSize` (15, 30, or 50). Typed filter text is preserved, including the difference between `42` and `"42"`.
 
-**Pin dates** sets `snapshot` to the current range end and shows **Fixed dates**. The start is derived from `days` using UTC calendar days. Copy the address bar to share the same interval and report configuration. Choosing a rolling date range removes the snapshot. A snapshot pins the query interval, not the results: late arrivals and retention can still change counts. Existing Overview drilldown links retain their exact start/end timestamps.
+The calendar picker shows two months on desktop and one on mobile, with direct YYYY-MM-DD inputs. Pick inclusive start/end days, then choose **Apply range**. Cancel, Escape, and outside dismissal discard drafts. The trigger shows the applied dates; the 7d / 30d / 90d buttons restore a rolling range. Custom ranges span at most 366 UTC days and cannot select future days. Copy the address bar to share the interval and report configuration. Changing dates retains applied Explore queries and drilldown filters. The URL fixes the query interval, not the results: late arrivals and retention can still change counts. Existing `snapshot` links and exact Overview drilldown timestamps remain readable.
 
 Project/source/date context follows sidebar navigation. Each route owns its chart or query choices; browser Back/Forward restores them. Automatic updates never rewrite the URL or add history entries, and they preserve unfinished query drafts and pagination.
 

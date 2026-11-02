@@ -69,7 +69,7 @@ There is no built-in login, admin token, password, or admin session cookie. Mana
 
 Click an Overview breakdown row to inspect its matching events in Explore. Source and environment tabs expose campaign and CLI version data. See [the dashboard guide](docs/dashboard.md) for drilldowns, typed filters, and date behavior.
 
-Project, source, range, chart choices, and applied Explore queries live in the URL. For example, `/projects/orbit?source=all&days=30&interval=week`. **Pin dates** adds a fixed-date `snapshot`; it does not archive results. Reload, sharing, and browser history restore the view.
+Project, source, range, chart choices, and applied Explore queries live in the URL. For example, `/projects/orbit?source=all&days=30&interval=week`. The calendar picker applies inclusive UTC days as explicit `from` / `to` timestamps (the API end is exclusive); it does not archive results. The 7d / 30d / 90d buttons return to a rolling range. Reload, sharing, and browser history restore the view.
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
@@ -132,7 +132,7 @@ Piko uses one fixed [Kanagawa Wave palette](https://github.com/rebelot/kanagawa.
 
 The compact workspace sidebar holds the project selector, page navigation, and a visible source list. Select All sources for the combined view or a named source to filter the project. Date, refresh, and appearance controls sit beside the report heading within the content layout. Settings omits report-only controls. Live updates run silently; Explore still offers a refresh when new data arrives. The sidebar collapses to icons on desktop and opens as a drawer on mobile, where project selection remains in the compact report controls.
 
-Overview keeps a full-width chart above paired event and dimension breakdowns. Hourly, Daily, Weekly, and Monthly buttons request aggregates from the API; weeks start on Monday in UTC and months follow calendar boundaries. Hourly is available for ranges of up to 31 days. Partial first/last buckets are labelled. Empty results keep the same chart and controls in place. Dashboard controls use the Base UI version of shadcn/ui Select, Sidebar/Sheet, ToggleGroup, Collapsible, Tabs, and AlertDialog alongside its buttons, forms, cards, and tables.
+Overview arranges six square analytics widgets for activity, sources, breakdowns, actors, outcomes, and duration. Hourly, Daily, Weekly, and Monthly buttons request aggregates from the API; weeks start on Monday in UTC and months follow calendar boundaries. Hourly is available for ranges of up to 31 days. Partial first/last buckets are labelled. Empty results keep the same chart and controls in place. Dashboard controls use the Base UI version of shadcn/ui Select, Calendar/Popover, Sidebar/Sheet, ToggleGroup, Collapsible, Tabs, and AlertDialog alongside its buttons, forms, cards, and tables.
 
 The visual system pairs Kanagawa colors with locally served Geist (and its [font license](apps/dashboard/public/licenses/geist.txt)). The shared shadcn theme uses softly squared controls, inset fields, single-frame segmented choices, warm selections, and soft menu/dialog shadows. Orange primary actions and the matching three-bar logo/favicon anchor the interface. Analytical sections stay flat; forms and inspectors retain clear boundaries. [Product context](apps/dashboard/PRODUCT.md) and [design rules](apps/dashboard/DESIGN.md) record the current decisions.
 
