@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("Settings defaults minimize collection without changing existing retention", async ({
+test("Settings defaults to one year without changing existing retention or collection defaults", async ({
   page,
 }) => {
   const api = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
@@ -18,18 +18,23 @@ test("Settings defaults minimize collection without changing existing retention"
   await page.addInitScript((id) => localStorage.setItem("piko:product", id), existing.id);
   await page.goto("/settings");
   await expect(page.getByLabel("Retention (days)")).toHaveValue("90");
+  await expect(page.locator('[data-slot="sidebar-footer"]')).not.toContainText("retention");
   await page.getByRole("button", { name: "New project", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Create a project" });
-  await expect(dialog.getByLabel("Retention (days)")).toHaveValue("30");
+  await expect(dialog.getByLabel("Retention (days)")).toHaveValue("365");
   await dialog.getByLabel("Project name").fill(`Privacy default ${Date.now()}`);
   const created = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/products") && response.request().method() === "POST",
   );
   await dialog.getByRole("button", { name: "Create project", exact: true }).click();
-  expect((await (await created).json()).retention_days).toBe(30);
+  expect((await (await created).json()).retention_days).toBe(365);
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByLabel("Retention (days)")).toHaveValue("30");
+  await expect(page.getByLabel("Retention (days)")).toHaveValue("365");
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(dialog.getByLabel("Retention (days)")).toHaveValue("365");
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   const snippet = page.locator(".integration-code");
   await expect(snippet).toContainText('referrerpolicy="no-referrer"');
   await expect(snippet).toContainText('identity: "none"');

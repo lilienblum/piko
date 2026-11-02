@@ -258,7 +258,6 @@ test("sidebar collapses, persists and keeps navigation keyboard accessible", asy
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
-  await expect(page.locator(".local-note")).not.toBeVisible();
   await expect(page.locator(".sidebar-footer")).not.toBeVisible();
   await page.reload();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");

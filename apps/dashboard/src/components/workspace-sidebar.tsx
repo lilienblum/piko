@@ -158,12 +158,6 @@ export function WorkspaceSidebar({
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="local-note workspace-retention">
-          <span className="status-dot" />
-          <span>
-            {product ? `${product.retention_days}-day retention` : "Self-hosted analytics"}
-          </span>
-        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

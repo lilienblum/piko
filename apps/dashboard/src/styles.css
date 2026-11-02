@@ -314,24 +314,6 @@ h3,
   align-items: center;
   padding-inline: 3px;
 }
-.local-note {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  padding: 10px 13px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-.status-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--success);
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
-[data-collapsible="icon"] .local-note,
 [data-collapsible="icon"] .brand-word {
   display: none;
 }
@@ -369,7 +351,6 @@ h3,
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    .local-note,
     .brand-word,
     [data-slot="sidebar-menu-button"] > svg:last-child {
       display: none;

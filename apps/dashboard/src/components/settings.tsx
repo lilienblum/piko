@@ -108,7 +108,7 @@ function ProductFields({
           onChange={(e) => onChange({ ...value, retention_days: Number(e.target.value) })}
         />
         <FieldDescription>
-          Automatic cleanup runs hourly. Choose the shortest useful retention window.
+          Events older than this are removed automatically. Applies to all sources in this project.
         </FieldDescription>
       </Field>
     </FieldGroup>
@@ -119,7 +119,7 @@ export function Settings() {
   const { timeZone, setTimeZone } = useDisplayPreferences();
   const timeZones = Array.from(new Set(["UTC", timeZone, ...Intl.supportedValuesOf("timeZone")]));
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({ name: "", retention_days: 30, website_url: "" });
+  const [draft, setDraft] = useState({ name: "", retention_days: 365, website_url: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<Product>();
@@ -134,7 +134,7 @@ export function Settings() {
       setCreatedProduct(saved);
       await reload(saved.id);
       setOpen(false);
-      setDraft({ name: "", retention_days: 30, website_url: "" });
+      setDraft({ name: "", retention_days: 365, website_url: "" });
       setCreatedProduct(undefined);
     } catch (e) {
       setError(
