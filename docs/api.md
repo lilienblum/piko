@@ -18,7 +18,7 @@ Management mutations require `X-Piko-Admin: 1`. This public request marker preve
 
 ## Projects and sources
 
-A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. All sources have the same analytics capabilities; there is no project or source type. Source names are unique within a project (ASCII case-insensitive). Creating a project automatically creates an initial source named **Events**, which can be renamed. Project responses include `sources` with `id`, `product_id`, `name`, `icon`, and `created_at`.
+A project owns one DuckDB database, shared retention, and any number of sources. A source is a named integration such as Website, iOS app, or CLI. All sources have the same analytics capabilities; there is no project or source type. Source names are unique within a project (ASCII case-insensitive). Creating a project automatically creates an initial source named **Events**, which can be renamed. Project responses include a stable, unique `slug` and `sources` with `id`, `product_id`, `name`, `icon`, and `created_at`.
 
 - `GET /api/products/:id/sources`: list sources.
 - `POST /api/products/:id/sources` with `{ "name": "iOS app" }`: create a source with an automatic icon.
@@ -28,6 +28,8 @@ A project owns one DuckDB database, shared retention, and any number of sources.
 `icon` accepts `website`, `ios`, `android`, `mobile`, `terminal`, `desktop`, `server`, `code`, `package`, `game`, or `generic`. An omitted/null value is stored as null: the dashboard derives a visual icon from common platform words in the current name, with a cube fallback. Explicit choices stay fixed across renames. Icons never filter events, select metrics or integration languages, or infer user/device identity. Unknown icons return 400; obsolete `kind` fields are rejected with 422.
 
 Keys cannot move between sources or projects. Foreign-project source IDs are rejected. Source deletion and merging are not supported; revoke a source's keys to stop new authorized intake.
+
+Slugs are allocated from the project name on creation, with numeric suffixes for collisions. Renaming keeps the slug unchanged. Schema 6 assigns slugs to existing projects without changing IDs, keys, sources, or event files. HTTP management endpoints continue to use UUIDs; the dashboard resolves its URL slug through the catalog. Slugs are identifiers, not credentials.
 
 ### Existing data
 

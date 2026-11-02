@@ -7,10 +7,10 @@ use rusqlite::{OptionalExtension, params};
 pub fn migrate(db: &mut rusqlite::Connection) -> anyhow::Result<()> {
     let version: i64 = db.query_row("PRAGMA user_version", [], |row| row.get(0))?;
     anyhow::ensure!(
-        version <= 5,
+        version <= 6,
         "Catalog schema is newer than this API supports"
     );
-    if version == 5 {
+    if version == 6 {
         return Ok(());
     }
     let tx = db.transaction()?;
@@ -46,7 +46,31 @@ pub fn migrate(db: &mut rusqlite::Connection) -> anyhow::Result<()> {
             "ALTER TABLE ingestion_keys ADD COLUMN allowed_origins TEXT NOT NULL DEFAULT '[]';",
         )?;
     }
-    tx.execute_batch("ALTER TABLE products ADD COLUMN website_url TEXT; ALTER TABLE products ADD COLUMN favicon BLOB; ALTER TABLE products ADD COLUMN favicon_version TEXT; PRAGMA user_version=5;")?;
+    if version < 5 {
+        tx.execute_batch("ALTER TABLE products ADD COLUMN website_url TEXT; ALTER TABLE products ADD COLUMN favicon BLOB; ALTER TABLE products ADD COLUMN favicon_version TEXT;")?;
+    }
+    tx.execute_batch("ALTER TABLE products ADD COLUMN slug TEXT NOT NULL DEFAULT '';")?;
+    let projects = tx
+        .prepare("SELECT id,name FROM products ORDER BY created_at,id")?
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    for (id, name) in projects {
+        let base = crate::store::project_slug(&name);
+        let mut slug = base.clone();
+        let mut suffix = 2;
+        while tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM products WHERE slug=?)",
+            [&slug],
+            |r| r.get::<_, bool>(0),
+        )? {
+            slug = format!("{base}-{suffix}");
+            suffix += 1;
+        }
+        tx.execute("UPDATE products SET slug=? WHERE id=?", params![slug, id])?;
+    }
+    tx.execute_batch(
+        "CREATE UNIQUE INDEX products_slug ON products(slug); PRAGMA user_version=6;",
+    )?;
     tx.commit()?;
     Ok(())
 }

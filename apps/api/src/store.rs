@@ -115,7 +115,7 @@ impl Store {
 pub fn product(db: &rusqlite::Connection, id: &str) -> ApiResult<Product> {
     let mut product = db
         .query_row(
-            "SELECT id,name,retention_days,created_at,website_url,favicon_version FROM products WHERE id=?",
+            "SELECT id,name,retention_days,created_at,website_url,favicon_version,slug FROM products WHERE id=?",
             [id],
             row_product,
         )
@@ -134,11 +134,12 @@ fn row_product(r: &rusqlite::Row<'_>) -> rusqlite::Result<Product> {
         sources: Vec::new(),
         website_url: r.get(4)?,
         favicon_version: r.get(5)?,
+        slug: r.get(6)?,
     })
 }
 pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
     let mut q = db
-        .prepare("SELECT id,name,retention_days,created_at,website_url,favicon_version FROM products ORDER BY created_at,id")
+        .prepare("SELECT id,name,retention_days,created_at,website_url,favicon_version,slug FROM products ORDER BY created_at,id")
         .map_err(anyhow::Error::from)?;
     let mut products = q
         .query_map([], row_product)
@@ -150,6 +151,22 @@ pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
     }
     Ok(products)
 }
+pub fn project_slug(name: &str) -> String {
+    let slug = name
+        .to_ascii_lowercase()
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    let slug = slug.chars().take(64).collect::<String>();
+    let slug = slug.trim_end_matches('-');
+    if slug.is_empty() {
+        "project".into()
+    } else {
+        slug.into()
+    }
+}
+
 pub fn save_product(
     db: &rusqlite::Connection,
     id: Option<String>,
@@ -163,7 +180,23 @@ pub fn save_product(
     };
     let id = id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let tx = db.unchecked_transaction().map_err(anyhow::Error::from)?;
-    tx.execute("INSERT INTO products(id,name,retention_days,created_at,website_url) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET name=?2,retention_days=?3,website_url=?5,favicon=CASE WHEN website_url IS ?5 THEN favicon ELSE NULL END,favicon_version=CASE WHEN website_url IS ?5 THEN favicon_version ELSE NULL END",params![id,input.name.trim(),input.retention_days,chrono::Utc::now().to_rfc3339(),website]).map_err(anyhow::Error::from)?;
+    if previous.is_some() {
+        tx.execute("UPDATE products SET name=?2,retention_days=?3,website_url=?4,favicon=CASE WHEN website_url IS ?4 THEN favicon ELSE NULL END,favicon_version=CASE WHEN website_url IS ?4 THEN favicon_version ELSE NULL END WHERE id=?1", params![id,input.name.trim(),input.retention_days,website]).map_err(anyhow::Error::from)?;
+    } else {
+        let base = project_slug(&input.name);
+        let mut slug = base.clone();
+        let mut suffix = 2;
+        loop {
+            // The unique index arbitrates concurrent creators. A conflict keeps
+            // the transaction's write lock while we allocate the next suffix.
+            let inserted = tx.execute("INSERT INTO products(id,name,retention_days,created_at,website_url,slug) VALUES (?1,?2,?3,?4,?5,?6) ON CONFLICT(slug) DO NOTHING", params![id,input.name.trim(),input.retention_days,chrono::Utc::now().to_rfc3339(),website,slug]).map_err(anyhow::Error::from)?;
+            if inserted == 1 {
+                break;
+            }
+            slug = format!("{base}-{suffix}");
+            suffix += 1;
+        }
+    }
     tx.execute(
         "INSERT OR IGNORE INTO sources(id,product_id,name,created_at) VALUES (?1,?1,'Events',?2)",
         params![id, chrono::Utc::now().to_rfc3339()],
@@ -250,4 +283,94 @@ pub fn cache_favicon(
     )
     .map_err(anyhow::Error::from)?;
     product(db, id)
+}
+
+#[cfg(test)]
+mod slug_tests {
+    use super::*;
+    fn input(name: &str) -> ProductInput {
+        ProductInput {
+            name: name.into(),
+            website_url: None,
+            retention_days: 365,
+        }
+    }
+    #[test]
+    fn slugs_are_unique_persistent_and_unchanged_by_rename() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path(), 2).unwrap();
+        let db = store.sqlite().unwrap();
+        let first = save_product(&db, None, input("Orbit Site")).unwrap();
+        let second = save_product(&db, None, input("Orbit--Site")).unwrap();
+        let third = save_product(&db, None, input("Orbit Site 2")).unwrap();
+        assert_eq!(first.slug, "orbit-site");
+        assert_eq!(second.slug, "orbit-site-2");
+        assert_eq!(third.slug, "orbit-site-2-2");
+        let key = create_key(&db, &first.id, "test", None, &[]).unwrap();
+        let updated = save_product(&db, Some(first.id.clone()), input("Renamed")).unwrap();
+        assert_eq!(updated.slug, first.slug);
+        assert_eq!(updated.created_at, first.created_at);
+        assert_eq!(
+            resolve_key(&db, key["key"].as_str().unwrap(), None)
+                .unwrap()
+                .0
+                .id,
+            first.id
+        );
+        drop(db);
+        drop(store);
+        let reopened = Store::open(dir.path(), 2).unwrap();
+        assert_eq!(
+            product(&reopened.sqlite().unwrap(), &first.id)
+                .unwrap()
+                .slug,
+            first.slug
+        );
+        assert_eq!(project_slug("東京 ✨"), "project");
+    }
+    #[test]
+    fn version_five_migration_assigns_stable_slugs_without_losing_catalog_data() {
+        let mut db = rusqlite::Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE products(id TEXT PRIMARY KEY,name TEXT NOT NULL,retention_days INTEGER NOT NULL,created_at TEXT NOT NULL,website_url TEXT,favicon BLOB,favicon_version TEXT);
+            INSERT INTO products VALUES ('1','Orbit',90,'2026-01-01',NULL,NULL,NULL),('2','Orbit',365,'2026-01-02','https://example.com',x'00','cached');
+            PRAGMA user_version=5;").unwrap();
+        crate::sources::migrate(&mut db).unwrap();
+        crate::sources::migrate(&mut db).unwrap();
+        let values: Vec<(String, i64, Option<String>)> = db
+            .prepare("SELECT slug,retention_days,favicon_version FROM products ORDER BY id")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(
+            values,
+            vec![
+                ("orbit".into(), 90, None),
+                ("orbit-2".into(), 365, Some("cached".into()))
+            ]
+        );
+        assert!(
+            db.execute("UPDATE products SET slug='orbit' WHERE id='2'", [])
+                .is_err()
+        );
+    }
+    #[test]
+    fn concurrent_creators_reserve_distinct_slugs() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path(), 2).unwrap();
+        let jobs: Vec<_> = (0..8)
+            .map(|_| {
+                let store = store.clone();
+                std::thread::spawn(move || {
+                    save_product(&store.sqlite().unwrap(), None, input("Same name"))
+                        .unwrap()
+                        .slug
+                })
+            })
+            .collect();
+        let slugs: std::collections::HashSet<_> =
+            jobs.into_iter().map(|job| job.join().unwrap()).collect();
+        assert_eq!(slugs.len(), 8);
+    }
 }

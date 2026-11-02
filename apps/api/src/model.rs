@@ -98,6 +98,7 @@ impl Event {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Product {
+    pub slug: String,
     pub website_url: Option<String>,
     pub favicon_version: Option<String>,
     pub id: String,
