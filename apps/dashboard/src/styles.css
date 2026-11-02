@@ -1798,40 +1798,43 @@ html {
 }
 .page-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
 }
 .page-content > * {
   min-width: 0;
-  grid-column: 1 / -1;
 }
 .page-content > .page-heading {
   grid-row: 1;
-  grid-column: 1;
   min-height: 64px;
   flex-wrap: wrap;
-}
-.workspace-toolbar {
-  padding-top: 14px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  margin-bottom: 16px;
 }
 .page-content > .workspace-toolbar {
-  grid-row: 1;
-  grid-column: 2;
+  grid-row: 2;
+  margin-bottom: 24px;
 }
-.workspace-toolbar-navigation,
+.workspace-toolbar-navigation {
+  display: none;
+}
 .workspace-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   min-width: 0;
 }
-.workspace-toolbar .workspace-source-name {
-  display: none;
+.workspace-sidebar-toggle {
+  width: 32px;
+  height: 32px;
+}
+@media (max-height: 480px) {
+  .workspace-brand-row {
+    height: 48px;
+  }
+  .workspace-navigation {
+    padding-block: 4px;
+  }
 }
 .display-settings {
   margin-bottom: 24px;
@@ -1839,45 +1842,27 @@ html {
 .display-settings [data-slot="field"] {
   max-width: 560px;
 }
-@media (max-width: 1150px) {
-  .page-content {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .page-content > .workspace-toolbar {
-    padding-top: 0;
+@media (max-width: 767px) {
+  .page-content > .workspace-toolbar-navigation {
     grid-row: 1;
-    grid-column: 1;
-    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
   }
   .page-content > .page-heading {
     grid-row: 2;
   }
-}
-@media (max-width: 767px) {
-  .workspace-toolbar {
-    flex-wrap: wrap;
+  .page-content > .workspace-toolbar {
+    grid-row: 3;
   }
-  .workspace-toolbar-navigation {
-    width: 100%;
+  .workspace-sidebar-toggle {
+    display: none;
   }
-  .workspace-toolbar-actions {
-    margin-left: auto;
-  }
-  .workspace-toolbar .workspace-source-name {
-    display: block;
+  .workspace-source-name {
     max-width: 30%;
     font-size: 12px;
     white-space: nowrap;
-  }
-}
-
-@media (max-width: 767px) {
-  .page-content[data-page="settings"] .workspace-toolbar {
-    flex-wrap: nowrap;
-  }
-  .page-content[data-page="settings"] .workspace-toolbar-navigation {
-    flex: 1;
-    width: auto;
   }
   .page-content[data-page="settings"] .workspace-source-name {
     display: none;
@@ -2203,9 +2188,34 @@ a.legend-row:hover .legend-name {
 }
 
 /* Calendar ranges share the report's date controls without locking page scroll. */
-.workspace-toolbar-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.date-presets {
+  gap: 4px;
+  border-radius: 0;
+}
+.date-presets .date-preset,
+.date-range-trigger {
+  height: 36px;
+  min-width: 40px;
+  padding-inline: 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.date-presets .date-preset:hover,
+.date-range-trigger:hover {
+  background: var(--surface-hover);
+  color: var(--foreground);
+}
+.date-presets .date-preset[data-pressed],
+.date-range-trigger[data-fixed] {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+  background: transparent;
 }
 .date-range-trigger {
   min-width: 0;
@@ -2215,11 +2225,6 @@ a.legend-row:hover .legend-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.date-range-trigger[data-fixed] {
-  border-color: var(--selection-foreground);
-  color: var(--selection-foreground);
-  background: var(--selection);
 }
 .date-range-popover {
   width: max-content;

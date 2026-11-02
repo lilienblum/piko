@@ -18,6 +18,7 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  SidebarTrigger,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -35,6 +36,7 @@ export function WorkspaceSidebar({
   sourceId,
   picker,
   loading,
+  navigationReady,
   onSourceChange,
 }: {
   path: string;
@@ -42,6 +44,7 @@ export function WorkspaceSidebar({
   sourceId?: string;
   picker: ReactNode;
   loading: boolean;
+  navigationReady: boolean;
   onSourceChange: (id: string) => void;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
@@ -183,6 +186,11 @@ export function WorkspaceSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <SidebarTrigger
+          className="workspace-sidebar-toggle"
+          disabled={!navigationReady}
+          title="Toggle sidebar"
+        />
       </SidebarFooter>
     </Sidebar>
   );

@@ -292,6 +292,7 @@ export function AppShell() {
           sourceId={sourceId}
           picker={projectPicker}
           loading={loading}
+          navigationReady={preferencesReady}
           onSourceChange={(id) => {
             if (!product) return;
             void navigate({
@@ -330,18 +331,18 @@ export function AppShell() {
             data-page={label.toLowerCase()}
             aria-busy={loading || resolvingProject || analyticsPending}
           >
-            <div className="workspace-toolbar">
-              <div className="workspace-toolbar-navigation">
-                <SidebarTrigger disabled={!preferencesReady} />
-                <div className="mobile-project-picker">{projectPicker}</div>
-                <span className="workspace-source-name">{source?.name ?? "All sources"}</span>
-              </div>
-              {view !== "/settings" && (
+            <div className="workspace-toolbar-navigation">
+              <SidebarTrigger disabled={!preferencesReady} />
+              <div className="mobile-project-picker">{projectPicker}</div>
+              <span className="workspace-source-name">{source?.name ?? "All sources"}</span>
+            </div>
+            {view !== "/settings" && (
+              <div className="workspace-toolbar">
                 <div className="workspace-toolbar-actions">
                   <ToggleGroup
                     aria-label="Date range"
-                    variant="outline"
-                    spacing={0}
+                    className="date-presets"
+                    spacing={1}
                     disabled={!preferencesReady}
                     value={drilldown || search.snapshot || search.from ? [] : [String(days)]}
                     onValueChange={(values) => {
@@ -365,6 +366,7 @@ export function AppShell() {
                   >
                     {[7, 30, 90].map((days) => (
                       <ToggleGroupItem
+                        className="date-preset"
                         key={days}
                         value={String(days)}
                         aria-label={`Last ${days} days`}
@@ -395,8 +397,8 @@ export function AppShell() {
                     }}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             {error && <ErrorState message={error} retry={refresh} />}
             {loading || resolvingProject ? (
               <>

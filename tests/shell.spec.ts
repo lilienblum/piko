@@ -60,7 +60,9 @@ for (const route of ["/", "/explore", "/settings"]) {
           await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeVisible();
         await expect(page.locator(".topbar")).toHaveCount(0);
-        await expect(page.locator(".page-content > .workspace-toolbar")).toBeVisible();
+        if (route !== "/settings")
+          await expect(page.locator(".page-content > .workspace-toolbar")).toBeVisible();
+        else await expect(page.locator(".workspace-toolbar")).toHaveCount(0);
         if (route !== "/settings")
           await expect(
             page.getByRole("button", { name: "Last 30 days", exact: true }),
@@ -81,7 +83,8 @@ for (const route of ["/", "/explore", "/settings"]) {
         const shell = page.locator("#main-content");
         const before = await shell.boundingBox();
         const content = await page.locator(".page-content").boundingBox();
-        const toolbar = await page.locator(".workspace-toolbar").elementHandle();
+        const toolbar =
+          route !== "/settings" ? await page.locator(".workspace-toolbar").elementHandle() : null;
         expect(before?.x).toBe(width < 768 ? 0 : collapsed ? 56 : 240);
         await page.screenshot({ path: test.info().outputPath("before-hydration.png") });
         release();
@@ -109,7 +112,16 @@ for (const route of ["/", "/explore", "/settings"]) {
         expect(after?.width).toBe(before?.width);
         expect(loaded?.x).toBe(content?.x);
         expect(loaded?.y).toBe(content?.y);
-        expect(await toolbar?.evaluate((element) => element.isConnected)).toBe(true);
+        if (route !== "/settings") {
+          expect(await toolbar?.evaluate((element) => element.isConnected)).toBe(true);
+          const heading = await page.locator(".page-heading").boundingBox();
+          const dates = await page.locator(".workspace-toolbar").boundingBox();
+          expect(dates?.x).toBe(heading?.x);
+          expect(dates?.y).toBeGreaterThanOrEqual((heading?.y ?? 0) + (heading?.height ?? 0));
+          await expect(
+            page.locator('.workspace-toolbar [data-slot="sidebar-trigger"]'),
+          ).toHaveCount(0);
+        }
         expect(errors).toEqual([]);
         if (width >= 768) await expectSourcesFit(page);
         await page.screenshot({ path: test.info().outputPath("after-hydration.png") });

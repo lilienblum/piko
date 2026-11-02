@@ -64,7 +64,7 @@ export function DateRangePicker({
   return (
     <Popover open={open} onOpenChange={changeOpen} modal={false}>
       <PopoverTrigger
-        render={<Button variant="outline" className="date-range-trigger" disabled={disabled} />}
+        render={<Button variant="ghost" className="date-range-trigger" disabled={disabled} />}
         aria-label="Choose date range"
         aria-description={fixed ? `${label}, UTC` : undefined}
         data-fixed={fixed || undefined}
@@ -79,7 +79,8 @@ export function DateRangePicker({
         <span className="date-range-label">{label}</span>
       </PopoverTrigger>
       <PopoverContent
-        align="end"
+        align="start"
+        collisionAvoidance={{ side: "none", align: "shift", fallbackAxisSide: "none" }}
         sideOffset={8}
         className="date-range-popover"
         initialFocus={false}

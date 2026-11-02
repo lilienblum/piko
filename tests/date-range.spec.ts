@@ -114,7 +114,8 @@ for (const width of [1440, 390]) {
   test(`date drafts cancel, reject invalid input, and keep layout stable at ${width}px`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 900 });
+    const height = width < 768 ? 844 : 720;
+    await page.setViewportSize({ width, height });
     await open(page);
     const url = page.url();
     const before = await page.locator("#main-content").boundingBox();
@@ -124,6 +125,10 @@ for (const width of [1440, 390]) {
     const box = await picker(page).boundingBox();
     expect(box?.x).toBeGreaterThanOrEqual(0);
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+    await expect(picker(page)).toHaveAttribute("data-side", "bottom");
+    const button = await trigger(page).boundingBox();
+    expect(box?.y).toBeGreaterThanOrEqual((button?.y ?? 0) + (button?.height ?? 0));
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
     await picker(page).getByLabel("Start date", { exact: true }).fill(end);
     await picker(page).getByLabel("End date", { exact: true }).fill(start);
     await expect(picker(page).locator("#range-feedback")).toContainText("on or after");
