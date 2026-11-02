@@ -21,10 +21,10 @@ Project/source/date context follows sidebar navigation. Each route owns its char
 
 ## Overview widgets
 
-Overview is a collection of six square widgets, arranged in three, two, or one column as the available space changes:
+Overview uses five core widgets and a source comparison when multiple sources contribute events. With no comparison, Activity spans two columns and the remaining widgets stay square; narrow screens stack them:
 
 - **Activity over time:** a selected measure and its time-series. Choose events, identified actors, visitors, installations, average duration, or p95 duration. The headline is the selected measure over the full range, calculated by the server.
-- **Sources:** when only one source contributes matching events, show its exact event count, icon, name, and Explore link without a pie or redundant 100% label. For multiple contributing sources, show a donut with the three largest sources and an **Other sources** slice for all remaining events, including groups beyond the server's top-twelve response. The center uses a compact total; the footer and legend retain exact counts. Named sources link to their events in Explore.
+- **Sources:** a single contributing source appears as a compact icon/name/count link above the charts, with no dedicated tile or pie. For multiple contributing sources, show a donut with the three largest sources and an **Other sources** slice for all remaining events, including groups beyond the server's top-twelve response. The center uses a compact total; the footer and legend retain exact counts. Named sources link to their events in Explore.
 - **Breakdown:** ranked rows with exact counts, shares, and drilldowns. Top events is the default; use the selector for another dimension. Longer lists scroll inside the widget.
 - **Identified actors:** distinct identities, separate visitor and installation counts, other actor identities, and website sessions when available. Identity is optional; unidentified events still count toward activity.
 - **Success rate:** succeeded/failed shares among events reporting a boolean `success` value. Missing properties and strings are excluded, and the absence of valid values is explained.
@@ -34,7 +34,7 @@ The connected **Hourly / Daily / Weekly / Monthly** controls apply to both time-
 
 Distinct identities are counted within each bucket. Adding daily visitor or installation counts does not give a unique count for the whole period. Missing durations remain gaps; they are not zero-duration commands. When no matching identities or numeric durations are available, the widget explains what is missing.
 
-Changing a measure loads only its value and plot; changing a breakdown loads only its rows. The six widget containers and controls stay in place. Refreshing an unchanged selection keeps existing values, plots, and rows visible; errors offer a local Retry action. Skullet placeholders occupy the affected regions for new ranges. Queries remain server-side and scoped to the selected project/source; default daily counts reuse the main result and the duration query runs only when numeric durations exist.
+Changing a measure loads only its value and plot; changing a breakdown loads only its rows. The current widget layout and controls stay in place. Refreshing an unchanged selection keeps existing values, plots, and rows visible; errors offer a local Retry action. Skullet placeholders occupy the affected regions for new ranges. Queries remain server-side and scoped to the selected project/source; single-source summaries and default daily counts reuse the main result, a source comparison query runs only for multiple configured sources or a Sources breakdown, and the duration query runs only when numeric durations exist.
 
 ## Breakdown dimensions
 
@@ -66,7 +66,7 @@ The [PostHog Activity interface](https://posthog.com/docs/activity) informed the
 
 ## Loading and feedback
 
-Navigation stays available while the product catalog loads. Overview uses local placeholders inside its six mounted widgets. Explore uses placeholders shaped like its results, chart, breakdown, and event rows. Breakdown choices load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
+Navigation stays available while the product catalog loads. Overview uses local placeholders inside its mounted widgets. Explore uses placeholders shaped like its results, chart, breakdown, and event rows. Breakdown choices load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
 
 Refreshing the current view keeps its cards, charts, event rows, inspector, and page number visible. Updates run in the background; a failed refresh leaves the last results available with retry feedback. New products, date selections, or applied queries still use placeholders so unrelated results are never mislabeled. Live hints, reconnection, focus, and visible online polling keep analytics current without a manual refresh control.
 
