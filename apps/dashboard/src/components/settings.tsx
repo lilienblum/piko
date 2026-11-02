@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { ValueSelect } from "./value-select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -116,7 +117,7 @@ function ProductFields({
 }
 export function Settings() {
   const { product, reload } = useWorkspace();
-  const { timeZone, setTimeZone } = useDisplayPreferences();
+  const { timeZone, setTimeZone, dateShortcuts, setDateShortcuts } = useDisplayPreferences();
   const timeZones = Array.from(new Set(["UTC", timeZone, ...Intl.supportedValuesOf("timeZone")]));
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", retention_days: 365, website_url: "" });
@@ -202,20 +203,37 @@ export function Settings() {
           <CardDescription>Preferences for this browser.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Field>
-            <FieldLabel htmlFor="event-timezone">Event timezone</FieldLabel>
-            <ValueSelect
-              id="event-timezone"
-              label="Event timezone"
-              value={timeZone}
-              onValueChange={setTimeZone}
-              options={timeZones.map((zone) => [zone, zone.replaceAll("_", " ")])}
-            />
-            <FieldDescription>
-              Used for event times and inspection. Charts and date ranges use UTC calendar buckets;
-              stored timestamps and exports remain UTC.
-            </FieldDescription>
-          </Field>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="event-timezone">Event timezone</FieldLabel>
+              <ValueSelect
+                id="event-timezone"
+                label="Event timezone"
+                value={timeZone}
+                onValueChange={setTimeZone}
+                options={timeZones.map((zone) => [zone, zone.replaceAll("_", " ")])}
+              />
+              <FieldDescription>
+                Used for event times and inspection. Charts and date ranges use UTC calendar
+                buckets; stored timestamps and exports remain UTC.
+              </FieldDescription>
+            </Field>
+            <Field orientation="horizontal">
+              <div>
+                <FieldLabel htmlFor="date-shortcuts">Date keyboard shortcuts</FieldLabel>
+                <FieldDescription id="date-shortcuts-description">
+                  Use the keys shown in the date menu to change periods. Shortcuts stay inactive
+                  while typing or using other menus and dialogs.
+                </FieldDescription>
+              </div>
+              <Switch
+                id="date-shortcuts"
+                aria-describedby="date-shortcuts-description"
+                checked={dateShortcuts}
+                onCheckedChange={setDateShortcuts}
+              />
+            </Field>
+          </FieldGroup>
         </CardContent>
       </Card>
       {product ? (

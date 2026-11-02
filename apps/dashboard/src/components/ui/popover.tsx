@@ -17,17 +17,19 @@ function PopoverContent({
   side = "bottom",
   sideOffset = 4,
   collisionAvoidance,
+  anchor,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset" | "collisionAvoidance"
+    "align" | "alignOffset" | "side" | "sideOffset" | "collisionAvoidance" | "anchor"
   >) {
   return (
     <PopoverPrimitive.Portal>
       {/* Keep popup autofocus from scrolling the page. */}
       <PopoverPrimitive.Positioner
         positionMethod="fixed"
+        anchor={anchor}
         align={align}
         alignOffset={alignOffset}
         side={side}

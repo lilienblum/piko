@@ -111,7 +111,7 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await expect(page.locator(".explore-summary strong")).toHaveText("250 ms");
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("Page 1 of 2")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -123,9 +123,9 @@ test("date picker supports keyboard selection, persistence, and narrow layouts",
   const trigger = page.getByRole("button", { name: "Choose date range", exact: true });
   await expect(trigger).toContainText("Last 30 days");
   await trigger.click();
-  const group = page.getByRole("group", { name: "Date range", exact: true });
-  const thirty = group.getByRole("button", { name: "Last 30 days", exact: true });
-  const ninety = group.getByRole("button", { name: "Last 90 days", exact: true });
+  const group = page.getByRole("menu", { name: "Date range", exact: true });
+  const thirty = group.getByRole("menuitemradio", { name: "Last 30 days", exact: true });
+  const ninety = group.getByRole("menuitemradio", { name: "Last 90 days", exact: true });
   await thirty.focus();
   await thirty.press("ArrowDown");
   await expect(ninety).toBeFocused();
@@ -146,7 +146,7 @@ test("date picker supports keyboard selection, persistence, and narrow layouts",
   await expect(trigger).toContainText("Last 90 days");
   await page.setViewportSize({ width: 320, height: 844 });
   await trigger.click();
-  const seven = group.getByRole("button", { name: "Last 7 days", exact: true });
+  const seven = group.getByRole("menuitemradio", { name: "Last 7 days", exact: true });
   await expect(seven).toHaveCSS("height", "40px");
   await seven.click();
   await expect(trigger).toContainText("Last 7 days");
@@ -405,7 +405,7 @@ test("breakdown choices drill into referrers and campaigns, with missing values 
   await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
   await page.goBack();
@@ -837,7 +837,7 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
   });
   await select(page, "Select project", tool.name);
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 7 days", exact: true }).click();
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await expect(page.locator('[data-slot="sidebar"][data-state]')).toHaveAttribute(

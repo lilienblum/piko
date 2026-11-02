@@ -63,7 +63,7 @@ test("project URL wins over saved preferences and applies a portable calendar ra
   await expect.poll(() => params(page).get("breakdown")).toBe("property:command");
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "Date range", exact: true });
-  await picker.getByRole("button", { name: "Custom range", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
   const start = await picker.getByLabel("Start date", { exact: true }).inputValue();
   const end = await picker.getByLabel("End date", { exact: true }).inputValue();
   await picker.getByRole("button", { name: "Apply range", exact: true }).click();
@@ -105,7 +105,7 @@ test("project URL wins over saved preferences and applies a portable calendar ra
     "One point per day",
   );
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 30 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 30 days", exact: true }).click();
   await expect.poll(() => params(page).has("from")).toBe(false);
   expect(params(page).has("to")).toBe(false);
 });

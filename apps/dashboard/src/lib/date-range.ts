@@ -51,6 +51,7 @@ export function rangeLabel(range: AnalyticsRange) {
 
 export const periodLabels = {
   today: "Today",
+  "24h": "Last 24 hours",
   yesterday: "Yesterday",
   month: "Month to date",
   "last-month": "Last month",
@@ -64,7 +65,9 @@ export function presetRange(period: DatePeriod, now: number): AnalyticsRange {
   const end = new Date(now);
   const start = new Date(now);
   start.setUTCHours(0, 0, 0, 0);
-  if (period === "yesterday") {
+  if (period === "24h") {
+    start.setTime(now - DAY_MS);
+  } else if (period === "yesterday") {
     end.setTime(start.getTime());
     start.setUTCDate(start.getUTCDate() - 1);
   } else if (period === "month" || period === "last-month" || period === "12months") {

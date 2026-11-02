@@ -149,7 +149,7 @@ test("visitor chart excludes installation identities without shrinking overview 
   await expect(page.locator(".chart-period-note")).toContainText("Last hour is partial");
   const wider = chartResponse(page, "actors", "week");
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 90 days", exact: true }).click();
   await result(wider);
   await expect(
     page.locator('.activity-widget svg[aria-label="Unique visitors by UTC week"]'),
@@ -280,7 +280,7 @@ test("dates automatically choose raw weekly and monthly aggregates and retain th
   await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   const weekly = chartResponse(page, "count", "week");
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-  await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 90 days", exact: true }).click();
   const weeks = await result(weekly);
   expect(weeks.series.every((point) => new Date(point.time).getUTCDay() === 1)).toBe(true);
   expect(weeks.series.reduce((sum, point) => sum + (point.value ?? 0), 0)).toBe(6);

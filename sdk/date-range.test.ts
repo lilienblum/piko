@@ -66,3 +66,12 @@ test("calendar presets remain nonempty at the exact start of a day or year", () 
     expect(rangeLabel(range)).toBe("Jan 1, 2026");
   }
 });
+
+test("last 24 hours is a rolling day, not midnight-to-now", () => {
+  const now = Date.parse("2026-03-09T03:15:27.123Z");
+  expect(presetRange("24h", now)).toEqual({
+    from: "2026-03-08T03:15:27.123Z",
+    to: "2026-03-09T03:15:27.123Z",
+  });
+  expect(presetRange("today", now).from).toBe("2026-03-09T00:00:00.000Z");
+});

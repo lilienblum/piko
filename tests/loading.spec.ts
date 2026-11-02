@@ -95,7 +95,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
   const release = await hold(page, "**/api/products/*/query");
   try {
     await page.getByRole("button", { name: "Choose date range", exact: true }).click();
-    await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Last 7 days", exact: true }).click();
     const pending = page.locator(".overview-grid");
     await expect(pending).toHaveAttribute("aria-busy", "true");
     await expect(pending).toBeVisible();

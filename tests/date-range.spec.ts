@@ -25,6 +25,7 @@ async function open(page: Page) {
   await page.goto(`/projects/${project.slug}?source=all&days=30`);
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("4");
 }
+const dateMenu = (page: Page) => page.getByRole("menu", { name: "Date range", exact: true });
 const picker = (page: Page) => page.getByRole("dialog", { name: "Date range", exact: true });
 const trigger = (page: Page) =>
   page.getByRole("button", { name: "Choose date range", exact: true });
@@ -57,7 +58,7 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
   await open(page);
   const original = page.url();
   await trigger(page).click();
-  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
+  await dateMenu(page).getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
   await expect(picker(page).getByRole("grid")).toHaveCount(2);
   await picker(page).locator(`button[data-day="${start}"]`).click();
   await expect(
@@ -93,7 +94,9 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
     await shared.goto(link);
     await expect(shared.locator(".activity-widget .widget-value").first()).toHaveText("2");
     await trigger(shared).click();
-    await picker(shared).getByRole("button", { name: "Custom range", exact: true }).click();
+    await dateMenu(shared)
+      .getByRole("menuitemradio", { name: "Custom range", exact: true })
+      .click();
     await expect(picker(shared).getByLabel("Start date", { exact: true })).toHaveValue(start);
     await expect(picker(shared).getByLabel("End date", { exact: true })).toHaveValue(end);
     await expect(picker(shared).locator(`button[data-day="${start}"]`)).toHaveAttribute(
@@ -104,7 +107,7 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
     await recipient.close();
   }
   await trigger(page).click();
-  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Last 7 days", exact: true }).click();
   await expect(trigger(page)).toContainText("Last 7 days");
   expect(new URL(page.url()).searchParams.has("from")).toBe(false);
   expect(new URL(page.url()).searchParams.has("to")).toBe(false);
@@ -123,7 +126,7 @@ for (const width of [1440, 390]) {
     const url = page.url();
     const before = await page.locator("#main-content").boundingBox();
     await trigger(page).click();
-    await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
+    await dateMenu(page).getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
     await expect(picker(page).getByRole("grid")).toHaveCount(width < 768 ? 1 : 2);
     expect(await page.locator("#main-content").boundingBox()).toEqual(before);
     const box = await picker(page).boundingBox();
@@ -144,7 +147,7 @@ for (const width of [1440, 390]) {
     await expect(trigger(page)).toBeFocused();
     expect(page.url()).toBe(url);
     await trigger(page).click();
-    await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
+    await dateMenu(page).getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
     await expect(picker(page).getByLabel("Start date", { exact: true })).not.toHaveValue(
       "2026-02-30",
     );
@@ -182,7 +185,7 @@ test("changing calendar dates preserves a drilldown's event and typed filter", a
   );
   await expect(page.getByText("across 1 matching events")).toBeVisible();
   await trigger(page).click();
-  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
+  await dateMenu(page).getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
   const widerStart = new Date(Date.parse(from) - day).toISOString().slice(0, 10);
   await picker(page).getByLabel("Start date", { exact: true }).fill(widerStart);
   await picker(page).getByLabel("End date", { exact: true }).fill(today);
@@ -204,7 +207,7 @@ test("calendar supports keyboard focus, range selection, and dismissal", async (
   await open(page);
   const url = page.url();
   await trigger(page).click();
-  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
+  await dateMenu(page).getByRole("menuitemradio", { name: "Custom range", exact: true }).click();
   await expect(picker(page).locator('button[data-range-start="true"]')).toBeFocused();
   const first = picker(page).locator(`button[data-day="${start}"]`);
   await first.focus();
@@ -232,7 +235,7 @@ test("one period picker navigates days and calendar months without future dates"
 }) => {
   await open(page);
   await trigger(page).click();
-  await picker(page).getByRole("button", { name: "Today", exact: true }).click();
+  await dateMenu(page).getByRole("menuitemradio", { name: "Today", exact: true }).click();
   await expect(trigger(page)).toContainText("Today");
   await expect(page.getByRole("button", { name: "Next period", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Previous period", exact: true }).click();
@@ -241,7 +244,7 @@ test("one period picker navigates days and calendar months without future dates"
   await page.getByRole("button", { name: "Next period", exact: true }).click();
   await expect(trigger(page)).toContainText("Today");
   await trigger(page).click();
-  await picker(page).getByRole("button", { name: "Month to date", exact: true }).click();
+  await dateMenu(page).getByRole("menuitemradio", { name: "Month to date", exact: true }).click();
   await page.getByRole("button", { name: "Previous period", exact: true }).click();
   const first = new Date(`${today.slice(0, 7)}-01T00:00:00.000Z`);
   const previous = new Date(first);
@@ -270,17 +273,17 @@ for (const size of [
     await open(page);
     const before = await trigger(page).boundingBox();
     await trigger(page).click();
-    const menu = picker(page);
+    const menu = dateMenu(page);
     await expect(menu).toHaveCSS("opacity", "1");
-    const options = menu.getByRole("group", { name: "Date range", exact: true });
-    await expect(options).toHaveCSS("flex-direction", "column");
-    const rows = await options.getByRole("button").evaluateAll((elements) =>
+    const options = menu;
+    await expect(menu.getByRole("separator")).toHaveCount(4);
+    const rows = await options.getByRole("menuitemradio").evaluateAll((elements) =>
       elements.map((el) => {
         const rect = el.getBoundingClientRect();
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       }),
     );
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(11);
     for (let index = 1; index < rows.length; index++) {
       expect(rows[index].y).toBeGreaterThanOrEqual(rows[index - 1].y + rows[index - 1].height - 1);
       expect(Math.abs(rows[index].x - rows[0].x)).toBeLessThan(1);
@@ -288,21 +291,21 @@ for (const size of [
     expect(await menu.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     const box = await menu.boundingBox();
     expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(size.height);
-    const last = options.getByRole("button", { name: "Last 12 months", exact: true });
+    const last = options.getByRole("menuitemradio", { name: "Last 12 months", exact: true });
     if (size.height >= 800) {
       await expect(last).toBeInViewport();
       await expect(
-        menu.getByRole("button", { name: "Custom range", exact: true }),
+        menu.getByRole("menuitemradio", { name: "Custom range", exact: true }),
       ).toBeInViewport();
     } else {
       await last.focus();
       await expect(last).toBeInViewport();
-      const custom = menu.getByRole("button", { name: "Custom range", exact: true });
+      const custom = menu.getByRole("menuitemradio", { name: "Custom range", exact: true });
       await custom.focus();
       await expect(custom).toBeInViewport();
       expect(await menu.evaluate((el) => el.scrollLeft)).toBe(0);
     }
-    await options.getByRole("button", { name: "Today", exact: true }).click();
+    await options.getByRole("menuitemradio", { name: "Today", exact: true }).click();
     const prev = page.getByRole("button", { name: "Previous period", exact: true });
     const next = page.getByRole("button", { name: "Next period", exact: true });
     const previousBox = await prev.boundingBox();
@@ -319,7 +322,7 @@ for (const size of [
       true,
     );
     await trigger(page).click();
-    await expect(options).toHaveCSS("flex-direction", "column");
+    await expect(options.getByRole("menuitemradio")).toHaveCount(11);
     await expect(menu).toHaveCSS("opacity", "1");
     await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
     await page.screenshot({ path: `/tmp/piko-date-menu-${size.width}x${size.height}.png` });
@@ -328,3 +331,148 @@ for (const size of [
     expect((await trigger(page).boundingBox())?.y).toBe(before?.y);
   });
 }
+
+test("visible preset shortcuts select periods and bracket keys navigate without future dates", async ({
+  page,
+}) => {
+  await open(page);
+  const request = page.waitForRequest(
+    (r) =>
+      r.url().endsWith(`/products/${project.id}/query`) &&
+      Date.parse(r.postDataJSON().to) - Date.parse(r.postDataJSON().from) === day,
+  );
+  await trigger(page).press("h");
+  await request;
+  await expect(trigger(page)).toContainText("Last 24 hours");
+  await expect(page.getByText(/One point per hour/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Previous period", exact: true })).toHaveCount(0);
+  for (const [key, value, label] of [
+    ["d", "today", "Today"],
+    ["e", "yesterday", "Yesterday"],
+    ["w", "7", "Last 7 days"],
+    ["f", "30", "Last 30 days"],
+    ["n", "90", "Last 90 days"],
+    ["m", "month", "Month to date"],
+    ["p", "last-month", "Last month"],
+    ["y", "year", "Year to date"],
+    ["l", "12months", "Last 12 months"],
+  ]) {
+    await trigger(page).press(key);
+    await expect(trigger(page)).toContainText(label);
+    const params = new URL(page.url()).searchParams;
+    expect(params.get(/^\d+$/.test(value) ? "days" : "period")).toBe(value);
+    expect(params.get("source")).toBe("all");
+    await trigger(page).click();
+    const item = dateMenu(page).getByRole("menuitemradio", { name: label, exact: true });
+    await expect(item).toHaveAttribute("aria-checked", "true");
+    await expect(item).toHaveAttribute("aria-keyshortcuts", key.toUpperCase());
+    await expect(item.locator("kbd")).toHaveText(key.toUpperCase());
+    await page.keyboard.press("Escape");
+    await expect(trigger(page)).toBeFocused();
+  }
+  // Shortcuts also work inside the menu, before Base UI's typeahead.
+  await trigger(page).click();
+  await dateMenu(page).press("d");
+  await expect(trigger(page)).toContainText("Today");
+  await expect(dateMenu(page)).toBeHidden();
+  await trigger(page).press("[");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("from"))
+    .toBe(new Date(midnight - day).toISOString());
+  await trigger(page).press("]");
+  await expect(trigger(page)).toContainText("Today");
+  const url = page.url();
+  await trigger(page).press("]");
+  expect(page.url()).toBe(url);
+});
+
+test("custom shortcut and preset back action hand off focus without scrolling", async ({
+  page,
+}) => {
+  await open(page);
+  const before = await trigger(page).boundingBox();
+  await trigger(page).click();
+  await dateMenu(page).press("c");
+  await expect(picker(page)).toBeVisible();
+  await expect(picker(page).locator('button[data-range-start="true"]')).toBeFocused();
+  expect(await trigger(page).boundingBox()).toEqual(before);
+  await picker(page).getByRole("button", { name: "Preset periods" }).click();
+  await expect(dateMenu(page)).toBeVisible();
+  await expect(picker(page)).toBeHidden();
+  await dateMenu(page).press("Escape");
+  await expect(trigger(page)).toBeFocused();
+  await trigger(page).press("c");
+  await expect(picker(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(trigger(page)).toBeFocused();
+  expect(await trigger(page).boundingBox()).toEqual(before);
+});
+
+test("shortcuts leave typing, other overlays, and modified key presses alone", async ({ page }) => {
+  await open(page);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page.getByText("across 4 matching events")).toBeVisible();
+  const original = page.url();
+  await page.getByRole("button", { name: "Filter", exact: true }).click();
+  const input = page.getByLabel("Property", { exact: true });
+  await input.pressSequentially("new_day");
+  await expect(input).toHaveValue("new_day");
+  expect(page.url()).toBe(original);
+  const projectSelect = page.getByRole("combobox", { name: "Select project", exact: true });
+  await projectSelect.click();
+  await page.keyboard.press("d");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  expect(page.url()).toBe(original);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Inspect checkout", exact: true }).first().click();
+  await page.getByRole("dialog").press("d");
+  expect(page.url()).toBe(original);
+  await page.keyboard.press("Escape");
+  await trigger(page).press("Control+d");
+  await trigger(page).press("Meta+d");
+  await trigger(page).press("Alt+d");
+  expect(page.url()).toBe(original);
+  await trigger(page).press("w");
+  await expect(trigger(page)).toContainText("Last 7 days");
+  await expect(input).toHaveValue("new_day");
+});
+
+test("date shortcuts can be disabled persistently while ordinary menu navigation still works", async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  const preference = page.getByRole("switch", { name: "Date keyboard shortcuts", exact: true });
+  await expect(preference).toBeChecked();
+  await preference.click();
+  await expect(preference).not.toBeChecked();
+  await page.reload();
+  await expect(preference).not.toBeChecked();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await trigger(page).press("d");
+  await expect(trigger(page)).toContainText("Last 30 days");
+  await trigger(page).click();
+  await expect(dateMenu(page).locator("kbd")).toHaveCount(0);
+  await expect(dateMenu(page).locator("[aria-keyshortcuts]")).toHaveCount(0);
+  const yesterday = dateMenu(page).getByRole("menuitemradio", { name: "Yesterday", exact: true });
+  await yesterday.focus();
+  await yesterday.press("ArrowUp");
+  const current = dateMenu(page).getByRole("menuitemradio", { name: "Today", exact: true });
+  await expect(current).toBeFocused();
+  await current.press("Enter");
+  await expect(trigger(page)).toContainText("Today");
+});
+
+test("custom shortcut brings an off-screen date control into view", async ({ page }) => {
+  await open(page);
+  await page.getByRole("heading", { name: "Duration", exact: true }).scrollIntoViewIfNeeded();
+  expect((await trigger(page).boundingBox())?.y).toBeLessThan(0);
+  await page.keyboard.press("c");
+  await expect(picker(page)).toBeVisible();
+  await expect(trigger(page)).toBeInViewport();
+  const box = await picker(page).boundingBox();
+  expect(box?.y).toBeGreaterThanOrEqual(0);
+  expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(page.viewportSize()?.height ?? 0);
+  await page.keyboard.press("Escape");
+  await expect(trigger(page)).toBeFocused();
+});
