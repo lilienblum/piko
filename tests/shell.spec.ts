@@ -1,4 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function expectSourcesFit(page: Page) {
+  const sources = page.locator(".workspace-sources");
+  await expect(sources).toBeVisible();
+  await expect
+    .poll(() => sources.evaluate((element) => element.scrollWidth - element.clientWidth))
+    .toBe(0);
+}
 
 const endpoint = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
 let project: { id: string; name: string };
@@ -69,6 +77,7 @@ for (const route of ["/", "/explore", "/settings"]) {
             page.getByRole("button", { name: "Last 30 days", exact: true }),
           ).toBeDisabled();
         await page.evaluate(() => document.fonts.ready);
+        if (width >= 768) await expectSourcesFit(page);
         const shell = page.locator("#main-content");
         const before = await shell.boundingBox();
         const content = await page.locator(".page-content").boundingBox();
@@ -102,6 +111,7 @@ for (const route of ["/", "/explore", "/settings"]) {
         expect(loaded?.y).toBe(content?.y);
         expect(await toolbar?.evaluate((element) => element.isConnected)).toBe(true);
         expect(errors).toEqual([]);
+        if (width >= 768) await expectSourcesFit(page);
         await page.screenshot({ path: test.info().outputPath("after-hydration.png") });
       } finally {
         release();
@@ -133,3 +143,39 @@ test("workspace failure keeps navigation and retries inside the same shell", asy
   expect(await navigation?.evaluate((element) => element.isConnected)).toBe(true);
   expect(requests).toBe(beforeRetry + 1);
 });
+
+for (const collapsed of [false, true]) {
+  test(`source list scrolls vertically within a short ${collapsed ? "collapsed" : "expanded"} sidebar`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: collapsed ? 360 : 400 });
+    await page.addInitScript(
+      ({ id, collapsed }) => {
+        localStorage.setItem("piko:product", id);
+        localStorage.setItem("piko:sidebar", collapsed ? "collapsed" : "expanded");
+      },
+      { id: project.id, collapsed },
+    );
+    await page.goto("/");
+    await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(
+      project.name,
+    );
+    await expectSourcesFit(page);
+    const sources = page.locator(".workspace-sources");
+    expect(await sources.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+      true,
+    );
+    const lastSource = page
+      .getByRole("navigation", { name: "Project sources" })
+      .getByRole("button")
+      .last();
+    await lastSource.focus();
+    await expect(lastSource).toBeFocused();
+    await expect(lastSource).toBeInViewport({ ratio: 1 });
+    expect(await sources.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expectSourcesFit(page);
+    await expect(page.getByRole("link", { name: "Documentation", exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+  });
+}
