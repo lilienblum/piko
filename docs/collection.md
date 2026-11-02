@@ -4,12 +4,12 @@ A project can combine multiple collectors: for example, Website, iOS app, and CL
 
 Identity remains optional and scoped to the project and identity kind. No person is automatically linked across web/mobile/tool sources. If you explicitly send the same opaque actor ID and identity kind from two sources, combined distinct-actor queries count it once. Use source-specific random IDs if that linkage is not intended. Visitor and installation identities remain distinct.
 
-## TypeScript client
+## JavaScript and TypeScript SDK
 
-Copy `sdk/typescript/client.ts` into a website, Bun tool, or server. It has no dependencies. Create a project and choose or add a source in Settings, then create an ingestion key for that source. Use only source-scoped ingestion keys in collectors; management access remains separate. For websites, use the browser tracker below to apply privacy signals and opt-out behavior. The generic client sends explicit calls and does not manage collection preferences.
+Use the [`@piko/sdk` package](../sdk/typescript/README.md) in a website, Bun tool, or server. It ships JavaScript and TypeScript declarations with no runtime dependencies. The package guide covers local installation until registry publication. Existing source imports from `sdk/typescript/client.ts` also remain supported. Create a project and choose or add a source in Settings, then create an ingestion key for that source. Use only source-scoped ingestion keys in collectors; management access remains separate. For websites, use the browser tracker below to apply privacy signals and opt-out behavior. The generic client sends explicit calls and does not manage collection preferences.
 
 ```ts
-import { Piko } from "./sdk/typescript/client";
+import { Piko } from "@piko/sdk";
 const piko = new Piko({
   endpoint: "https://piko.example.com",
   key: "pk_...",
@@ -26,6 +26,8 @@ await piko.send({
 `sendBatch` accepts 1–100 events. IDs and timestamps are materialized once before retrying, preserving deduplication. The total request deadline includes retries and backoff. Redirects are refused, cookies and Referer are omitted, and an optional `signal` cancels delivery. 400/401/413/422 are not retried; retryable network/server failures and 429 get at most one retry by default. A Retry-After longer than the remaining deadline ends delivery immediately. Awaited sends return durable acknowledgment or throw a delivery error; catch errors if analytics must not fail your business operation.
 
 ## Browser tracker
+
+Bundled applications can import `startBrowserTracker` from `@piko/sdk/browser`. The hosted module remains available without installing a package:
 
 ```html
 <script type="module" referrerpolicy="no-referrer">
@@ -69,7 +71,31 @@ On withdrawal, call `tracker.optOut()`. It stops collection, removes hooks/timer
 
 The pending queue holds 100 events, sends batches of up to 20 (targeting 60 KiB of JSON), and flushes every two seconds. Full queues drop new events. Delivery uses keepalive fetch for bodies up to 64 KiB and ordinary fetch for larger bodies, with a short total deadline. Ordinary fetch cannot outlive page unload, and browser shutdown may lose events. `flush()` attempts one bounded batch. `shutdown()` stops collection and drains queued batches within one total `timeoutMs` deadline (800 ms by default), discarding anything still pending at the deadline. Neither guarantees delivery. `shutdown()` is a normal lifecycle flush; use **`optOut()`** for privacy withdrawal. Install only one tracker instance per page.
 
-## Rust CLI
+## Rust SDK
+
+Use the standalone [`piko-sdk` crate](../sdk/rust/README.md) for new Rust integrations. It uses reqwest/rustls, Tokio, serde/serde_json, uuid, and chrono; it has no dependency on Piko's server or databases.
+
+```rust
+use piko_sdk::{Event, Piko};
+
+let client = Piko::new("https://piko.example.com", "pk_YOUR_SOURCE_KEY")?;
+let event = Event::new("command_run", "cli")
+    .property("command", "build")
+    .property("success", true)
+    .property("duration_ms", 42_u64);
+let ack = client.send(&event).await?;
+```
+
+Run on a Tokio runtime and send only after your application's collection preference permits it. `Event::new` captures a UUID and timestamp once, without an actor or installation identity. `send_batch` accepts 1–100 events within 256 KiB. A send returns the committed acknowledgment or a typed error. The default 800 ms total deadline includes retries, response reads, and backoff; dropping the future cancels pending delivery. Use `Piko::with_options` to adjust the deadline and retry count. Reuse the original event when retrying in your application.
+
+`sdk/rust/examples/collect.rs` demonstrates the public SDK with explicit opt-in and `DO_NOT_TRACK` handling:
+
+```sh
+PIKO_TELEMETRY=1 PIKO_ENDPOINT=http://127.0.0.1:3001 \
+PIKO_INGESTION_KEY=pk_YOUR_KEY cargo run -p piko-sdk --example collect
+```
+
+## Existing Rust CLI worker
 
 The implementation is in `apps/api/src/telemetry.rs`; the runnable example is `apps/api/examples/cli.rs`.
 

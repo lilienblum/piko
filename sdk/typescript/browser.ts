@@ -1,4 +1,4 @@
-import { Piko, type Event, type Options, type Properties } from "./client";
+import { Piko, type Event, type Options, type Properties } from "./client.js";
 const campaignParams = [
   "utm_source",
   "utm_medium",

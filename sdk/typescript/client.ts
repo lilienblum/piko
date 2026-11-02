@@ -24,23 +24,46 @@ export class DeliveryError extends Error {
     public status?: number,
   ) {
     super(message);
+    this.name = "DeliveryError";
   }
 }
 /** Small dependency-free client. A send's total deadline includes retries and backoff. */
 export class Piko {
-  constructor(private options: Options) {
+  private readonly options: Options;
+  constructor(options: Options) {
     const timeout = options.timeoutMs ?? 800;
     const retries = options.retries ?? 1;
     if (!Number.isSafeInteger(timeout) || timeout <= 0)
       throw new Error("timeoutMs must be a positive finite integer");
     if (!Number.isSafeInteger(retries) || retries < 0)
       throw new Error("retries must be a nonnegative finite integer");
+    const endpoint = new URL(options.endpoint);
+    if (
+      !["http:", "https:"].includes(endpoint.protocol) ||
+      endpoint.username ||
+      endpoint.password ||
+      endpoint.href.includes("?") ||
+      endpoint.href.includes("#")
+    )
+      throw new Error("endpoint must be an HTTP(S) URL without credentials, query, or fragment");
+    if (!options.key.trim() || /[\r\n]/.test(options.key)) throw new Error("key is required");
+    this.options = { ...options, endpoint: endpoint.href.replace(/\/+$/, "") };
   }
   send(event: Event): Promise<Ack> {
     return this.sendBatch([event]);
   }
-  async sendBatch(events: Event[]): Promise<Ack> {
+  async sendBatch(events: readonly Event[]): Promise<Ack> {
     if (!events.length || events.length > 100) throw new Error("Send 1–100 events");
+    const eventCount = events.length;
+    for (const event of events) {
+      for (const value of Object.values(event.properties ?? {})) {
+        if (
+          !["string", "number", "boolean"].includes(typeof value) ||
+          (typeof value === "number" && !Number.isFinite(value))
+        )
+          throw new Error("Properties must be finite numbers, strings, or booleans");
+      }
+    }
     // IDs and timestamps are materialized ONCE, before all retry attempts.
     const payload = JSON.stringify({
       events: events.map((event) => ({
@@ -49,9 +72,10 @@ export class Piko {
         timestamp: event.timestamp ?? new Date().toISOString(),
       })),
     });
+    const payloadBytes = new TextEncoder().encode(payload).byteLength;
+    if (payloadBytes > 256 * 1024) throw new Error("Batch exceeds the API's 256 KiB body limit");
     // Browsers reject larger keepalive bodies even while the page is still open.
-    const keepalive =
-      (this.options.keepalive ?? false) && new TextEncoder().encode(payload).byteLength <= 65_536;
+    const keepalive = (this.options.keepalive ?? false) && payloadBytes <= 65_536;
     const timeout = this.options.timeoutMs ?? 800;
     const deadline = Date.now() + timeout;
     const timeoutSignal = AbortSignal.timeout(timeout);
@@ -76,7 +100,19 @@ export class Piko {
           referrerPolicy: "no-referrer",
           redirect: "error",
         });
-        if (response.ok) return (await response.json()) as Ack;
+        if (response.ok) {
+          const ack = (await response.json()) as Ack | null;
+          if (
+            !ack ||
+            !Number.isSafeInteger(ack.accepted) ||
+            !Number.isSafeInteger(ack.duplicates) ||
+            ack.accepted < 0 ||
+            ack.duplicates < 0 ||
+            ack.accepted + ack.duplicates !== eventCount
+          )
+            throw new DeliveryError("Invalid ingestion acknowledgment", response.status);
+          return ack;
+        }
         const message = await response.json().catch(() => ({ error: response.statusText }));
         lastError = new DeliveryError(message?.error ?? "Delivery failed", response.status);
         if (response.status < 500 && response.status !== 429) throw lastError;

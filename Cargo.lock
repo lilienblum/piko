@@ -1341,6 +1341,7 @@ dependencies = [
  "chrono",
  "duckdb",
  "http-body-util",
+ "piko-sdk",
  "reqwest",
  "rusqlite",
  "serde",
@@ -1353,6 +1354,18 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "piko-sdk"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
  "uuid",
 ]
 

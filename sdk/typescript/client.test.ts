@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { Piko } from "./client";
+import { Piko, type Properties } from "./client";
 const original = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = original;
@@ -151,4 +151,105 @@ test("delivery limits must be finite integers", () => {
     expect(() => new Piko({ endpoint: "http://localhost", key: "key", timeoutMs })).toThrow();
   for (const retries of [NaN, Infinity, -1, 0.5])
     expect(() => new Piko({ endpoint: "http://localhost", key: "key", retries })).toThrow();
+});
+
+test("JavaScript properties are never silently coerced to null or dropped", async () => {
+  let attempts = 0;
+  globalThis.fetch = (async () => {
+    attempts++;
+    return Response.json({ accepted: 1, duplicates: 0 });
+  }) as unknown as typeof fetch;
+  const client = new Piko({ endpoint: "http://localhost", key: "key" });
+  for (const value of [NaN, Infinity, null, undefined, [], {}, 1n]) {
+    await expect(
+      client.send({ name: "test", source: "sdk", properties: { value } as unknown as Properties }),
+    ).rejects.toThrow("Properties must be");
+  }
+  expect(attempts).toBe(0);
+});
+
+test("malformed or inconsistent acknowledgments do not report successful delivery", async () => {
+  let attempts = 0;
+  for (const ack of [
+    null,
+    {},
+    { accepted: 1 },
+    { accepted: -1, duplicates: 2 },
+    { accepted: 2, duplicates: 0 },
+    { accepted: 0.5, duplicates: 0.5 },
+  ]) {
+    globalThis.fetch = (async () => {
+      attempts++;
+      return Response.json(ack);
+    }) as unknown as typeof fetch;
+    await expect(
+      new Piko({ endpoint: "http://localhost", key: "key" }).send({ name: "test", source: "sdk" }),
+    ).rejects.toThrow("Invalid ingestion acknowledgment");
+  }
+  expect(attempts).toBe(6);
+});
+
+test("batch count and serialized byte limits fail before sending", async () => {
+  let attempts = 0;
+  globalThis.fetch = (async () => {
+    attempts++;
+    return Response.json({ accepted: 1, duplicates: 0 });
+  }) as unknown as typeof fetch;
+  const client = new Piko({ endpoint: "http://localhost", key: "key" });
+  const event = { name: "test", source: "sdk" };
+  await expect(client.sendBatch([])).rejects.toThrow("1–100");
+  await expect(client.sendBatch(Array(101).fill(event))).rejects.toThrow("1–100");
+  await expect(
+    client.send({ ...event, properties: { large: "東京".repeat(50_000) } }),
+  ).rejects.toThrow("256 KiB");
+  expect(attempts).toBe(0);
+});
+
+test("constructor snapshots options and supports an endpoint path prefix", async () => {
+  const options = { endpoint: "https://example.com/piko///", key: "original" };
+  const client = new Piko(options);
+  options.endpoint = "https://unexpected.example";
+  options.key = "changed";
+  globalThis.fetch = (async (input: unknown, init: RequestInit) => {
+    expect(input).toBe("https://example.com/piko/api/ingest");
+    expect(new Headers(init.headers).get("authorization")).toBe("Bearer original");
+    const event = JSON.parse(init.body as string).events[0];
+    expect(event.event_id).toBe("stable");
+    expect(event.timestamp).toBe("2026-11-02T00:00:00Z");
+    return Response.json({ accepted: 0, duplicates: 1 });
+  }) as typeof fetch;
+  expect(
+    await client.send({
+      name: "test",
+      source: "sdk",
+      event_id: "stable",
+      timestamp: "2026-11-02T00:00:00Z",
+    }),
+  ).toEqual({ accepted: 0, duplicates: 1 });
+});
+
+test("invalid endpoints cannot carry credentials, queries, or fragments", () => {
+  for (const endpoint of [
+    "ftp://example.com",
+    "https://user:pass@example.com",
+    "https://example.com/?key=x",
+    "https://example.com/#fragment",
+    "https://example.com/?",
+    "https://example.com/#",
+  ]) {
+    expect(() => new Piko({ endpoint, key: "key" })).toThrow();
+  }
+  for (const key of ["", " ", "key\r\nother: header"]) {
+    expect(() => new Piko({ endpoint: "https://example.com", key })).toThrow();
+  }
+});
+
+test("mutating the caller's batch during delivery does not change acknowledgment validation", async () => {
+  const events = [{ name: "test", source: "sdk" }];
+  globalThis.fetch = (async () => {
+    events.length = 0;
+    return Response.json({ accepted: 1, duplicates: 0 });
+  }) as unknown as typeof fetch;
+  const client = new Piko({ endpoint: "http://localhost", key: "key" });
+  expect(await client.sendBatch(events)).toEqual({ accepted: 1, duplicates: 0 });
 });

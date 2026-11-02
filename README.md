@@ -73,6 +73,13 @@ Project, source, range, chart choices, and applied Explore queries live in the U
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
+### SDKs
+
+- [JavaScript / TypeScript — `@piko/sdk`](sdk/typescript/README.md): zero runtime dependencies, ESM and TypeScript declarations, explicit sends and a privacy-aware browser tracker.
+- [Rust — `piko-sdk`](sdk/rust/README.md): standalone async collection using reqwest/rustls, Tokio, serde/serde_json, uuid, and chrono. It does not pull in the API server or databases.
+
+Both support typed properties, batches, stable event IDs across bounded retries, and persistence acknowledgments. Packages are available from this checkout; they have not been published to registries. The linked guides cover local installation and examples.
+
 Existing projects migrate automatically to an initial source; existing keys and counts remain valid. Back up the stopped API's entire data directory before upgrading. Restoring that backup is required to downgrade to a pre-source binary. See [source and migration semantics](docs/api.md#projects-and-sources). The HTTP paths still use `/products` for existing integrations.
 
 ## Privacy defaults

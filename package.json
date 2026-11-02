@@ -6,7 +6,8 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "bun scripts/dev.ts",
-    "build": "bun run --cwd apps/dashboard build && bun typecheck",
+    "build": "bun run build:sdk && bun run --cwd apps/dashboard build && bun typecheck",
+    "build:sdk": "bun run --cwd sdk/typescript build",
     "fmt": "bun node_modules/@biomejs/biome/bin/biome format --write . && cargo fmt --all",
     "fmt:check": "bun node_modules/@biomejs/biome/bin/biome format . && cargo fmt --all --check",
     "lint": "bun node_modules/@biomejs/biome/bin/biome lint .",
@@ -33,7 +34,8 @@
     "vite": "^8.3.5"
   },
   "workspaces": [
-    "apps/dashboard"
+    "apps/dashboard",
+    "sdk/typescript"
   ],
   "license": "MIT",
   "dependencies": {

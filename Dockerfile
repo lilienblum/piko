@@ -3,6 +3,7 @@ FROM rust:1-bookworm AS api-build
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY apps/api ./apps/api
+COPY sdk/rust ./sdk/rust
 RUN cargo build --locked --release -p piko
 
 FROM debian:bookworm-slim AS api
@@ -18,6 +19,7 @@ FROM oven/bun:1.4.4 AS dashboard-build
 WORKDIR /app
 COPY package.json bun.lock tsconfig.json ./
 COPY apps/dashboard/package.json ./apps/dashboard/package.json
+COPY sdk/typescript/package.json ./sdk/typescript/package.json
 RUN bun install --frozen-lockfile
 COPY apps/dashboard ./apps/dashboard
 COPY sdk ./sdk

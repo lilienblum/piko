@@ -1,0 +1,36 @@
+{
+  "name": "@piko/sdk",
+  "version": "0.1.0",
+  "description": "Dependency-free Piko event collection for JavaScript, TypeScript, and browsers",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lilienblum/piko.git",
+    "directory": "sdk/typescript"
+  },
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun ../../node_modules/typescript/bin/tsc -p tsconfig.build.json",
+    "prepack": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
