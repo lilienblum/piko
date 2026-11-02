@@ -7,38 +7,41 @@ use rusqlite::{OptionalExtension, params};
 pub fn migrate(db: &mut rusqlite::Connection) -> anyhow::Result<()> {
     let version: i64 = db.query_row("PRAGMA user_version", [], |row| row.get(0))?;
     anyhow::ensure!(
-        version <= 3,
+        version <= 4,
         "Catalog schema is newer than this API supports"
     );
-    if version == 3 {
+    if version == 4 {
         return Ok(());
     }
     let tx = db.transaction()?;
-    tx.execute_batch(
-        "CREATE TABLE IF NOT EXISTS sources(
+    if version < 3 {
+        tx.execute_batch(
+            "CREATE TABLE IF NOT EXISTS sources(
         id TEXT PRIMARY KEY, product_id TEXT NOT NULL REFERENCES products(id),
         name TEXT NOT NULL COLLATE NOCASE, kind TEXT NOT NULL, created_at TEXT NOT NULL,
         UNIQUE(product_id,name));",
-    )?;
-    let has_source = tx
-        .prepare("PRAGMA table_info(ingestion_keys)")?
-        .query_map([], |r| r.get::<_, String>(1))?
-        .collect::<rusqlite::Result<Vec<_>>>()?
-        .iter()
-        .any(|name| name == "source_id");
-    if !has_source {
-        tx.execute_batch(
-            "ALTER TABLE ingestion_keys ADD COLUMN source_id TEXT REFERENCES sources(id);",
         )?;
-    }
-    // The project ID is the stable initial source ID, including for historical event rows.
-    tx.execute_batch("INSERT OR IGNORE INTO sources(id,product_id,name,kind,created_at)
+        let has_source = tx
+            .prepare("PRAGMA table_info(ingestion_keys)")?
+            .query_map([], |r| r.get::<_, String>(1))?
+            .collect::<rusqlite::Result<Vec<_>>>()?
+            .iter()
+            .any(|name| name == "source_id");
+        if !has_source {
+            tx.execute_batch(
+                "ALTER TABLE ingestion_keys ADD COLUMN source_id TEXT REFERENCES sources(id);",
+            )?;
+        }
+        // The project ID is the stable initial source ID, including for historical event rows.
+        tx.execute_batch("INSERT OR IGNORE INTO sources(id,product_id,name,kind,created_at)
         SELECT id,id,CASE kind WHEN 'website' THEN 'Website' WHEN 'tool' THEN 'CLI' WHEN 'mobile' THEN 'Mobile app' ELSE 'Events' END,kind,created_at FROM products;
         UPDATE ingestion_keys SET source_id=product_id WHERE source_id IS NULL;
         ALTER TABLE sources ADD COLUMN icon TEXT;
         ALTER TABLE sources DROP COLUMN kind;
         ALTER TABLE products DROP COLUMN kind;
         PRAGMA user_version=3;")?;
+    }
+    tx.execute_batch("ALTER TABLE ingestion_keys ADD COLUMN allowed_origins TEXT NOT NULL DEFAULT '[]'; PRAGMA user_version=4;")?;
     tx.commit()?;
     Ok(())
 }
@@ -108,7 +111,9 @@ mod tests {
         assert_eq!(sources[1].name, "iOS app");
         assert_eq!(sources[1].icon, None);
         assert_eq!(
-            crate::store::resolve_key(&db, "pk_existing").unwrap().1,
+            crate::store::resolve_key(&db, "pk_existing", None)
+                .unwrap()
+                .1,
             "mobile"
         );
         for table in ["products", "sources"] {
@@ -137,7 +142,9 @@ mod tests {
             Some("ios")
         );
         assert_eq!(
-            crate::store::resolve_key(&db, "pk_existing").unwrap().1,
+            crate::store::resolve_key(&db, "pk_existing", None)
+                .unwrap()
+                .1,
             "mobile"
         );
         save(

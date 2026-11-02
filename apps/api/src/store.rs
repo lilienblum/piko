@@ -176,6 +176,7 @@ pub fn create_key(
     id: &str,
     label: &str,
     source_id: Option<&str>,
+    allowed_origins: &[String],
 ) -> ApiResult<serde_json::Value> {
     product(db, id)?;
     let source_id = source_id.unwrap_or(id);
@@ -183,14 +184,17 @@ pub fn create_key(
     if label.trim().is_empty() || label.len() > 80 {
         return Err(ApiError::bad("Key label must be 1–80 bytes"));
     }
+    let allowed_origins = crate::origins::normalize(allowed_origins)?;
     let key = secret("pk_");
     let key_id = uuid::Uuid::new_v4().to_string();
-    db.execute("INSERT INTO ingestion_keys(id,product_id,label,prefix,hash,created_at,source_id) VALUES (?,?,?,?,?,?,?)",params![key_id,id,label.trim(),&key[..11],hash(&key),chrono::Utc::now().to_rfc3339(),source_id]).map_err(anyhow::Error::from)?;
-    Ok(serde_json::json!({"id":key_id,"key":key,"source_id":source_id}))
+    db.execute("INSERT INTO ingestion_keys(id,product_id,label,prefix,hash,created_at,source_id,allowed_origins) VALUES (?,?,?,?,?,?,?,?)",params![key_id,id,label.trim(),&key[..11],hash(&key),chrono::Utc::now().to_rfc3339(),source_id,serde_json::to_string(&allowed_origins).map_err(anyhow::Error::from)?]).map_err(anyhow::Error::from)?;
+    Ok(
+        serde_json::json!({"id":key_id,"key":key,"source_id":source_id,"allowed_origins":allowed_origins}),
+    )
 }
 pub fn keys(db: &rusqlite::Connection, id: &str) -> ApiResult<Vec<KeyInfo>> {
     product(db, id)?;
-    let mut q=db.prepare("SELECT id,label,prefix,created_at,revoked,source_id FROM ingestion_keys WHERE product_id=? ORDER BY created_at").map_err(anyhow::Error::from)?;
+    let mut q=db.prepare("SELECT id,label,prefix,created_at,revoked,source_id,allowed_origins FROM ingestion_keys WHERE product_id=? ORDER BY created_at").map_err(anyhow::Error::from)?;
     q.query_map([id], |r| {
         Ok(KeyInfo {
             id: r.get(0)?,
@@ -199,22 +203,35 @@ pub fn keys(db: &rusqlite::Connection, id: &str) -> ApiResult<Vec<KeyInfo>> {
             created_at: r.get(3)?,
             revoked: r.get(4)?,
             source_id: r.get(5)?,
+            allowed_origins: serde_json::from_str(&r.get::<_, String>(6)?).map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    6,
+                    rusqlite::types::Type::Text,
+                    Box::new(e),
+                )
+            })?,
         })
     })
     .map_err(anyhow::Error::from)?
     .collect::<rusqlite::Result<_>>()
     .map_err(|e| anyhow::Error::from(e).into())
 }
-pub fn resolve_key(db: &rusqlite::Connection, key: &str) -> ApiResult<(Product, String)> {
-    let resolved: Option<(String, String)> = db
+pub fn resolve_key(
+    db: &rusqlite::Connection,
+    key: &str,
+    origin: Option<&str>,
+) -> ApiResult<(Product, String)> {
+    let resolved: Option<(String, String, String)> = db
         .query_row(
-            "SELECT product_id,source_id FROM ingestion_keys WHERE hash=? AND revoked=0",
+            "SELECT product_id,source_id,allowed_origins FROM ingestion_keys WHERE hash=? AND revoked=0",
             [hash(key)],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )
         .optional()
         .map_err(anyhow::Error::from)?;
-    let (id, source_id) = resolved.ok_or_else(ApiError::unauthorized)?;
+    let (id, source_id, allowed) = resolved.ok_or_else(ApiError::unauthorized)?;
+    let allowed: Vec<String> = serde_json::from_str(&allowed).map_err(anyhow::Error::from)?;
+    crate::origins::check(&allowed, origin)?;
     crate::sources::get(db, &id, &source_id)?;
     Ok((product(db, &id)?, source_id))
 }

@@ -1,3 +1,4 @@
+import { AllowedOriginsField, KeyOriginsEditor, parseOrigins } from "./key-origins";
 import { useDisplayPreferences } from "./display-preferences";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -44,6 +45,7 @@ import { ErrorState } from "./shared";
 import { SourceSettings } from "./source-settings";
 import { SourceIcon } from "./source-icon";
 type KeyInfo = {
+  allowed_origins: string[];
   source_id: string;
   id: string;
   label: string;
@@ -228,6 +230,7 @@ function ProductSettings({ product }: { product: Product }) {
     | { status: "error"; message: string }
   >({ status: "loading" });
   const [label, setLabel] = useState("");
+  const [allowedOrigins, setAllowedOrigins] = useState("");
   const [createdKey, setCreatedKey] = useState<{ id: string; key: string } | null>(null);
   const newKey = createdKey?.key ?? "";
   const [error, setError] = useState("");
@@ -399,7 +402,22 @@ function ProductSettings({ product }: { product: Product }) {
                         {product.sources?.find((source) => source.id === k.source_id)?.name ??
                           "Initial source"}
                       </span>
+                      <span className="quiet break-all">
+                        {k.allowed_origins?.length
+                          ? k.allowed_origins.join(", ")
+                          : "Any origin · CLI and mobile allowed"}
+                      </span>
                     </div>
+                    {!k.revoked && (
+                      <KeyOriginsEditor
+                        productId={product.id}
+                        keyInfo={k}
+                        disabled={busy}
+                        onSaved={() =>
+                          loadKeys(undefined, "Origins saved. Could not refresh the key list. ")
+                        }
+                      />
+                    )}
                     {k.revoked ? (
                       <Badge variant="outline">Revoked</Badge>
                     ) : (
@@ -431,7 +449,11 @@ function ProductSettings({ product }: { product: Product }) {
                   const result = await api<{ id: string; key: string }>(
                     `/products/${product.id}/keys`,
                     "POST",
-                    { label, source_id: keySourceId },
+                    {
+                      label,
+                      source_id: keySourceId,
+                      allowed_origins: parseOrigins(allowedOrigins),
+                    },
                   );
                   setCreatedKey(result);
                   setLabel("");
@@ -475,6 +497,12 @@ function ProductSettings({ product }: { product: Product }) {
                     placeholder="e.g. Production website"
                   />
                 </Field>
+                <AllowedOriginsField
+                  id="key-origins"
+                  value={allowedOrigins}
+                  onChange={setAllowedOrigins}
+                  disabled={busy || keyState.status !== "ready"}
+                />
                 <Button
                   type="submit"
                   variant="outline"
@@ -497,7 +525,8 @@ function ProductSettings({ product }: { product: Product }) {
             </form>
             <p className="key-note">
               Browser keys are public identifiers. They can send events, but can’t read data or
-              manage your project.
+              manage your project. Origin restrictions reduce accidental collection and browser
+              misuse; a determined sender can forge headers.
             </p>
           </CardContent>
         </Card>

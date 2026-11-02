@@ -881,3 +881,107 @@ async fn existing_keys_and_events_migrate_to_the_initial_source_without_changing
         drop(state);
     }
 }
+
+#[tokio::test]
+async fn origin_restrictions_are_enforced_before_writing_and_persist() {
+    let f = Fixture::new(16);
+    let (id, native) = f.product("Restricted site").await;
+    let (other, _) = f.product("Other project").await;
+    let path = format!("/api/products/{id}/keys");
+    let (status, created) = call(&f.app, "POST", &path, "", json!({"label":"Browser","allowed_origins":["https://EXAMPLE.com:443/","https://*.example.com"]})).await;
+    assert_eq!(status, StatusCode::OK, "{created}");
+    let key = created["key"].as_str().unwrap();
+    let key_id = created["id"].as_str().unwrap();
+    assert_eq!(created["allowed_origins"][0], "https://example.com");
+    async fn send(app: &Router, key: &str, origin: Option<&str>) -> StatusCode {
+        let mut request = Request::builder()
+            .method("POST")
+            .uri("/api/ingest")
+            .header("authorization", format!("Bearer {key}"))
+            .header("content-type", "application/json");
+        if let Some(origin) = origin {
+            request = request.header("origin", origin);
+        }
+        app.clone()
+            .oneshot(
+                request
+                    .body(Body::from(event("same-retry-id", json!(12)).to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+    for origin in [
+        None,
+        Some("null"),
+        Some("https://evilexample.com"),
+        Some("https://example.com.evil.test"),
+        Some("http://app.example.com"),
+        Some("https://app.example.com:444"),
+    ] {
+        assert_eq!(send(&f.app, key, origin).await, StatusCode::FORBIDDEN);
+    }
+    let (_, empty) = call(
+        &f.app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        "",
+        range(),
+    )
+    .await;
+    assert_eq!(empty["summary"]["total"], 0);
+    for origin in ["https://example.com", "https://app.example.com"] {
+        assert_eq!(send(&f.app, key, Some(origin)).await, StatusCode::OK);
+    }
+    assert_eq!(send(&f.app, &native, None).await, StatusCode::OK);
+    let (status, _) = call(
+        &f.app,
+        "PATCH",
+        &format!("/api/products/{other}/keys/{key_id}"),
+        "",
+        json!({"allowed_origins":[]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (_, invalid) = call(
+        &f.app,
+        "POST",
+        &path,
+        "",
+        json!({"label":"bad","allowed_origins":["*"]}),
+    )
+    .await;
+    assert!(invalid["error"].is_string());
+    f.state.writer.stop().await;
+    let restarted = AppState::open(&config(f.dir.path(), 16)).unwrap();
+    let app = router(restarted.clone());
+    assert_eq!(send(&app, key, None).await, StatusCode::FORBIDDEN);
+    let (_, keys) = call(&app, "GET", &path, "", Value::Null).await;
+    assert!(
+        keys.as_array()
+            .unwrap()
+            .iter()
+            .any(|k| k["id"] == key_id && k["allowed_origins"].as_array().unwrap().len() == 2)
+    );
+    let (status, _) = call(
+        &app,
+        "PATCH",
+        &format!("{path}/{key_id}"),
+        "",
+        json!({"allowed_origins":[]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(send(&app, key, None).await, StatusCode::OK);
+    let (_, result) = call(
+        &app,
+        "POST",
+        &format!("/api/products/{id}/query"),
+        "",
+        range(),
+    )
+    .await;
+    assert_eq!(result["summary"]["total"], 1);
+    restarted.writer.stop().await;
+}

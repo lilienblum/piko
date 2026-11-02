@@ -2,6 +2,7 @@ pub mod changes;
 pub mod error;
 pub mod ingest;
 pub mod model;
+pub mod origins;
 pub mod product_db;
 pub mod query;
 pub mod runtime;
@@ -66,7 +67,10 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/api/products/{id}/sources/{source}", patch(update_source))
         .route("/api/products/{id}/keys", get(list_keys).post(create_key))
-        .route("/api/products/{id}/keys/{key}", delete(revoke_key))
+        .route(
+            "/api/products/{id}/keys/{key}",
+            delete(revoke_key).patch(update_key_origins),
+        )
         .route("/api/products/{id}/query", post(query_product))
         .route("/api/cleanup", post(run_cleanup))
         .route_layer(middleware::from_fn(management_request));
@@ -148,9 +152,17 @@ async fn ingest_events(
     let key = bearer(&headers)
         .ok_or_else(ApiError::unauthorized)?
         .to_string();
+    let origin = if headers.get_all(header::ORIGIN).iter().count() == 1 {
+        headers
+            .get(header::ORIGIN)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+    } else {
+        None
+    };
     let (p, source_id) = state
         .store
-        .state(move |db| store::resolve_key(db, &key))
+        .state(move |db| store::resolve_key(db, &key, origin.as_deref()))
         .await?;
     let Json(payload) = payload.map_err(|e| ApiError(e.status(), e.body_text()))?;
     let mut events = payload.events();
@@ -196,7 +208,10 @@ async fn list_keys(
     Ok(Json(s.store.state(move |db| store::keys(db, &id)).await?))
 }
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct NewKey {
+    #[serde(default)]
+    allowed_origins: Vec<String>,
     label: String,
     source_id: Option<String>,
 }
@@ -207,9 +222,35 @@ async fn create_key(
 ) -> ApiResult<Json<Value>> {
     Ok(Json(
         s.store
-            .state(move |db| store::create_key(db, &id, &input.label, input.source_id.as_deref()))
+            .state(move |db| {
+                store::create_key(
+                    db,
+                    &id,
+                    &input.label,
+                    input.source_id.as_deref(),
+                    &input.allowed_origins,
+                )
+            })
             .await?,
     ))
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct KeyOrigins {
+    allowed_origins: Vec<String>,
+}
+async fn update_key_origins(
+    State(s): State<AppState>,
+    Path((id, key)): Path<(String, String)>,
+    Json(input): Json<KeyOrigins>,
+) -> ApiResult<StatusCode> {
+    let allowed = origins::normalize(&input.allowed_origins)?;
+    s.store.state(move |db| {
+        let changed = db.execute("UPDATE ingestion_keys SET allowed_origins=? WHERE product_id=? AND id=? AND revoked=0", rusqlite::params![serde_json::to_string(&allowed).map_err(anyhow::Error::from)?, id, key]).map_err(anyhow::Error::from)?;
+        if changed == 0 { return Err(ApiError::missing()); }
+        Ok(())
+    }).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 async fn revoke_key(
     State(s): State<AppState>,

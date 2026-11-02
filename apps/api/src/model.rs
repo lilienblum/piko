@@ -158,6 +158,7 @@ impl ProductInput {
 }
 #[derive(Debug, Serialize)]
 pub struct KeyInfo {
+    pub allowed_origins: Vec<String>,
     pub id: String,
     pub source_id: String,
     pub label: String,
