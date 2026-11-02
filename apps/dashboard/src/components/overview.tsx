@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
 import { OverviewLoading, BreakdownLoading } from "./loading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@/lib/use-query";
@@ -206,24 +205,7 @@ function ProductOverview() {
       <PageHeader
         title={source ? `${product.name} / ${source.name}` : product.name}
         description="Events, identities, and performance across your project."
-      >
-        <div className="heading-actions">
-          <Button
-            variant="outline"
-            nativeButton={false}
-            role="link"
-            render={<Link to="/explore" />}
-          >
-            Explore events
-            <HugeiconsIcon
-              icon={ArrowRight02Icon}
-              strokeWidth={2}
-              aria-hidden="true"
-              data-icon="inline-end"
-            />
-          </Button>
-        </div>
-      </PageHeader>
+      />
       {query.error && !query.data ? (
         <ErrorState message={query.error} retry={refresh} />
       ) : query.loading ? (
