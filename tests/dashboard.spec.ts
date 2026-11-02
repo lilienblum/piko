@@ -19,8 +19,11 @@ async function select(page: Page, label: string, option: string) {
   await page.getByRole("option", { name: option, exact: true }).click();
 }
 async function appearance(page: Page, theme: "Light" | "Dark" | "Auto") {
+  const mobile = (page.viewportSize()?.width ?? 1440) < 768;
+  if (mobile) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page.getByRole("menuitemradio", { name: theme, exact: true }).click();
+  if (mobile) await page.getByRole("button", { name: "Close navigation", exact: true }).click();
 }
 let web: { id: string; name: string; key: string };
 let tool: { id: string; name: string; key: string };

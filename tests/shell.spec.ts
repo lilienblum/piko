@@ -63,7 +63,8 @@ for (const route of ["/", "/explore", "/settings"]) {
           "1",
         );
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeDisabled();
-        await expect(page.getByRole("button", { name: "Appearance" })).toBeDisabled();
+        if (width >= 768)
+          await expect(page.getByRole("button", { name: "Appearance" })).toBeDisabled();
         if (route !== "/settings")
           await expect(page.getByRole("combobox", { name: "Date range" })).toBeDisabled();
         await page.evaluate(() => document.fonts.ready);
@@ -83,7 +84,11 @@ for (const route of ["/", "/explore", "/settings"]) {
           await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
         await expect(page.getByRole("status", { name: "Loading workspace" })).not.toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeEnabled();
-        await expect(page.getByRole("button", { name: "Appearance" })).toBeEnabled();
+        if (width >= 768)
+          await expect(page.getByRole("button", { name: "Appearance" })).toBeEnabled();
+        await expect(
+          page.locator("#main-content").getByRole("button", { name: "Appearance" }),
+        ).toHaveCount(0);
         if (route !== "/settings")
           await expect(page.getByRole("combobox", { name: "Date range" })).toBeEnabled();
         await expect(page.getByRole("alert")).not.toBeVisible();

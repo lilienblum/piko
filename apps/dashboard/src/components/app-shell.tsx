@@ -15,7 +15,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Calendar03Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
-import { ThemeMenu } from "./theme-provider";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkspaceSidebar } from "./workspace-sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
@@ -225,49 +224,46 @@ export function AppShell() {
                 <div className="mobile-project-picker">{projectPicker}</div>
                 <span className="workspace-source-name">{source?.name ?? "All sources"}</span>
               </div>
-              <div className="workspace-toolbar-actions">
-                {path !== "/settings" && (
-                  <>
-                    <ValueSelect
-                      label="Date range"
-                      disabled={!preferencesReady}
-                      value={drilldown ? "linked" : String(days)}
-                      icon={
-                        <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />
-                      }
-                      className="date-select"
-                      onValueChange={(value) => {
-                        if (value === "linked") return;
-                        clearDrilldown();
-                        setDays(Number(value));
-                        savePreference("piko:days", value);
-                        setNow(Date.now());
-                      }}
-                      options={[
-                        ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
-                        ["7", "Last 7 days"],
-                        ["30", "Last 30 days"],
-                        ["90", "Last 90 days"],
-                      ]}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Refresh analytics"
-                      onClick={refresh}
-                      disabled={loading || analyticsPending}
-                      aria-busy={loading || analyticsPending}
-                    >
-                      {loading || analyticsPending ? (
-                        <Spinner aria-hidden="true" />
-                      ) : (
-                        <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
-                      )}
-                    </Button>
-                  </>
-                )}
-                <ThemeMenu />
-              </div>
+              {path !== "/settings" && (
+                <div className="workspace-toolbar-actions">
+                  <ValueSelect
+                    label="Date range"
+                    disabled={!preferencesReady}
+                    value={drilldown ? "linked" : String(days)}
+                    icon={
+                      <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />
+                    }
+                    className="date-select"
+                    onValueChange={(value) => {
+                      if (value === "linked") return;
+                      clearDrilldown();
+                      setDays(Number(value));
+                      savePreference("piko:days", value);
+                      setNow(Date.now());
+                    }}
+                    options={[
+                      ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
+                      ["7", "Last 7 days"],
+                      ["30", "Last 30 days"],
+                      ["90", "Last 90 days"],
+                    ]}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Refresh analytics"
+                    onClick={refresh}
+                    disabled={loading || analyticsPending}
+                    aria-busy={loading || analyticsPending}
+                  >
+                    {loading || analyticsPending ? (
+                      <Spinner aria-hidden="true" />
+                    ) : (
+                      <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
             {error && <ErrorState message={error} retry={refresh} />}
             {loading ? (

@@ -281,7 +281,7 @@ Clear, compact instruments. Inputs use a card surface, field stroke, small (3px)
 
 ### Navigation
 
-The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout.
+The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout. Appearance lives in the sidebar footer above Documentation, with the current Light, Dark, or Auto choice shown in the expanded rail. It stays available as an icon in the collapsed rail and inside the mobile navigation sheet.
 
 ### Tabs
 

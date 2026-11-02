@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ThemeMenu } from "./theme-provider";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -165,6 +166,9 @@ export function WorkspaceSidebar({
           </span>
         </div>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <ThemeMenu />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Documentation"

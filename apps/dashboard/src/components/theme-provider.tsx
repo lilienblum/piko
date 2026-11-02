@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
+import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 import { readPreference, savePreference } from "@/lib/preferences";
 import {
   DropdownMenu,
@@ -71,26 +71,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 export function ThemeMenu() {
+  const { isMobile } = useSidebar();
   const context = useContext(ThemeContext);
   if (!context) throw new Error("Missing theme provider");
   const { mounted, theme, setTheme } = context;
   const icon = theme === "auto" ? ComputerIcon : theme === "dark" ? Moon02Icon : Sun03Icon;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Appearance"
-            title={`Appearance: ${theme}`}
-            disabled={!mounted}
-          />
-        }
+      <SidebarMenuButton
+        tooltip="Appearance"
+        aria-label="Appearance"
+        title={`Appearance: ${theme}`}
+        render={<DropdownMenuTrigger disabled={!mounted} />}
       >
         <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+        <span className="group-data-[collapsible=icon]:sr-only">Appearance</span>
+        <span
+          className="ml-auto capitalize group-data-[collapsible=icon]:hidden"
+          aria-hidden="true"
+        >
+          {theme}
+        </span>
+      </SidebarMenuButton>
+      <DropdownMenuContent side={isMobile ? "top" : "right"} align="end">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Appearance</DropdownMenuLabel>
           <DropdownMenuSeparator />
