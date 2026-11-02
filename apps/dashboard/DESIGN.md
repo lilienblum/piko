@@ -372,3 +372,8 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 - **Don't** add decorative botanical imagery, faux paper textures, or ornamental glow.
 - **Don't** replace useful event context with decoration or hide an actual loading failure behind a skeleton.
 - **Don't** turn either the Explore composition or the Overview widget grid into a mandatory layout for every page.
+
+
+## Shareable report state
+
+Use `/projects/<slug>`, `/projects/<slug>/explore`, and `/projects/<slug>/settings` as the canonical routes. Treat the project path and validated search parameters as authoritative for source, range, chart choices, and applied Explore queries and pagination. Browser preferences only initialize bare URLs. Preserve workspace context across sidebar navigation and view state through Back/Forward. Keep draft edits local until Run query. Pin dates fixes the UTC interval without promising immutable results. Automatic freshness must never add URL/history churn. Invalid or unavailable scope shows an error instead of silently querying another project.

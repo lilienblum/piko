@@ -47,3 +47,8 @@ Working sample website and CLI datasets; functional ingestion/query examples; au
 ## Accessibility & Inclusion
 
 Preserve keyboard access, semantic controls, visible focus, reduced-motion support, readable contrast, and narrow-screen layouts. These are implementation commitments inferred from the existing product requirements.
+
+
+## Shareable report state
+
+Use `/projects/<slug>`, `/projects/<slug>/explore`, and `/projects/<slug>/settings` as the canonical routes. Treat the project path and validated search parameters as authoritative for source, range, chart choices, and applied Explore queries and pagination. Browser preferences only initialize bare URLs. Preserve workspace context across sidebar navigation and view state through Back/Forward. Keep draft edits local until Run query. Pin dates fixes the UTC interval without promising immutable results. Automatic freshness must never add URL/history churn. Invalid or unavailable scope shows an error instead of silently querying another project.

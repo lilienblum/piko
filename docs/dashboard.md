@@ -1,10 +1,23 @@
 # Exploring from the overview
 
-Select a project and source in the sidebar, and a date range beside the report heading. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Every source uses the same overview, includes all event names, and offers the same chart metrics and breakdowns. Source selection is remembered per project. Settings manages every source regardless of the analytics selection.
+Select a project and source in the sidebar, and a date range beside the report heading. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Every source uses the same overview, includes all event names, and offers the same chart metrics and breakdowns. The URL records the selected project, source, and date range; saved preferences only initialize a bare entry URL. Settings manages every source regardless of the analytics selection.
 
 Click a page, command, event, referrer, or other breakdown row to open its matching events in Explore. Each link carries the project, selected source when applicable, exact UTC interval, and selected value. A source breakdown link uses its stable ID, so renaming does not break links. It works after reload and through browser history, even when the browser previously had a different product selected.
 
-Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Those edits apply to the current view; reloading the URL restores the original clicked selection. Clear the drilldown to return to the normal date range. Selecting another project, source, or date range also clears the linked selection. A missing project/source or malformed drilldown shows an error instead of querying another product.
+Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Running a query writes the applied configuration to the URL, so reloading or sharing it restores those changes. Unsubmitted edits stay local. Clear the drilldown to return to the normal date range. Selecting another project, source, or date range also clears the linked selection. A missing project/source or malformed drilldown shows an error instead of querying another product.
+
+## Shareable URLs
+
+Projects have stable, unique slugs. An example Overview link is `/projects/orbit?source=all&days=30&interval=week`. A renamed project keeps its slug. Explicit URL selections win over browser preferences; unavailable projects/sources and malformed scope parameters show an error instead of querying a fallback project. Links do not change access permissions.
+
+- Project paths: `/projects/<slug>`, `/projects/<slug>/explore`, and `/projects/<slug>/settings`. Bare `/`, `/explore`, and `/settings` open the saved project and replace the URL with its canonical path.
+- Shared query parameters: `source` (`all` or a source UUID), `days` (7, 30, or 90), and optional `snapshot` (an exact UTC ISO timestamp).
+- Overview parameters: `metric`, `interval` (`hour`, `day`, `week`, `month`), `breakdown`, and `duration` (`avg` or `p95`).
+- Explore parameters: `query` (TanStack Router's JSON-encoded applied configuration), `page` (one-based), and `pageSize` (15, 30, or 50). Typed filter text is preserved, including the difference between `42` and `"42"`.
+
+**Pin dates** sets `snapshot` to the current range end and shows **Fixed dates**. The start is derived from `days` using UTC calendar days. Copy the address bar to share the same interval and report configuration. Choosing a rolling date range removes the snapshot. A snapshot pins the query interval, not the results: late arrivals and retention can still change counts. Existing Overview drilldown links retain their exact start/end timestamps.
+
+Project/source/date context follows sidebar navigation. Each route owns its chart or query choices; browser Back/Forward restores them. Automatic updates never rewrite the URL or add history entries, and they preserve unfinished query drafts and pagination.
 
 ## Overview widgets
 
@@ -47,7 +60,7 @@ Open an event to inspect it in a side panel. Properties are searchable by name a
 
 Use a property's filter action to run a matching query. This replaces the current property filter, preserves the applied event/source/measure/grouping, and resets pagination. Unsubmitted query-builder edits are not applied by that action.
 
-Choose 15, 30, or 50 rows per page. Filtering and pagination happen on the server. While a page loads, charts stay visible and loading rows replace the previous page. The inspector's newer/older controls move only through the loaded page. There is no automatic live refresh.
+Choose 15, 30, or 50 rows per page. Filtering and pagination happen on the server. While a page loads, charts stay visible and loading rows replace the previous page. The inspector's newer/older controls move only through the loaded page. New committed data updates the table automatically without resetting the selected page or inspector.
 
 The [PostHog Activity interface](https://posthog.com/docs/activity) informed the useful event context and separate property, metadata, and JSON views. Piko uses its existing event model and bounded server queries.
 
@@ -55,9 +68,9 @@ The [PostHog Activity interface](https://posthog.com/docs/activity) informed the
 
 Navigation stays available while the product catalog loads. Overview uses local placeholders inside its six mounted widgets. Explore uses placeholders shaped like its results, chart, breakdown, and event rows. Breakdown choices load within their own card. Changing a product or query replaces the previous results with placeholders; pagination keeps the matching charts visible while its event rows load.
 
-Refreshing the current view keeps its cards, charts, event rows, inspector, and page number visible. Only the activity icons change while new data loads; a failed refresh leaves the last results available with retry feedback. New products, date selections, or applied queries still use placeholders so unrelated results are never mislabeled. The fixed-size refresh action in the query header also announces new data from the live channel without adding or removing a banner.
+Refreshing the current view keeps its cards, charts, event rows, inspector, and page number visible. Updates run in the background; a failed refresh leaves the last results available with retry feedback. New products, date selections, or applied queries still use placeholders so unrelated results are never mislabeled. Live hints, reconnection, focus, and visible online polling keep analytics current without a manual refresh control.
 
-Refresh and Run query indicate request activity and prevent duplicate submissions. Settings shows key-list loading separately from an empty list or a failed request. Create, save, and revoke actions show their active operation. A failed key revocation explains the failure inside its confirmation dialog.
+Run query indicates request activity and prevents duplicate submissions. Settings shows key-list loading separately from an empty list or a failed request. Create, save, and revoke actions show their active operation. A failed key revocation explains the failure inside its confirmation dialog.
 
 A newly created key remains available to copy if refreshing the key list fails. Retrying the list does not create another key. If product creation succeeds but refreshing the product selector fails, Retry loading product fetches the catalog without submitting another creation request.
 

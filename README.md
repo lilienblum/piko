@@ -62,12 +62,14 @@ Under Tako, data lives in `$TAKO_DATA_DIR` (locally `.tako/data/app`); standalon
 ## Use it
 
 1. **Settings:** create a project, then add named **sources** such as Website, iOS app, or CLI. All sources use the same analytics UI. Icons follow the source name automatically, or can be chosen from a predefined Hugeicons set; no URL is needed. Create a key for a specific source and copy it while visible. Only its SHA-256 hash and display prefix are stored.
-2. **Overview:** select a project, source (or **All sources**), and date range. Website sources default to `page_view`; tools to `command_run`; mobile/other sources and mixed projects show all events. A combined project shares storage and retention. Missing identity or duration is shown honestly as unavailable.
+2. **Overview:** select a project, source (or **All sources**), and date range. Every source has the same widgets and query choices; Overview includes all event names. A combined project shares storage and retention. Missing identity or duration is shown honestly as unavailable.
 3. **Explore:** select an event, measure, grouping, and optional typed property filter. Counts, distinct actors, numeric sum/average, and duration p50/p95 run in DuckDB. Charts, grouping, filtering, and event pagination are server-side. Click an event for its original typed envelope.
 
 There is no built-in login, admin token, password, or admin session cookie. Management mutations use an `X-Piko-Admin: 1` request marker to prevent cross-site form submissions; it is not a secret or authorization mechanism. Cloudflare Access is the authentication boundary.
 
 Click an Overview breakdown row to inspect its matching events in Explore. Source and environment tabs expose campaign and CLI version data. See [the dashboard guide](docs/dashboard.md) for drilldowns, typed filters, and date behavior.
+
+Project, source, range, chart choices, and applied Explore queries live in the URL. For example, `/projects/orbit?source=all&days=30&interval=week`. **Pin dates** adds a fixed-date `snapshot`; it does not archive results. Reload, sharing, and browser history restore the view.
 
 See [API and data semantics](docs/api.md), [collection examples and identity](docs/collection.md), and [benchmark methodology/results](docs/benchmark.md).
 
