@@ -288,3 +288,11 @@ Packaged the existing collector as `@piko/sdk`, with ESM JavaScript, TypeScript 
 The JavaScript tarball was installed into a separate temporary consumer project. ESM exports, browser imports without DOM side effects, TypeScript declarations, real HTTP retries, and a send/query round trip through a disposable Piko API and DuckDB all passed. The latter verified committed acknowledgments, deduplication, typed properties, Unicode, and absent identity. The Rust crate passed `cargo package` verification independently; its standalone example passed opt-in, Do Not Track, and real HTTP retry checks. Rust integration tests verified the same persistence semantics against the API. Test servers and temporary API data were removed after use.
 
 Runtime execution used Bun 1.4.4 and Rust 1.95.0. Node.js execution, browser E2E, container builds, and benchmarks were not run for this SDK change. Neither package was published to a registry, and no production deployment was performed. Package READMEs document local installation and runnable examples.
+
+## Single-source overview — 2026-11-02
+
+The Sources widget uses a plain exact event count, source icon/name, and Explore link when one source contributes events to the current view. It omits the pie and redundant 100% label. This is based on query results, not the number of configured sources, and applies to source-filtered views too. Multiple contributing sources retain their donut, shares, keyboard inspection, and drilldowns. Empty/error/loading states and the widget grid remain intact.
+
+`bun fmt`, `bun typecheck`, `bun lint`, **41 Bun tests**, and the client/SSR production build pass. All **17 affected Chromium checks passed in 1.1 minutes**. Coverage includes unused configured sources, single-source summaries at 1440/894/390 px, multi-source keyboard tooltips, source filtering, drilldowns, and stable automatic refresh. The browser-test apps and temporary databases were removed. Manual preview inspection confirmed the Website source summary. Rust and benchmark checks were not rerun because API, persistence, and query execution are unchanged.
+
+After incorporating the concurrent SDK package commit, formatting, lint, all 41 Bun tests, and the combined SDK/dashboard production build and typecheck were rerun successfully. Both verification records are retained.
