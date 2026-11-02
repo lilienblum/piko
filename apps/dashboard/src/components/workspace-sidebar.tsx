@@ -48,33 +48,35 @@ export function WorkspaceSidebar({
   const sources = [{ id: "", name: "All sources", icon: null }, ...(product?.sources ?? [])];
   return (
     <Sidebar collapsible="icon" className="workspace-sidebar">
-      <SidebarHeader className="workspace-brand-row">
-        <Link
-          {...workspaceTarget("/", product?.slug)}
-          aria-label="Piko overview"
-          className="brand-link"
-          onClick={() => setOpenMobile(false)}
-        >
-          <span className="brand">
-            <img className="brand-mark" src="/favicon.svg?v=7" width="30" height="30" alt="" />
-            <span className="brand-word">piko</span>
-          </span>
-        </Link>
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close navigation"
+      <SidebarHeader className="workspace-identity">
+        <div className="workspace-brand-row">
+          <Link
+            {...workspaceTarget("/", product?.slug)}
+            aria-label="Piko overview"
+            className="brand-link"
             onClick={() => setOpenMobile(false)}
           >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
-          </Button>
-        )}
+            <span className="brand">
+              <img className="brand-mark" src="/favicon.svg?v=7" width="30" height="30" alt="" />
+              <span className="brand-word">piko</span>
+            </span>
+          </Link>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close navigation"
+              onClick={() => setOpenMobile(false)}
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+        <div className="workspace-project" title={product?.name}>
+          <span className="workspace-section-label">Project</span>
+          {picker}
+        </div>
       </SidebarHeader>
-      <div className="workspace-project" title={product?.name}>
-        <span className="workspace-section-label">Project</span>
-        {picker}
-      </div>
       <SidebarContent>
         <SidebarGroup className="workspace-navigation">
           <SidebarGroupContent>

@@ -262,9 +262,6 @@ h3,
   background: var(--primary);
   color: var(--primary-foreground);
 }
-[data-slot="sidebar-header"] {
-  border-bottom: 1px solid var(--sidebar-border);
-}
 [data-slot="sidebar-menu-button"] {
   border: 1px solid transparent;
 }
@@ -1573,7 +1570,20 @@ h1 {
 }
 
 /* Compact workspace: scope lives in the rail; dates remain beside the report. */
+.workspace-identity {
+  flex-shrink: 0;
+  gap: 0;
+  padding: 0;
+  background-color: var(--sidebar);
+  background-image:
+    linear-gradient(180deg, transparent 45%, var(--sidebar) 100%),
+    url("/images/sidebar-gradient.webp");
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
 .workspace-brand-row {
+  display: flex;
   height: 64px;
   flex-shrink: 0;
   flex-direction: row;
@@ -1583,7 +1593,6 @@ h1 {
 }
 .workspace-project {
   padding: 16px 12px;
-  border-bottom: 1px solid var(--sidebar-border);
 }
 .workspace-project .product-select {
   width: 100%;
