@@ -30,7 +30,7 @@ One fixed Kanagawa Wave theme, Hugeicons, accessible shadcn Base UI primitives, 
 
 ## Brand Commitments
 
-Piko is the working name. The user selected Kanagawa colors and one theme without an appearance selector. Use Wave's sumi-ink surfaces and warm text, with Surimi Orange for primary actions, Carp Yellow highlights, violet/aqua chart categories, and green outcomes; avoid making the interface uniformly blue. Preserve the established compact squared controls, Geist typography, straight three-bar mark and matching favicon, flat analytical surfaces, and six-widget Overview. Accessible shadcn Base UI primitives remain. Use straightforward product language and accurate analytics terminology.
+Piko is the working name. The user selected Kanagawa colors and one theme without an appearance selector. Use Wave's sumi-ink surfaces and warm text, with Surimi Orange for primary actions, Carp Yellow highlights, violet/aqua chart categories, and green outcomes; avoid making the interface uniformly blue. The user requested a rebuild of the shared shadcn theme: compact softly squared controls, inset fields, single-frame segmented choices, warm selections, and restrained overlay elevation. Preserve Geist typography, the straight three-bar mark and matching favicon, flat analytical surfaces, and the six-widget Overview. Accessible shadcn Base UI primitives remain. Use straightforward product language and accurate analytics terminology.
 
 ## Evidence on Hand
 

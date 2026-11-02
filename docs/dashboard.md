@@ -87,3 +87,5 @@ Dashboard primitives use the official shadcn **Base UI** registry (`base-vega`) 
 ## Appearance
 
 Piko has one fixed Kanagawa Wave theme. Sumi-ink surfaces, warm text, orange primary actions, and yellow/violet/aqua chart accents are present from the first server-rendered paint. There is no appearance menu or theme preference, and old saved Light/Dark/Auto values are ignored.
+
+The shared component theme defines foreground/background pairs, hover and pressed surfaces, selection, focus, radii, and elevation in `apps/dashboard/src/styles.css`. Component variants consume those tokens directly. Controls use 6px corners, cards 12px, fields a recessed surface, and segmented choices one shared frame. Menus and dialogs use soft shadows; keyboard focus uses a single yellow outline. Preserve these defaults when adding Base UI components instead of reintroducing generated dark-mode overrides or page-specific bevel styles.

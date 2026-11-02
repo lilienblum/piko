@@ -15,7 +15,7 @@ Authority: the user explicitly requested a collection of square widgets with gra
 ## Direction contract
 
 THESIS: six equally weighted questions make a compact project snapshot: activity, sources, event dimensions, identified actors, outcomes, and duration.
-OWN-WORLD: one Kanagawa Wave palette: sumi-ink surfaces, warm text, orange actions, yellow/violet/aqua charts, and green outcomes. Retain Geist, squared controls, Hugeicons, and shadcn Base UI behavior. Widgets have fine borders and no resting shadow.
+OWN-WORLD: one Kanagawa Wave palette: sumi-ink surfaces, warm text, orange actions, yellow/violet/aqua charts, and green outcomes. Retain Geist, softly squared shared controls, Hugeicons, and shadcn Base UI behavior. Widgets have fine borders and no resting shadow.
 STORY: choose project/source in the persistent sidebar and dates in the report heading, scan the widgets, switch a measure or dimension locally, and follow a real source or breakdown into scoped Explore results.
 FIRST VIEWPORT: a shared interval button group sits above three square widgets across. The second row completes the six-question snapshot. No duplicated Explore action, hero chart, or full-page loading replacement.
 FORM: user-specified equal-square composition in an established world; no new-world seed or concept roll applies. Three columns become two at a container width of 870px and one at 550px. Below 300px, the square constraint yields to a 310px minimum height and smaller padding so content remains usable.
@@ -31,7 +31,7 @@ FORM: user-specified equal-square composition in an established world; no new-wo
 
 ## Geometry and color
 
-Widgets use a 1:1 aspect ratio, 20px padding, a 4px corner, the card surface, and a fine semantic border. Grid spacing is 16px. Headers, flexible bodies, and reserved footers prevent results or local messages from changing the outer geometry. Widget headings are 14px/600; headline values are 32px/600 with tabular numerals and compact line height. These are Overview treatments, not a new mandatory layout for every screen.
+Widgets use a 1:1 aspect ratio, 20px padding, a 12px corner, the card surface, and a fine semantic border. Grid spacing is 16px. Headers, flexible bodies, and reserved footers prevent results or local messages from changing the outer geometry. Widget headings are 14px/600; headline values are 32px/600 with tabular numerals and compact line height. These are Overview treatments, not a new mandatory layout for every screen.
 
 Time series retain Carp Yellow strokes, subtle area fills, sparse axes, and linear interpolation. Sources use Carp Yellow, Oni Violet, and Wave Aqua for the first three categories, with muted ink for Other; category labels carry meaning independently of color. Outcome colors retain their success/destructive semantics. The source donut's compact 18px center avoids ring collisions while its footer and legends retain exact counts.
 

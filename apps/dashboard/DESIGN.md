@@ -1,37 +1,48 @@
 ---
 
 name: "Piko"
-description: "Kanagawa Wave: a single sumi-ink theme with warm text, orange actions, yellow highlights, and seasonal chart accents."
+description: "Kanagawa Wave: sumi-ink analytics with warm text, orange actions, inset fields, and quiet shared controls."
 colors:
   background: "#1f1f28"
   foreground: "#dcd7ba"
   heading: "#dcd7ba"
   card: "#2a2a37"
+  card-foreground: "#dcd7ba"
+  popover: "#363646"
+  popover-foreground: "#dcd7ba"
   primary: "#ffa066"
   primary-foreground: "#16161d"
+  primary-hover: "#ffb585"
+  primary-active: "#ed925c"
   secondary: "#363646"
+  secondary-foreground: "#dcd7ba"
   muted: "#363646"
   muted-foreground: "#c8c093"
   accent: "#49443c"
+  accent-foreground: "#dcd7ba"
+  selection: "#49443c"
+  selection-foreground: "#e6c384"
   destructive: "#ff5d62"
   destructive-foreground: "#16161d"
-  border: "#54546d"
-  input: "#938aa9"
+  border: "#41414f"
+  input: "#7a7888"
+  ring: "#e6c384"
+  surface-inset: "#1a1a22"
+  surface-hover: "#363646"
+  surface-pressed: "#41414f"
   success: "#98bb6c"
   subtle: "#1a1a22"
   data: "#e6c384"
   data-secondary: "#957fb8"
   data-tertiary: "#7aa89f"
-  control-highlight: "#54546d"
-  control-edge: "color-mix(in oklab, var(--input) 65%, var(--background))"
   sidebar: "#16161d"
   sidebar-foreground: "#dcd7ba"
   sidebar-primary: "#ffa066"
   sidebar-primary-foreground: "#16161d"
   sidebar-accent: "#2a2a37"
   sidebar-accent-foreground: "#dcd7ba"
-  sidebar-border: "#54546d"
-  sidebar-ring: "#ffa066"
+  sidebar-border: "#41414f"
+  sidebar-ring: "#e6c384"
 typography:
   display:
     fontFamily: "Geist Variable, sans-serif"
@@ -59,9 +70,9 @@ typography:
   control:
     fontFamily: "Geist Variable, sans-serif"
     fontSize: "14px"
-    fontWeight: 600
+    fontWeight: 550
     lineHeight: 1.5
-    letterSpacing: "-0.01em"
+    letterSpacing: "normal"
   supporting:
     fontFamily: "Geist Variable, sans-serif"
     fontSize: "13px"
@@ -73,10 +84,10 @@ typography:
     fontWeight: 500
     lineHeight: 1.5
 rounded:
-  sm: "3px"
-  md: "4px"
-  lg: "6px"
-  xl: "6px"
+  sm: "4px"
+  md: "6px"
+  lg: "8px"
+  xl: "12px"
 spacing:
   2: "8px"
   3: "12px"
@@ -89,31 +100,64 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
     typography: "{typography.control}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  button-primary-hover:
+    backgroundColor: "{colors.primary-hover}"
+  button-primary-active:
+    backgroundColor: "{colors.primary-active}"
+  button-destructive:
+    backgroundColor: "{colors.destructive}"
+    textColor: "{colors.destructive-foreground}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
     padding: "8px 16px"
     height: "36px"
   button-outline:
-    backgroundColor: "{colors.card}"
+    backgroundColor: "transparent"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  button-secondary:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.secondary-foreground}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
     padding: "8px 16px"
     height: "36px"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.foreground}"
+    textColor: "{colors.muted-foreground}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px"
+    height: "36px"
+  button-link:
+    backgroundColor: "transparent"
+    textColor: "{colors.primary}"
+    typography: "{typography.control}"
     rounded: "{rounded.md}"
     padding: "8px 16px"
     height: "36px"
   input:
-    backgroundColor: "{colors.card}"
+    backgroundColor: "{colors.surface-inset}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
     padding: "4px 12px"
     height: "36px"
+  select:
+    backgroundColor: "{colors.surface-inset}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "8px 12px"
+    height: "36px"
   navigation-active:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.primary-foreground}"
-    rounded: "{rounded.sm}"
+    backgroundColor: "color-mix(in oklab, var(--primary) 12%, var(--sidebar))"
+    textColor: "{colors.sidebar-primary}"
+    rounded: "{rounded.md}"
     padding: "8px"
     height: "36px"
   badge-outline:
@@ -124,13 +168,13 @@ components:
     padding: "2px 8px"
   card-contained:
     backgroundColor: "{colors.card}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.lg}"
+    textColor: "{colors.card-foreground}"
+    rounded: "{rounded.xl}"
     padding: "20px 24px"
   overview-widget:
     backgroundColor: "{colors.card}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.xl}"
     padding: "20px"
   measurement-field:
     backgroundColor: "transparent"
@@ -143,9 +187,25 @@ components:
     padding: "0 10px"
     height: "36px"
     rounded: "0px"
+  segmented-group:
+    backgroundColor: "{colors.surface-inset}"
+    textColor: "{colors.muted-foreground}"
+    rounded: "{rounded.lg}"
+    padding: "3px"
+  segmented-selected:
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
+    rounded: "{rounded.sm}"
+    padding: "0 10px"
+    height: "28px"
   tabs-line:
     backgroundColor: "transparent"
-    textColor: "{colors.foreground}"
+    textColor: "{colors.muted-foreground}"
+    rounded: "0px"
+    height: "36px"
+  tabs-line-active:
+    backgroundColor: "transparent"
+    textColor: "{colors.primary}"
     rounded: "0px"
     height: "36px"
 ---
@@ -156,44 +216,45 @@ components:
 
 **Creative North Star: "Kanagawa Wave"**
 
-Piko is a compact measurement tool using the user-selected Kanagawa palette. Sumi-ink surfaces and warm Fuji text frame Surimi Orange actions, Carp Yellow measurements, violet/aqua source categories, and green outcomes. Self-hosted Geist, shallow raised controls, framed tabs, and the straight three-bar mark preserve the existing interface character. The request changes colors and removes theme selection; it does not replace typography or page composition.
+Piko is a compact measurement tool using the user-selected Kanagawa palette. Sumi-ink surfaces and warm Fuji text frame Surimi Orange actions, Carp Yellow measurements, violet/aqua source categories, and green outcomes. Self-hosted Geist, softly squared controls, inset fields, single-frame segmented choices, and the upright three-bar mark give the interface its precise, quiet character. Accessible shadcn Base UI primitives and Hugeicons provide the shared component language.
 
-Analytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. One palette is present in server-rendered HTML and CSS. There is no appearance selector, theme preference, or system-theme listener.
+Analytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into six square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. One palette is present in server-rendered HTML and CSS. There is no appearance selector, theme preference, or system-theme listener.
 
 **Key Characteristics:**
 
 - Sumi-ink surfaces, warm text, orange actions, and yellow/violet/aqua data accents.
 - Geist typography with restrained headings and prominent measurements.
 - Flat analytical fields and square Overview widgets; contained forms and inspection.
-- Tactile squared controls, explicit focus, and stable loading geometry.
+- Softly squared controls, inset fields, warm selection, one focus outline, and stable geometry.
 
 ## Colors
 
-The palette is drawn from the [official Kanagawa colors](https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/colors.lua). Frontmatter values are normative. Piko uses one dark Wave palette; the user's later feedback selects warm primary/accents instead of blue controls. All components use semantic CSS variables.
+The palette is drawn from the [official Kanagawa colors](https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/colors.lua), with semantic interaction states derived for the built interface. Frontmatter values are normative. Piko uses one dark Wave palette, with warm primary accents and bounded data colors. All components use semantic CSS variables; foreground aliases resolve to their actual values in the frontmatter.
 
 ### Primary
 
-- **Surimi Orange** (`primary`): filled actions, active navigation, focus rings, and the shared logo/favicon. Sumi-ink text (`primary-foreground`) keeps filled controls readable.
-- **Carp Yellow** (`data`): time-series strokes and the first source category.
-- **Seasonal categories** (`data-secondary`, `data-tertiary`): Oni Violet and Wave Aqua for additional sources. Exact labels and values remain available independently of color.
-- **Spring Green** (`success`): successful outcomes and healthy-state indicators.
+- **Surimi Orange** (`primary`): filled primary actions, active navigation text, active tab underlines, and the shared logo/favicon. Sumi-ink text (`primary-foreground`) keeps filled controls readable. Explicit `primary-hover` and `primary-active` tokens provide brighter hover and deeper pressed states.
+- **Carp Yellow** (`data`, `ring`, `selection-foreground`): time-series strokes, the first source category, a visible keyboard outline, and warm selected-choice text.
 
 ### Secondary
 
-- **Winter Yellow field** (`accent`): a muted warm selection field and proportional breakdown fill.
-- **Quiet controls** (`secondary`, `muted`): raised sumi-ink surfaces; outlined actions remain subordinate to filled orange actions.
+- **Seasonal categories** (`data-secondary`, `data-tertiary`): Oni Violet and Wave Aqua for additional sources. Exact labels and values remain available independently of color.
+- **Winter Yellow field** (`accent`, `selection`): muted warm emphasis, selected choices, and proportional breakdown fills. `accent-foreground` retains warm body text while `selection-foreground` emphasizes the chosen value.
+- **Spring Green** (`success`): successful outcomes and healthy-state indicators.
 - **Peach Red** (`destructive`): errors and destructive actions, with dark foreground on filled destructive controls.
 
 ### Neutral
 
 - **Sumi-ink workspace** (`background`, `sidebar`, `subtle`): layered dark surfaces, with a deeper sidebar.
-- **Working surface** (`card`): lighter sumi ink for fields, widgets, popovers, and editing regions.
+- **Working surface** (`card`, `card-foreground`): contained widgets and editing regions with warm text.
+- **Floating surface** (`popover`, `popover-foreground`): brighter sumi ink for select menus, with its own readable foreground.
+- **Quiet controls** (`secondary`, `muted`, `surface-hover`): subordinate actions and neutral hover fields. `surface-pressed` is the stronger pressed neutral; `surface-inset` gives fields and grouped choices a recessed ground.
 - **Fuji White** (`foreground`, `heading`): warm primary text and measurements.
-- **Old White** (`muted-foreground`): readable supporting text, axes, and metadata. Do not use the palette's darker comment gray for small interface labels.
+- **Old White** (`muted-foreground`): readable supporting text, axes, and metadata.
 - **Fine seam** (`border`, `sidebar-border`): passive divisions and container boundaries.
-- **Spring Violet stroke** (`input`): visible boundaries on interactive controls.
+- **Field stroke** (`input`): stronger boundaries on editable controls; hover moves to supporting-text color.
 
-**The Measured Color Rule.** Orange marks actions and selection; yellow, violet, and aqua distinguish measurements; green and red label outcomes. Keep surrounding surfaces in sumi ink and do not make every control or chart blue.
+**The Measured Color Rule.** Orange marks actions and destination selection; yellow, violet, and aqua distinguish measurements; green and red label outcomes. Selected choices and keyboard focus use warm yellow within the same palette.
 
 ## Typography
 
@@ -227,31 +288,30 @@ At (1150px) and below, Explore's results stack and query controls wrap. At (800p
 
 ## Elevation & Depth
 
-Analytical regions stay flat. Interactive controls use shallow, crisp depth inspired by the buttons and framed elements on [turbopuffer](https://turbopuffer.com/): a fine top highlight, squared face, and short lower edge. This distinction makes actions visible without raising every data region. Modal dialogs and sheets retain their existing larger shadow; the chart's faint yellow area fill remains a data treatment.
+Analytical regions and cards stay flat. Primary and destructive actions have a soft, shallow shadow; fields read as inset through their darker surface, without a bevel. Menus and dialogs use progressively wider soft shadows. Depth communicates temporary overlay hierarchy, while container seams organize persistent content. The chart's faint yellow area fill remains a data treatment.
 
 ### Shadow Vocabulary
 
-- **Control face:** an inset top highlight and a (2px) solid lower edge. Primary and destructive highlights mix their respective foreground at (18%); neutral controls use `control-highlight`. `control-edge` mixes input stroke (65%) with the workspace ground.
-- **Pressed:** the lower edge reduces to (1px) and the face becomes inset. Enabled action buttons move down (1px) only when reduced motion is not requested. Selects change depth without moving their popup anchor.
-- **Overlay:** dialogs and sheets retain the overlay shadow recorded in the sidecar.
-- **Context menus:** squared select, dropdown, and popover surfaces use a crisp (3px by 3px) offset edge, recorded in the sidecar.
-- **Flat surfaces:** analytical fields, cards, and metadata remain without a resting shadow. Text inputs have a faint inset upper edge.
+- **Control** (`elevation-control`): `0 1px 2px rgb(0 0 0 / 16%)`, used by filled primary and destructive actions.
+- **Menu** (`elevation-menu`): `0 8px 24px rgb(0 0 0 / 28%)`, used by select menu surfaces.
+- **Dialog** (`elevation-dialog`): `0 20px 60px rgb(0 0 0 / 40%)`, used by modal dialogs and sheets.
+- **Flat surfaces:** cards, analytical fields, navigation, grouped choices, outline/secondary/ghost actions, and metadata have no resting shadow.
 
-**The Shared Ground Rule.** Keep analytical regions flat and aligned. Fine boundaries may group related measurements in Overview widgets; reserve raised depth for controls and overlays.
+**The Shared Ground Rule.** Keep analytical regions flat and aligned. Fine boundaries group related measurements; reserve soft elevation for filled actions and temporary overlays.
 
 ## Shapes
 
-Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Open analytical fields, proportional bars, and tab underlines remain square; Overview widgets use the medium corner without raised depth. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=7` asset, with a Surimi Orange tile and dark sumi-ink bars.
+Controls and navigation use softly squared medium corners; small badges and choices nested inside a group use the small corner. Menus and grouped-choice frames use the large corner, while contained cards, dialogs, and Overview widgets use the extra-large corner. The frontmatter radius scale is normative. Open analytical fields, proportional bars, and line-tab underlines remain square. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=7` asset, with a Surimi Orange tile and dark sumi-ink bars.
 
-The select arrow compartment uses a (2px) inner corner to nest inside its (3px) outer corner and (1px) border; it is not another standalone radius token.
-
-Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Open chart and stream regions use transparent backgrounds and square corners. Overview widgets use the card surface and medium corner to bound each separate question without a resting shadow.
+Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Select triggers are one continuous field with an inline arrow. Segmented choices have one outer frame, internal spacing, and a selected fill; individual options do not acquire independent frames. Overview widgets retain their square aspect ratio without a resting shadow.
 
 ## Components
 
 ### Buttons
 
-Compact, tactile actions. Primary buttons use warm ink with the theme's primary foreground; outline buttons use the card surface, and ghost actions remain flat. Raised variants use a (3px) corner, fine border, top highlight, and (2px) lower edge. The outline hover strengthens its boundary and uses the muted field. Pressing reduces the edge and briefly depresses enabled actions; motion runs for (120–160ms) and honors reduced motion. Disabled controls lose their raised edge, reduce opacity to (50%), and stop pointer interaction. Keyboard focus remains a primary outline (2px) with an offset (3px). Standard dimensions and small/icon variants remain unchanged.
+Compact actions with stable geometry. Primary buttons use Surimi Orange and the dark primary foreground; destructive actions use their own semantic pair. Both use the control shadow. Outline actions have a transparent face and field stroke, secondary actions use the neutral secondary surface, ghost actions start with supporting text, and links use primary-colored text with a hover underline. All share the medium corner and a label weight of (550).
+
+Primary hover and press use their dedicated state tokens. Outline and ghost variants use hover/pressed surfaces; secondary controls move from secondary to pressed, then inset. State changes affect color rather than position. The default height is (36px), with (24px), (32px), and (40px) size variants and matching icon-only sizes. Disabled controls reduce opacity to (50%) and stop pointer interaction. Keyboard focus uses the shared ring outline (2px) with an offset (3px), without a second shadow ring. Color transitions run for (160ms) with ease-out timing and honor reduced motion.
 
 ### Chips
 
@@ -259,19 +319,25 @@ Small field labels. Source, type, and filter badges use a compact squared badge 
 
 ### Cards / Containers
 
-Contained editing cards use the card surface, a fine border, the large corner, vertical padding (20px), and horizontal content padding (24px). Settings, sources, and integration cards add a stronger top border in the input color. Their headers size to their actual content. Open analytical variants remove the surrounding card shell and align headings and content on the same field. Overview uses its dedicated square container, with the card surface, a fine border, the medium corner, and equal padding from the frontmatter; the body flexes between a steady header and footer. Use the flat surface and overlay distinction from Elevation & Depth.
+Contained editing cards use the card and card-foreground pair, a fine border, the extra-large corner, vertical padding (20px), and horizontal content padding (24px). Their headers size to their actual content. Open analytical variants remove the surrounding card shell and align headings and content on the same field. Overview uses a dedicated square container with the card surface, a fine border, the same extra-large corner, and equal padding from the frontmatter; the body flexes between a steady header and footer. Cards remain flat; menus and dialogs own the larger soft shadows.
 
 ### Inputs / Fields
 
-Clear, compact instruments. Inputs use a card surface, field stroke, small (3px) radius, and faint inset top edge. Selects share the raised button face and a distinct (28px) arrow compartment with a fine separator; the entire control is one trigger, not a split action. Labels have (10px) leading padding and (36px) trailing clearance, retain their leading icons, and truncate safely. Toolbar selectors use the same anatomy with medium-weight text; below (640px), their arrow compartment reduces to (24px), with (8px) leading padding and (32px) trailing clearance so common labels remain visible. Keep existing widths, heights, and nonmodal behavior stable. Opening a select insets the face and turns its arrow without shifting the trigger or removing the page scrollbar. Selected menu items use an accent fill and fine inset outline. Form labels, nearby helper/error text, invalid boundaries, explicit keyboard focus, and the (40px) narrow-screen minimum remain.
+Clear, compact instruments. Inputs and select triggers share the inset surface, field stroke, and medium corner. Input text uses (14px) at desktop widths and (16px) below the medium breakpoint. Selects place a small arrow inline after their label; no separate arrow compartment or divider appears. Labels retain leading icons, truncate safely, and keep existing widths and nonmodal behavior. Hover strengthens the border; an open select uses the hover surface and ring-colored border without moving its anchor or removing the page scrollbar.
+
+Selected menu items use the selection field and warm selection foreground; highlighted items use the accent field, and the selected indicator is orange. Select menus use the popover pair, large corner, and menu shadow. Form labels, nearby helper/error text, destructive invalid boundaries, visible focus, and the (40px) narrow-screen minimum remain. Disabled fields reduce opacity and stop interaction.
 
 ### Navigation
 
-The three destinations sit on the deeper sumi-ink rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout. The date range is a connected 7d / 30d / 90d button group using the chart interval control treatment, with one selected choice and arrow-key navigation. Drilldowns show a selected Fixed dates segment until a rolling range is chosen. The footer contains retention context and Documentation; no theme selector appears in expanded, collapsed, or mobile navigation.
+The three destinations sit on the deeper sumi-ink rail. Active links use an orange tint mixed into the sidebar ground (12%), orange text, and the built stronger weight (650); hover raises the tint to (17%). Inactive hover uses the sidebar accent. Navigation remains flat with the medium corner. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark.
+
+The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout. The date range is a connected 7d / 30d / 90d group using the chart interval treatment, with one selected choice and arrow-key navigation. Drilldowns show a selected Fixed dates segment until a rolling range is chosen. The footer contains retention context and Documentation; no theme selector appears in expanded, collapsed, or mobile navigation.
 
 ### Tabs
 
-The line variant now uses a shared bottom rule and a framed active tab, like a small index divider. Its selected face uses the card surface, fine field border, squared top corners, and a top highlight; inactive labels stay flat. Preserve keyboard navigation, explicit focus, and existing dimensions. The segmented variant keeps its existing treatment.
+Line tabs sit on a shared bottom seam with transparent faces. The selected tab uses orange text and a (2px) underline; inactive tabs use supporting text and brighten on hover. There is no active-tab frame or top highlight. The default tab variant uses an inset group surface and a warm selected fill. Preserve keyboard navigation, explicit focus, and existing dimensions.
+
+Connected toggle groups use one large-corner frame on the inset surface, padding (3px), and a gap (2px). Their borderless options have small corners and a desktop height of (28px). Warm selected text and a selection fill indicate the active interval or date range. Chart groups expand their options to the existing (40px) minimum on narrow screens.
 
 ### Shared measurements and event inspection
 
@@ -292,7 +358,8 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 - **Do** reuse semantic theme variables to preserve one consistent palette from the first server paint.
 - **Do** preserve the shared upright three-bar logo/favicon, Geist, and the Kanagawa sumi-ink/orange/yellow relationship.
 - **Do** align measurements and use fine dividers to connect analytical regions.
-- **Do** keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.
+- **Do** use inset fields, single-frame segmented choices, and semantic hover/pressed/selection states.
+- **Do** keep visible labels, one ring-colored focus outline, readable metadata, and touch-sized controls on narrow screens.
 - **Do** preserve chart and table geometry while data loads or refreshes.
 - **Do** use TanStack line and donut charts, actual event identity kinds, and truthful empty or error states.
 - **Do** keep Overview widgets square and flat while preserving their exact measures, local loading, and responsive reading order.
@@ -301,6 +368,7 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 
 - **Don't** return to a corporate blue card grid or a black neon terminal identity.
 - **Don't** wrap every measurement in a raised, rounded card.
+- **Don't** reintroduce beveled button faces, split-arrow compartments, individual segment frames, or filled orange destination navigation.
 - **Don't** add decorative botanical imagery, faux paper textures, or ornamental glow.
 - **Don't** replace useful event context with decoration or hide an actual loading failure behind a skeleton.
 - **Don't** turn either the Explore composition or the Overview widget grid into a mandatory layout for every page.
