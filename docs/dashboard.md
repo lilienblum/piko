@@ -71,7 +71,7 @@ Settings lists sources with their name and icon. Automatic chooses an icon from 
 
 ## Chart inspection
 
-Overview and Explore use official Bklit UI charts. Hover or touch the plot to inspect a bucket. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
+Overview and Explore use TanStack Charts. Hover or touch the plot to inspect a bucket. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
 
 ## Component foundation
 

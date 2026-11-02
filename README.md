@@ -5,7 +5,7 @@ Privacy-first, self-hosted product analytics for websites, CLIs, and developer t
 Piko has two independent applications, deployed together:
 
 - **`apps/api`** — Rust/Axum/Tokio. Owns products, ingestion keys, ingestion, and queries. SQLite stores the shared catalog; each product gets its own DuckDB event database. It has no dependency on dashboard code, routes, or assets.
-- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui on Base UI, [Bklit UI charts](https://bklit.com/docs/components/area-chart), and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. Authentication is handled by Cloudflare Access, outside the app.
+- **`apps/dashboard`** — React/TypeScript with **TanStack Start**, Vite, shadcn/ui on Base UI, [TanStack Charts](https://tanstack.com/charts/latest), and TanStack Table. Runs on **Bun**, serves the UI, and forwards `/api/*` to the Rust service. Authentication is handled by Cloudflare Access, outside the app.
 
 This two-process layout supersedes the original single-process concept. There is still one deployment, one persistent data volume, and no external database. You can run the API on its own.
 
@@ -92,7 +92,7 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-`bun test` runs SDK and test-runner validation tests (scoped by `bunfig.toml`). `bun test:e2e` starts two dedicated Tako apps at `https://piko-e2e.test` and `https://piko-e2e-api.test`, runs real Chromium tests, then stops those apps and deletes their temporary databases. Initialize local TLS and the notification secret once with `bun dev`; the preview need not be running during tests. No seed is needed. To run a subset, use `bun test:e2e tests/bklit-chart.spec.ts`.
+`bun test` runs SDK and test-runner validation tests (scoped by `bunfig.toml`). `bun test:e2e` starts two dedicated Tako apps at `https://piko-e2e.test` and `https://piko-e2e-api.test`, runs real Chromium tests, then stops those apps and deletes their temporary databases. Initialize local TLS and the notification secret once with `bun dev`; the preview need not be running during tests. No seed is needed. To run a subset, use `bun test:e2e tests/analytics-chart.spec.ts`.
 
 Every run gets fresh storage under `.tako/e2e/<run-id>/`. Test URLs are set by the runner, existing URL overrides cannot point it at the preview, and direct Playwright runs are rejected. A preflight requires an empty test database before any fixtures are created. Test failure, Ctrl-C, and SIGTERM all run teardown. A lock prevents simultaneous runs from sharing the test hosts. If a process is force-killed, follow the [test recovery instructions](docs/tako.md#browser-tests); its data remains separate from the preview. If Chromium is absent, install it with `bun node_modules/@playwright/test/cli.js install chromium`.
 
@@ -129,7 +129,7 @@ The Yuzu visual system uses muted yellow navigation in Light, neutral charcoal i
 
 Loading regions use the official [Skullet](https://skullet.lochie.me/) package: measured text placeholders and shared skeleton boxes for charts, tables, and keys. The navigation and report controls stay mounted; existing results remain visible during refresh. Reduced motion disables skeleton animation.
 
-Charts use the official Bklit UI source components with Piko’s theme and UTC labels. Mouse, touch, and arrow keys inspect values; missing numeric values remain gaps. See the [chart integration notes](apps/dashboard/src/components/charts/README.md) and [MIT notice](apps/dashboard/public/licenses/bklit.txt).
+Charts use [TanStack Charts](https://tanstack.com/charts/latest) with Piko’s theme and UTC labels. Mouse, touch, and arrow keys inspect values; missing numeric values remain gaps. See the [chart integration notes](docs/charts.md).
 
 Website ingestion keys can optionally restrict allowed origins in Settings, including `https://*.example.com` subdomains. Add the apex separately; schemes and ports match exactly. Restricted keys reject missing or unmatched Origin headers before writing events. Keep separate unrestricted keys for CLI/mobile/server clients. These checks reduce browser misuse, but public keys and forgeable non-browser headers cannot authenticate a sender. See [origin policy details](docs/api.md#optional-browser-origin-restrictions).
 

@@ -134,7 +134,7 @@ export function AnalyticsChart({
               },
             },
           },
-          margin: { top: 12, right: 24 },
+          margin: { top: 12 },
           theme: {
             foreground: "var(--foreground)",
             muted: "var(--muted-foreground)",

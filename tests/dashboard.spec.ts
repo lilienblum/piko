@@ -23,7 +23,10 @@ async function appearance(page: Page, theme: "Light" | "Dark" | "Auto") {
   if (mobile) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page.getByRole("menuitemradio", { name: theme, exact: true }).click();
-  if (mobile) await page.getByRole("button", { name: "Close navigation", exact: true }).click();
+  if (mobile) {
+    await page.getByRole("button", { name: "Close navigation", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Sidebar", exact: true })).toBeHidden();
+  }
 }
 let web: { id: string; name: string; key: string };
 let tool: { id: string; name: string; key: string };

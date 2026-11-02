@@ -196,6 +196,8 @@ Six focused Chromium checks pass against the native Tako apps: mobile website/to
 
 ## Official Bklit UI charts — 2026-11-01
 
+Superseded by the TanStack Charts migration below; this section records the earlier verification.
+
 Overview and Explore now use the official Bklit UI area chart, grid, axes, and tooltip components installed from `https://ui.bklit.com/r/{name}.json` through the Bun-run shadcn CLI. The committed registry sources and lockfile pin this installation; the MIT notice is included and served locally. Recharts and its unused shadcn wrapper are removed. Piko's existing utility module and Yuzu palette are preserved. Registry chart roles reference the existing theme tokens.
 
 The shared adapter retains UTC dates, partial-bucket labels, metric units, responsive height, honest empty/loading/error states, and existing results during refresh. It adds keyboard inspection through the same crosshair and tooltip, with live value announcements. Narrow local adaptations to the official sources preserve missing-value gaps and zero baselines for negative aggregates, and permit vertical touch scrolling and pinch zoom. Those adaptations are documented beside the sources.
@@ -239,3 +241,16 @@ Added optional per-key origin policies, with scheme/port-aware exact matches and
 Optional project websites now feed a server-fetched, locally cached favicon in the project selector. Tests cover website normalization, private/special IP rejection, bounded downloads, redirect rejection, cached bytes and headers after restart, project isolation, clearing/invalidation, late-fetch protection, first-party image requests, and geometry-preserving rendering fallback. The UI image test uses a fixture; a separate opt-in HTTPS smoke test successfully downloaded the actual Datafast favicon in 0.27 seconds. This is a single connectivity check, not a performance benchmark.
 
 **31 Rust tests**, **30 Bun tests**, and **7 affected Chromium browser tests** passed, along with formatting, TypeScript, lint, Clippy with warnings denied, and the production build. The opt-in network smoke test passed separately. Browser checks used disposable Tako apps/databases, which were removed afterward. Manual review covered Dark desktop Settings and the origin editor, plus the Light mobile screenshot. The running preview API was restarted on the new binary; its five existing projects migrated successfully, and the origin editor was verified against that API without changing existing key policies. The full browser suite and mixed-load benchmark were not rerun; no production deployment was performed.
+
+
+## TanStack Charts — 2026-11-02
+
+Overview and Explore now use the native React/SVG adapter from `@tanstack/charts` 1.1.0. Removed the vendored Bklit runtime, registry entry, license notice, chart-theme tokens, and unused direct D3, Motion, and Number Flow dependencies. D3 dependencies owned by TanStack Charts remain transitive. Current integration details live in [charts.md](charts.md).
+
+The adapter preserves linear segments, null gaps, measured zeroes, negative values, UTC calendar labels, partial-period tooltips, duration units, and stable refresh geometry. Native focus and tooltip announcements replace the old custom keyboard cursor; a small interaction-controller hook preserves Escape dismissal for unpinned tooltips. Automatic margins prevent hourly/monthly endpoint labels from clipping, including at 390 px. Native plot and tooltip animations are disabled.
+
+Manual browser review covered Website and CLI sources, p95 duration, monthly partial periods, pointer/keyboard inspection, light/dark Explore, narrow-screen layout, and a stable Overview refresh. The preview was reloaded after the production build refreshed Vite's development module graph. Preview data was not changed. Browser tests use the disposable Tako apps and databases; the mobile test helper now waits for the sidebar's closing transition before choosing a project.
+
+Formatting, typecheck, lint, **30 Bun tests / 141 assertions**, and the client/SSR production build pass. All **34 focused chart, overview, and dashboard browser checks** passed after the endpoint-label and mobile-test fixes. The final full suite passed **93 Chromium tests in 4.0 minutes**, and teardown removed both test apps and their temporary databases. Rust/backend checks and the ingestion benchmark were not rerun because the API, SDKs, and persistence logic are unchanged. No production deployment was performed.
+
+The largest client chunk measures **569.47 kB minified / 189.05 kB gzip**. The existing Vite chunk-size warning remains. This is a build-size measurement, not a runtime performance benchmark.

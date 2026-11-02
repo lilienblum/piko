@@ -293,7 +293,7 @@ Charts use an angular single-series line with linear interpolation, the data och
 
 ### Charts
 
-Use the official Bklit UI area chart components for Overview and Explore. Chart colors derive from the existing semantic theme; the chart registry must not introduce another palette. Preserve linear plots, subtle fills, zero baselines, missing-value gaps, UTC labels, metric units, keyboard inspection, and touch scrolling. Keep the plot mounted during refresh and preserve its region height while measuring. Reveal and scale animations are disabled so changing results stays immediate; reduced-motion also suppresses tooltip/axis transitions.
+Use TanStack Charts for Overview and Explore. Chart colors derive from the existing semantic theme; do not introduce another palette. Preserve linear plots, subtle fills, zero baselines, missing-value gaps, UTC labels, metric units, keyboard inspection, and touch scrolling. Keep the plot mounted during refresh and preserve its region height while measuring. Reveal and scale animations are disabled so changing results stays immediate; reduced-motion also suppresses tooltip/axis transitions.
 
 ### Motion and loading
 

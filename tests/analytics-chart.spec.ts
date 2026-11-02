@@ -131,3 +131,28 @@ for (const sample of [
     expect(paths).not.toMatch(/NaN|Infinity/);
   });
 }
+
+for (const interval of ["Hourly", "Monthly"]) {
+  test(`TanStack keeps ${interval.toLowerCase()} endpoint labels inside a narrow plot`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.getByRole("button", { name: interval, exact: true }).click();
+    const plot = page.locator(".analytics-plot");
+    await expect(plot.locator("svg.ts-chart")).toHaveAccessibleName(
+      interval === "Hourly" ? /UTC hour/ : /UTC month/,
+    );
+    await expect
+      .poll(() =>
+        plot.evaluate((element) => {
+          const bounds = element.getBoundingClientRect();
+          return [...element.querySelectorAll("svg text")].every((label) => {
+            const rect = label.getBoundingClientRect();
+            return !rect.width || (rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1);
+          });
+        }),
+      )
+      .toBe(true);
+  });
+}

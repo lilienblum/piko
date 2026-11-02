@@ -36,41 +36,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-line-primary: var(--chart-line-primary);
-  --color-chart-line-secondary: var(--chart-line-secondary);
-  --color-chart-brush-border: var(--chart-brush-border);
-  --color-chart-tooltip-background: var(--chart-tooltip-background);
-  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
-  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
-  --color-chart-scale-02: var(--chart-scale-02);
-  --color-chart-scale-03: var(--chart-scale-03);
-  --color-chart-scale-04: var(--chart-scale-04);
-  --color-chart-scale-05: var(--chart-scale-05);
-  --color-chart-segment-line: var(--chart-segment-line);
-  --color-chart-segment-background: var(--chart-segment-background);
-  --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
-  --color-chart-marker-badge-background: var(--chart-marker-badge-background);
-  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
-  --color-chart-indicator-color: var(--chart-indicator-color);
-  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
-  --color-chart-scale-01: var(--chart-scale-01);
-  --color-chart-scale-mix: var(--chart-scale-mix);
-  --color-chart-label: var(--chart-label);
-  --color-chart-marker-foreground: var(--chart-marker-foreground);
-  --color-chart-marker-border: var(--chart-marker-border);
-  --color-chart-marker-background: var(--chart-marker-background);
-  --color-chart-grid: var(--chart-grid);
-  --color-chart-crosshair: var(--chart-crosshair);
-  --color-chart-foreground-muted: var(--chart-foreground-muted);
-  --color-chart-foreground: var(--chart-foreground);
-  --color-chart-background: var(--chart-background);
-  --color-chart-negative: var(--chart-negative);
-  --color-chart-positive: var(--chart-positive);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
 }
 :root {
   color-scheme: light;
@@ -101,42 +66,6 @@
   --sidebar-accent-foreground: #34362a;
   --sidebar-border: #c5c197;
   --sidebar-ring: var(--primary);
-  /* Official Bklit chart roles share Piko’s Light/Dark/Auto palette. */
-  --chart-1: var(--data);
-  --chart-2: var(--success);
-  --chart-3: var(--destructive);
-  --chart-4: var(--muted-foreground);
-  --chart-5: var(--foreground);
-  --chart-positive: var(--success);
-  --chart-negative: var(--destructive);
-  --chart-background: var(--background);
-  --chart-foreground: var(--foreground);
-  --chart-foreground-muted: var(--muted-foreground);
-  --chart-line-primary: var(--data);
-  --chart-line-secondary: var(--success);
-  --chart-crosshair: var(--muted-foreground);
-  --chart-grid: var(--border);
-  --chart-brush-border: var(--input);
-  --chart-tooltip-background: var(--card);
-  --chart-tooltip-foreground: var(--foreground);
-  --chart-tooltip-muted: var(--muted-foreground);
-  --chart-marker-background: var(--card);
-  --chart-marker-border: var(--input);
-  --chart-marker-foreground: var(--foreground);
-  --chart-label: var(--muted-foreground);
-  --chart-scale-mix: var(--card);
-  --chart-scale-01: var(--subtle);
-  --chart-scale-02: var(--muted);
-  --chart-scale-03: var(--accent);
-  --chart-scale-04: var(--secondary);
-  --chart-scale-05: var(--data);
-  --chart-scale-pattern-color: var(--card);
-  --chart-indicator-color: var(--data);
-  --chart-indicator-secondary-color: var(--background);
-  --chart-marker-badge-background: var(--primary);
-  --chart-marker-badge-foreground: var(--primary-foreground);
-  --chart-segment-background: var(--accent);
-  --chart-segment-line: var(--input);
 }
 .dark {
   color-scheme: dark;
@@ -1952,6 +1881,13 @@ html {
   --ts-chart-tooltip-shadow: 0 8px 20px color-mix(in srgb, var(--foreground) 10%, transparent);
   --ts-chart-tooltip-padding: 12px;
   --ts-chart-tooltip-font: 400 13px / 1.5 "Geist Variable", sans-serif;
+}
+.analytics-plot .ts-chart {
+  outline: none;
+}
+.analytics-plot .ts-chart:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 .analytics-plot .ts-chart-tooltip__title {
   color: var(--muted-foreground);

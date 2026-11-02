@@ -26,7 +26,7 @@ Overview for regular checks, Explore for server-side queries and event inspectio
 
 Two Tako applications: Rust API and TanStack Start dashboard. Per-product DuckDB analytics; SQLite application state. Preserve bounded ingestion, durable acknowledgments, typed queries, deduplication, and external authentication through Cloudflare Access. No new backend scope for this redesign. Bun tooling only; MIT license.
 
-Light, Dark, and Auto themes, Hugeicons, accessible shadcn Base UI primitives, official Bklit UI charts, and server-paginated tables remain. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
+Light, Dark, and Auto themes, Hugeicons, accessible shadcn Base UI primitives, TanStack Charts, and server-paginated tables remain. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
 
 ## Brand Commitments
 
