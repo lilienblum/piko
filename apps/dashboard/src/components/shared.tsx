@@ -1,3 +1,4 @@
+import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
 import type { ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -85,7 +86,7 @@ export function SeriesChart({
   description: string;
   label?: string;
   controls?: ReactNode;
-  bucket?: "day" | "hour";
+  bucket?: TimeBucket;
   unit?: string;
   range?: { from: string; to: string };
   pending?: boolean;
@@ -93,19 +94,6 @@ export function SeriesChart({
   retry?: () => void;
   emptyMessage?: string;
 }) {
-  const bucketWidth = bucket === "hour" ? 3600000 : 86400000;
-  const from = range ? Date.parse(range.from) : undefined;
-  const to = range ? Date.parse(range.to) : undefined;
-  const partialFirst = from !== undefined && from % bucketWidth !== 0;
-  const partialLast = to !== undefined && to % bucketWidth !== 0;
-  const partialLabel =
-    partialFirst && partialLast
-      ? `First and last ${bucket}s are partial.`
-      : partialFirst
-        ? `First ${bucket} is partial.`
-        : partialLast
-          ? `Last ${bucket} is partial.`
-          : `Complete UTC ${bucket}s.`;
   return (
     <Card className={`chart-card${controls ? " chart-card-interactive" : ""}`}>
       <CardHeader>
@@ -160,7 +148,8 @@ export function SeriesChart({
         </div>
         {range && (
           <p className="chart-period-note">
-            {bucket === "hour" ? "Hourly" : "Daily"} · UTC · {partialLabel}
+            {bucketLabels[bucket]} · UTC{bucket === "week" ? " (Monday start)" : ""} ·{" "}
+            {partialBucketNote(range, bucket)}
           </p>
         )}
       </CardContent>

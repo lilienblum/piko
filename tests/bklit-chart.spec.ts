@@ -55,7 +55,7 @@ test("Bklit keeps numeric gaps and zero/negative values, with keyboard UTC inspe
   expect(path).not.toMatch(/NaN|Infinity/);
   await expect(chart).toContainText("-20");
   await chart.press("Home");
-  await expect(chart.locator(".chart-tooltip-date")).toContainText("Oct 31, 23:00 UTC");
+  await expect(chart.locator(".chart-tooltip-date")).toContainText("Oct 31, 2026 UTC");
   await expect(chart.locator(".chart-tooltip-value strong")).toHaveText("10");
   await chart.press("ArrowRight");
   await expect(chart.locator(".chart-tooltip-value strong")).toHaveText("No numeric value");

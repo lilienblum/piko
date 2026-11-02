@@ -1,3 +1,4 @@
+import { nextBucket, type TimeBucket } from "@/lib/time-buckets";
 import { curveLinear } from "d3-shape";
 import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import { AreaChart } from "@/components/charts/area-chart";
@@ -38,7 +39,7 @@ export function AnalyticsChart({
 }: {
   series: QueryResult["series"];
   label: string;
-  bucket: "day" | "hour";
+  bucket: TimeBucket;
   unit?: string;
   range?: { from: string; to: string };
 }) {
@@ -54,7 +55,7 @@ export function AnalyticsChart({
         date.toLocaleString("en-US", {
           timeZone: "UTC",
           month: "short",
-          day: "numeric",
+          ...(bucket === "month" ? { year: "numeric" as const } : { day: "numeric" as const }),
           ...(bucket === "hour"
             ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" as const }
             : {}),
@@ -62,13 +63,21 @@ export function AnalyticsChart({
       ),
     [points, bucket],
   );
-  const bucketWidth = bucket === "hour" ? 3_600_000 : 86_400_000;
   const valueLabel = (value: unknown) =>
     typeof value === "number" ? `${number(value, 2)}${unit ? ` ${unit}` : ""}` : "No numeric value";
   const dateLabel = (time: number) => {
     const partial =
-      range && (time < Date.parse(range.from) || time + bucketWidth > Date.parse(range.to));
-    return `${new Date(time).toLocaleString("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} UTC${partial ? ` · partial ${bucket}` : ""}`;
+      range && (time < Date.parse(range.from) || nextBucket(time, bucket) > Date.parse(range.to));
+    const date = new Date(time).toLocaleString("en-US", {
+      timeZone: "UTC",
+      month: "short",
+      year: "numeric",
+      ...(bucket !== "month" ? { day: "numeric" as const } : {}),
+      ...(bucket === "hour"
+        ? { hour: "2-digit" as const, minute: "2-digit" as const, hourCycle: "h23" as const }
+        : {}),
+    });
+    return `${bucket === "week" ? "Week of " : ""}${date} UTC${partial ? ` · partial ${bucket}` : ""}`;
   };
   const inspect = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!points.length) return;
@@ -97,7 +106,7 @@ export function AnalyticsChart({
       data-chart-library="bklit"
       role="application"
       aria-roledescription="interactive chart"
-      aria-label={`${label} by UTC ${bucket === "hour" ? "hour" : "date"}`}
+      aria-label={`${label} by UTC ${bucket === "day" ? "date" : bucket}`}
       aria-describedby={instructionsId}
       // biome-ignore lint/a11y/noNoninteractiveTabindex: This chart implements arrow-key inspection.
       tabIndex={0}
