@@ -21,6 +21,7 @@ colors:
   success: "#50632d"
   subtle: "#e1e3dc"
   data: "#7c691c"
+  data-clay: "#956052"
   sidebar: "#ded9ad"
   sidebar-foreground: "#34362a"
   sidebar-accent: "#d2cca0"
@@ -43,6 +44,7 @@ colors:
   dark-success: "#adbf85"
   dark-subtle: "#17191b"
   dark-data: "#d1c360"
+  dark-data-clay: "#d5a38b"
   dark-sidebar: "#17191b"
   dark-sidebar-foreground: "#d4d8d0"
   dark-sidebar-accent: "#272b29"
@@ -52,8 +54,8 @@ typography:
   display:
     fontFamily: "Geist Variable, sans-serif"
     fontSize: "32px"
-    fontWeight: 650
-    lineHeight: 1.2
+    fontWeight: 600
+    lineHeight: 1.15
     letterSpacing: "-0.035em"
   headline:
     fontFamily: "Geist Variable, sans-serif"
@@ -143,6 +145,11 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.lg}"
     padding: "20px 24px"
+  overview-widget:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    padding: "20px"
   measurement-field:
     backgroundColor: "transparent"
     textColor: "{colors.foreground}"
@@ -169,13 +176,13 @@ components:
 
 Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, shallow raised controls, framed tabs, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
 
-Analytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
+Analytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
 
 **Key Characteristics:**
 
 - Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.
 - Geist typography with restrained headings and prominent measurements.
-- Flat analytical fields; contained forms and inspection.
+- Flat analytical fields and square Overview widgets; contained forms and inspection.
 - Tactile squared controls, explicit focus, and stable loading geometry.
 
 ## Colors
@@ -186,8 +193,9 @@ The palette uses soft stone working surfaces in Light and deep, nearly neutral c
 
 - **Warm action ink** (`primary`): filled actions, active navigation, and focus outlines. In Dark, this becomes a yellow accent with dark text for readable filled controls.
 - **Primary foreground** (`primary-foreground`): text on filled primary controls.
-- **Success** (`success`): small healthy-state indicators, with a separate green in each theme.
+- **Success** (`success`): healthy-state indicators and outcome proportions, with a separate green in each theme; source categories also reuse this color with explicit labels.
 - **Chart ochre** (`data`): plotted measurements and legend marks; it becomes a lighter yellow in Dark.
+- **Category clay** (`data-clay`): a restrained third source category, paired with ochre and green; it becomes lighter in Dark. Labels and exact values remain necessary, since category color alone carries no meaning.
 
 ### Secondary
 
@@ -207,7 +215,7 @@ The palette uses soft stone working surfaces in Light and deep, nearly neutral c
 - **Field stroke** (`input`): stronger boundaries for interactive fields and outlined buttons.
 - **Navigation ink** (`sidebar-foreground`): readable labels on each navigation ground.
 
-**The Measured Color Rule.** Use ink primary for actions and navigation selection, data ochre for plotted measurements, and semantic success/destructive colors for status; keep surrounding evidence neutral.
+**The Measured Color Rule.** Use ink primary for actions and navigation selection, data ochre for time-series measurements, and semantic success/destructive colors for outcomes. Source distributions use the bounded ochre/green/clay palette with explicit labels; keep surrounding evidence neutral.
 
 ## Typography
 
@@ -220,7 +228,7 @@ The palette uses soft stone working surfaces in Light and deep, nearly neutral c
 
 - **Display:** the frontmatter display role is a metric value, not a marketing headline. Its size reduces at narrower widths while tabular numerals preserve alignment.
 - **Headline:** page titles, compact and slightly tightened; the narrow layout uses a small size reduction.
-- **Title:** chart, card, and section headings share a steady, moderately bold scale.
+- **Title:** chart, card, and section headings share a steady, moderately bold scale; Overview uses a smaller widget-title treatment recorded in its surface brief.
 - **Body:** controls and general interface text.
 - **Supporting:** page explanations, with a measured line length of up to (65ch).
 - **Label:** field labels, metadata, legends, and table headers. Labels use sentence case; chart ticks and secondary table annotations can use the observed smaller (11px) treatment.
@@ -235,9 +243,9 @@ The persistent shell places a muted yellow rail in Light, or charcoal rail in Da
 
 The sidebar owns project selection, destination navigation, and a visible source list. All sources and individual source rows are mutually exclusive scope controls; their active treatment is quieter than active destination navigation. Source lists scroll independently, long names truncate with accessible full labels, and real retention information anchors the footer. Desktop navigation rows are (36px), collapsed rows (32px), and mobile drawer rows at least (40px). The sidebar supplies project/source context; report headings sit beside dates, refresh, and appearance. At (1150px) and below, controls move to their own row inside the same content layout. Settings omits dates and refresh, keeping appearance alongside the mobile project picker. Mobile moves source selection into the drawer. Connection status and version/license text are not product chrome.
 
-Overview places related measurements on shared rows, then a full-width chart and two equal-width breakdowns. Chart metrics sit beside a single-select Hourly/Daily/Weekly/Monthly button group; below (640px), these controls stack at full width. Weekly/monthly queries aggregate raw events on the server, with UTC calendar labels and partial-boundary notes. Paired breakdown headers share the same title/control row and description row, so their first data rows align. Empty ranges preserve the chart and controls. Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
+Overview is a collection of six equally sized square widgets: activity, sources, breakdowns, identified actors, outcomes, and duration. A shared Hourly/Daily/Weekly/Monthly button group controls its two time series; metric and dimension choices live in the corresponding widgets. The three-column grid becomes two columns at an available container width of (870px), then one at (550px), with a readable minimum-height fallback below (300px). Weekly/monthly queries aggregate raw events on the server, with UTC calendar labels and partial-boundary notes. Empty ranges retain the six sections and their controls. This is the user-requested Overview composition, not a universal page layout; its detailed hierarchy and geometry belong in the Overview surface brief. Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
 
-At (1150px) and below, Explore's results stack and query controls wrap. At (800px) and below, metric rows become two columns and Settings/breakdown regions stack. Below (768px), navigation becomes a sheet. At (640px) and below, toolbar controls wrap, page gutters become (16px), and buttons, selects, and inputs have a minimum height of (40px). The compact event view retains event/context columns and inline time; inspection exposes full metadata. Loading layouts retain the content's regions instead of replacing the whole page with an unrelated spinner.
+At (1150px) and below, Explore's results stack and query controls wrap. At (800px) and below, Settings regions stack. Overview responds to its available container width as described above. Below (768px), navigation becomes a sheet. At (640px) and below, toolbar controls wrap, page gutters become (16px), and buttons, selects, and inputs have a minimum height of (40px). The compact event view retains event/context columns and inline time; inspection exposes full metadata. Loading layouts retain the content's regions instead of replacing the whole page with an unrelated spinner.
 
 ## Elevation & Depth
 
@@ -251,15 +259,15 @@ Analytical regions stay flat. Interactive controls use shallow, crisp depth insp
 - **Context menus:** squared select, dropdown, and popover surfaces use a crisp (3px by 3px) offset edge, recorded in the sidecar.
 - **Flat surfaces:** analytical fields, cards, and metadata remain without a resting shadow. Text inputs have a faint inset upper edge.
 
-**The Shared Ground Rule.** Keep analytical regions flat and aligned; reserve enclosed containers for editing, inspection, and genuinely separate context.
+**The Shared Ground Rule.** Keep analytical regions flat and aligned. Fine boundaries may group related measurements in Overview widgets; reserve raised depth for controls and overlays.
 
 ## Shapes
 
-Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Analytical fields, proportional bars, and tab underlines remain square. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
+Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Open analytical fields, proportional bars, and tab underlines remain square; Overview widgets use the medium corner without raised depth. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
 
 The select arrow compartment uses a (2px) inner corner to nest inside its (3px) outer corner and (1px) border; it is not another standalone radius token.
 
-Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Analytical chart, metric, and stream wrappers override the generic card silhouette with transparent backgrounds and square corners.
+Thin borders define forms and seams. A stronger input stroke distinguishes editable fields from passive separators. Open chart and stream regions use transparent backgrounds and square corners. Overview widgets use the card surface and medium corner to bound each separate question without a resting shadow.
 
 ## Components
 
@@ -273,7 +281,7 @@ Small field labels. Source, type, and filter badges use a compact squared badge 
 
 ### Cards / Containers
 
-Contained editing cards use the card surface, a fine border, the large corner, vertical padding (20px), and horizontal content padding (24px). Settings, sources, and integration cards add a stronger top border in the input color. Their headers size to their actual content. Analytical variants remove the surrounding card shell and align headings and content on the same field. Use the flat surface and overlay distinction from Elevation & Depth.
+Contained editing cards use the card surface, a fine border, the large corner, vertical padding (20px), and horizontal content padding (24px). Settings, sources, and integration cards add a stronger top border in the input color. Their headers size to their actual content. Open analytical variants remove the surrounding card shell and align headings and content on the same field. Overview uses its dedicated square container, with the card surface, a fine border, the medium corner, and equal padding from the frontmatter; the body flexes between a steady header and footer. Use the flat surface and overlay distinction from Elevation & Depth.
 
 ### Inputs / Fields
 
@@ -289,15 +297,15 @@ The line variant now uses a shared bottom rule and a framed active tab, like a s
 
 ### Shared measurements and event inspection
 
-Charts use an angular single-series line with linear interpolation, the data ochre stroke, light horizontal grid marks, muted axes, and a faint ochre area fill. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
+Time series use an angular single-series line with linear interpolation, the data ochre stroke, light horizontal grid marks, muted axes, and a faint ochre area fill. Overview adds source and outcome donuts paired with labeled values; their center labels summarize rather than replacing the exact legend and footer values. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
 
 ### Charts
 
-Use TanStack Charts for Overview and Explore. Chart colors derive from the existing semantic theme; do not introduce another palette. Preserve linear plots, subtle fills, zero baselines, missing-value gaps, UTC labels, metric units, keyboard inspection, and touch scrolling. Keep the plot mounted during refresh and preserve its region height while measuring. Reveal and scale animations are disabled so changing results stays immediate; reduced-motion also suppresses tooltip/axis transitions.
+Use TanStack Charts for Overview and Explore. Line and donut colors derive from the semantic theme and its bounded source-category palette. Preserve linear plots, subtle fills, zero baselines, missing-value gaps, UTC labels, metric units, keyboard inspection, and touch scrolling. Keep plots and donuts mounted during refresh and preserve their region height while measuring. Source donuts show a compact center count and retain the exact total in the footer; source and outcome legends expose values without requiring hover. Reveal and scale animations are disabled so changing results stays immediate; reduced-motion also suppresses tooltip/axis transitions.
 
 ### Motion and loading
 
-Transitions clarify state rather than introducing spectacle. The rail uses a short linear size/position transition; dialogs and sheets use the existing short entry/exit treatment. Reduced-motion preference disables animations and transitions. Loading uses the official Skullet package, with measured text and fixed-size SkeletonBox elements mapped to the same regions as real content. Skeleton base/highlight colors derive from foreground at (10%)/(8%), with (3px) corners and a slow shared shimmer. Skullet holds fast loads for (150ms), reveals together over (120ms), and respects reduced motion. The server-rendered rail and report controls keep their geometry through hydration, including a saved collapsed rail. No full-page skeleton, connection-state label, or version/license footer. Existing data stays visible during refresh. Only incoming data regions receive placeholders. Event timezone is a browser preference in Settings; it changes table and inspector timestamps, while chart/calendar buckets and raw JSON stay UTC. Controls that require JavaScript become enabled after hydration.
+Transitions clarify state rather than introducing spectacle. The rail uses a short linear size/position transition; dialogs and sheets use the existing short entry/exit treatment. Reduced-motion preference disables animations and transitions. Loading uses the official Skullet package, with measured text and fixed-size SkeletonBox elements mapped to the same regions as real content. Skeleton base/highlight colors derive from foreground at (10%)/(8%), with (3px) corners and a slow shared shimmer. Skullet holds fast loads for (150ms), reveals together over (120ms), and respects reduced motion. The server-rendered rail and report controls keep their geometry through hydration, including a saved collapsed rail. No full-page skeleton, connection-state label, or version/license footer. Existing data stays visible during refresh. Only incoming data regions receive placeholders. Overview retains all six section containers while Skullet fills pending values or bodies locally; failures surface within the affected widget with a retry action. Event timezone is a browser preference in Settings; it changes table and inspector timestamps, while chart/calendar buckets and raw JSON stay UTC. Controls that require JavaScript become enabled after hydration.
 
 ## Do's and Don'ts
 
@@ -308,7 +316,8 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 - **Do** align measurements and use fine dividers to connect analytical regions.
 - **Do** keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.
 - **Do** preserve chart and table geometry while data loads or refreshes.
-- **Do** use the existing line chart, actual event identity kinds, and truthful empty or error states.
+- **Do** use TanStack line and donut charts, actual event identity kinds, and truthful empty or error states.
+- **Do** keep Overview widgets square and flat while preserving their exact measures, local loading, and responsive reading order.
 
 ### Don't:
 
@@ -316,4 +325,4 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 - **Don't** wrap every measurement in a raised, rounded card.
 - **Don't** add decorative botanical imagery, faux paper textures, or ornamental glow.
 - **Don't** replace useful event context with decoration or hide an actual loading failure behind a skeleton.
-- **Don't** turn the Explore composition into a mandatory layout for every page.
+- **Don't** turn either the Explore composition or the Overview widget grid into a mandatory layout for every page.

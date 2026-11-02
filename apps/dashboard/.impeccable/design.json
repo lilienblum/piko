@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T14:10:32.567213+00:00",
+  "generatedAt": "2026-11-02T03:03:45.544271Z",
   "title": "Design System: Piko",
   "extensions": {
     "colorMeta": {
@@ -591,6 +591,34 @@
           "oklch(84% 0.00977 151.55)",
           "oklch(95% 0.00977 151.55)"
         ]
+      },
+      "data-clay": {
+        "role": "secondary",
+        "displayName": "Category clay",
+        "tonalRamp": [
+          "oklch(15% 0.07312 35.49)",
+          "oklch(26% 0.07312 35.49)",
+          "oklch(38% 0.07312 35.49)",
+          "oklch(49% 0.07312 35.49)",
+          "oklch(61% 0.07312 35.49)",
+          "oklch(72% 0.07312 35.49)",
+          "oklch(84% 0.07312 35.49)",
+          "oklch(95% 0.07312 35.49)"
+        ]
+      },
+      "dark-data-clay": {
+        "role": "secondary",
+        "displayName": "Category clay \u00b7 Dark",
+        "tonalRamp": [
+          "oklch(15% 0.06838 46.83)",
+          "oklch(26% 0.06838 46.83)",
+          "oklch(38% 0.06838 46.83)",
+          "oklch(49% 0.06838 46.83)",
+          "oklch(61% 0.06838 46.83)",
+          "oklch(72% 0.06838 46.83)",
+          "oklch(84% 0.06838 46.83)",
+          "oklch(95% 0.06838 46.83)"
+        ]
       }
     },
     "typographyMeta": {
@@ -791,21 +819,29 @@
       "description": "Shared bottom rule with a framed selected face and flat inactive labels.",
       "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Breakdown\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">Sources</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Events</button></div>",
       "css": ".ds-tabs{display:inline-flex;gap:0;height:36px;padding:0;background:transparent;border-bottom:1px solid var(--input);}.ds-tab{position:relative;height:100%;margin-bottom:-1px;padding:4px 8px;border:1px solid transparent;border-radius:3px 3px 0 0;background:transparent;color:var(--muted-foreground);font:500 12px \"Geist Variable\",sans-serif;cursor:pointer;}.ds-tab[aria-selected=true]{background:var(--card);color:var(--foreground);border-color:var(--input);border-bottom-color:var(--card);box-shadow:inset 0 1px 0 var(--control-highlight);}.ds-tab:hover{color:var(--foreground);}.ds-tab:focus-visible{outline:2px solid var(--primary);outline-offset:3px;}"
+    },
+    {
+      "name": "Overview widget",
+      "kind": "card",
+      "refersTo": "overview-widget",
+      "description": "A flat square analytical section with a steady header, flexible body, and reserved footer.",
+      "html": "<section class=\"ds-overview-widget\"><h2 class=\"ds-widget-title\">Activity over time</h2><div class=\"ds-widget-body\"><strong class=\"ds-widget-value\">1,248</strong><span class=\"ds-widget-label\">Events</span></div><footer class=\"ds-widget-footer\">Example measurement</footer></section>",
+      "css": ".ds-overview-widget{display:flex;flex-direction:column;gap:12px;width:260px;aspect-ratio:1;padding:20px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--foreground);font-family:\"Geist Variable\",sans-serif;}.ds-widget-title{margin:0;min-height:32px;font-size:14px;font-weight:600;letter-spacing:-.01em;}.ds-widget-body{display:flex;flex:1;flex-direction:column;gap:10px;min-height:0;}.ds-widget-value{font-size:32px;font-weight:600;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums;}.ds-widget-label{font-size:12px;color:var(--muted-foreground);}.ds-widget-footer{min-height:24px;font-size:11px;line-height:1.5;color:var(--muted-foreground);}"
     }
   ],
   "narrative": {
     "northStar": "Yuzu",
-    "overview": "Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, shallow raised controls, framed tabs, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.\n\nAnalytical regions share a continuous ground with fine seams, aligned labels, and tabular values. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.",
+    "overview": "Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, shallow raised controls, framed tabs, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.\n\nAnalytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.",
     "keyCharacteristics": [
       "Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.",
       "Geist typography with restrained headings and prominent measurements.",
-      "Flat analytical fields; contained forms and inspection.",
+      "Flat analytical fields and square Overview widgets; contained forms and inspection.",
       "Tactile squared controls, explicit focus, and stable loading geometry."
     ],
     "rules": [
       {
         "name": "The Measured Color Rule",
-        "body": "Use ink primary for actions and navigation selection, data ochre for plotted measurements, and semantic success/destructive colors for status; keep surrounding evidence neutral.",
+        "body": "Use ink primary for actions and navigation selection, data ochre for time-series measurements, and semantic success/destructive colors for outcomes. Source distributions use the bounded ochre/green/clay palette with explicit labels; keep surrounding evidence neutral.",
         "section": "colors"
       },
       {
@@ -815,7 +851,7 @@
       },
       {
         "name": "The Shared Ground Rule",
-        "body": "Keep analytical regions flat and aligned; reserve enclosed containers for editing, inspection, and genuinely separate context.",
+        "body": "Keep analytical regions flat and aligned. Fine boundaries may group related measurements in Overview widgets; reserve raised depth for controls and overlays.",
         "section": "elevation"
       }
     ],
@@ -825,8 +861,9 @@
       "Do align measurements and use fine dividers to connect analytical regions.",
       "Do keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.",
       "Do preserve chart and table geometry while data loads or refreshes.",
-      "Do use the existing line chart, actual event identity kinds, and truthful empty or error states.",
-      "Do use official Bklit UI charts with semantic colors, UTC labels, missing-value gaps, keyboard inspection, touch scrolling, and stable refresh geometry.",
+      "Do use TanStack line and donut charts, actual event identity kinds, and truthful empty or error states.",
+      "Do keep Overview widgets square and flat while preserving their exact measures, local loading, and responsive reading order.",
+      "Do use TanStack Charts with semantic colors, UTC labels, missing-value gaps, keyboard inspection, touch scrolling, and stable refresh geometry.",
       "Do use official Skullet for component loading, keep report controls within the heading layout, and keep connection state and version/license details out of product chrome."
     ],
     "donts": [
@@ -834,7 +871,7 @@
       "Don't wrap every measurement in a raised, rounded card.",
       "Don't add decorative botanical imagery, faux paper textures, or ornamental glow.",
       "Don't replace useful event context with decoration or hide an actual loading failure behind a skeleton.",
-      "Don't turn the Explore composition into a mandatory layout for every page."
+      "Don't turn either the Explore composition or the Overview widget grid into a mandatory layout for every page."
     ]
   }
 }
