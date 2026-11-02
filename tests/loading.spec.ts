@@ -98,7 +98,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
     const pending = page.locator(".overview-grid");
     await expect(pending).toHaveAttribute("aria-busy", "true");
     await expect(pending).toBeVisible();
-    await expect(pending.locator(".overview-widget")).toHaveCount(6);
+    await expect(pending.locator(".overview-widget")).toHaveCount(5);
     await expect(pending.locator(".widget-value [skullet-loading]")).toHaveCount(3);
     await expect(pending.locator("[skullet-bar]").first()).toBeVisible();
     await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "true");

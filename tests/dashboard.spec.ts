@@ -179,7 +179,7 @@ test("create product, edit retention, create and revoke a key", async ({ page })
   await page.getByRole("tab", { name: "TypeScript" }).click();
   await expect(page.getByRole("tabpanel")).toContainText("await piko.send");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.locator(".overview-widget")).toHaveCount(6);
+  await expect(page.locator(".overview-widget")).toHaveCount(5);
   for (const widget of await page.locator(".overview-widget").all())
     await expect(widget).toContainText("No events in this range");
   await expect(page.locator(".overview-widget svg.ts-chart")).toHaveCount(0);

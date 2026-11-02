@@ -306,13 +306,13 @@ test("calendar interval buttons query raw weekly and monthly aggregates and reta
 });
 
 for (const width of [1440, 894, 390]) {
-  test(`Overview keeps six square widgets and contained content at ${width}px`, async ({
+  test(`Overview uses a wide activity chart and compact single-source summary at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
-    await expect(page.locator(".overview-widget")).toHaveCount(6);
+    await expect(page.locator(".overview-widget")).toHaveCount(5);
     const bounds = await page.locator(".overview-widget").evaluateAll((widgets) =>
       widgets.map((widget) => {
         const rect = widget.getBoundingClientRect();
@@ -320,6 +320,7 @@ for (const width of [1440, 894, 390]) {
         const footer = widget.querySelector(".widget-footer")?.getBoundingClientRect();
         if (!body || !footer) throw new Error("Widget structure missing");
         return {
+          activity: widget.classList.contains("activity-widget"),
           width: rect.width,
           height: rect.height,
           bodyBottom: body.bottom,
@@ -328,7 +329,9 @@ for (const width of [1440, 894, 390]) {
       }),
     );
     for (const bound of bounds) {
-      expect(Math.abs(bound.width - bound.height)).toBeLessThan(2);
+      if (!bound.activity || width === 390)
+        expect(Math.abs(bound.width - bound.height)).toBeLessThan(2);
+      else expect(bound.width).toBeGreaterThan(bound.height * 1.9);
       expect(bound.bodyBottom).toBeLessThanOrEqual(bound.footerTop);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -337,14 +340,11 @@ for (const width of [1440, 894, 390]) {
     await expect(page.locator(".outcomes-widget [data-chart-kind='donut']")).toHaveCount(0);
     await expect(page.locator(".outcomes-widget")).toContainText("No success values received");
     await expect(page.locator(".audience-widget .widget-value")).toHaveText("3");
-    const sources = page.locator(".sources-widget");
-    await expect(sources.locator("[data-chart-kind='donut']")).toHaveCount(0);
-    await expect(sources.locator(".widget-value")).toHaveText("6");
-    await expect(sources).not.toContainText("100%");
-    await expect(sources.getByRole("link", { name: "Explore Events", exact: true })).toBeVisible();
-    await expect(sources.locator("footer")).toContainText(
-      "All matching events come from this source.",
-    );
+    await expect(page.locator(".sources-widget")).toHaveCount(0);
+    await expect(page.locator(".source-summary-count")).toHaveText("6 events");
+    await expect(page.getByRole("link", { name: "Explore Events", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Explore Events", exact: true }).click();
+    await expect(page.getByText("across 6 matching events")).toBeVisible();
   });
 }
 

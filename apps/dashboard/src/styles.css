@@ -1897,7 +1897,45 @@ html {
   color: var(--muted-foreground);
   font-size: 13px;
 }
+.overview-toolbar-context {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.overview-source-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--foreground);
+  font-size: 13px;
+  text-decoration: none;
+}
+.overview-source-summary > :where(svg) {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.source-summary-name {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.overview-source-summary:hover .source-summary-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.source-summary-count {
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .overview-grid {
+  --overview-cell-size: calc((100cqw - 32px) / 3);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
@@ -1912,6 +1950,11 @@ html {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--card);
+}
+.overview-grid[data-source-comparison="false"] .activity-widget {
+  grid-column: span 2;
+  aspect-ratio: auto;
+  height: var(--overview-cell-size);
 }
 .widget-header {
   display: flex;
@@ -2084,18 +2127,6 @@ html {
   height: 7px;
   border-radius: 2px;
 }
-.single-source-row {
-  grid-template-columns: 20px minmax(0, 1fr);
-  min-height: 36px;
-  font-size: 14px;
-}
-.sources-widget .single-source-row > svg {
-  width: 20px;
-  height: 20px;
-}
-.single-source-row > .legend-name {
-  text-align: left;
-}
 a.legend-row {
   text-decoration: none;
 }
@@ -2161,10 +2192,16 @@ a.legend-row:hover .legend-name {
 }
 @container (max-width: 870px) {
   .overview-grid {
+    --overview-cell-size: calc((100cqw - 16px) / 2);
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @container (max-width: 550px) {
+  .overview-grid[data-source-comparison="false"] .activity-widget {
+    grid-column: auto;
+    aspect-ratio: 1;
+    height: auto;
+  }
   .overview-grid {
     grid-template-columns: minmax(0, 1fr);
   }

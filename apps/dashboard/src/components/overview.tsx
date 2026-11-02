@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
@@ -77,8 +79,10 @@ function ProductOverview() {
   const body = { ...range, source_id: sourceId, measure: "count", group_by: "name" };
   const scope = JSON.stringify([range.from, sourceId]);
   const query = useQuery(product?.id, body, refreshKey, scope);
+  const canCompareSources = !sourceId && (product?.sources.length ?? 0) > 1;
+  const needsSourceQuery = canCompareSources || dimension === "source_id";
   const sources = useQuery(
-    product?.id,
+    needsSourceQuery ? product?.id : undefined,
     { ...body, group_by: "source_id" },
     refreshKey,
     `${scope}:sources`,
@@ -125,7 +129,7 @@ function ProductOverview() {
   );
   useAnalyticsPending(
     query.refreshing ||
-      sources.refreshing ||
+      (needsSourceQuery && sources.refreshing) ||
       (separateBreakdown && secondary.refreshing) ||
       (separateChart && chartQuery.refreshing) ||
       (hasDuration && duration.refreshing),
@@ -140,6 +144,13 @@ function ProductOverview() {
   );
   const singleSource =
     sourceSlices.length === 1 && sourceSlices[0].group ? sourceSlices[0] : undefined;
+  const showSources = canCompareSources && (!sources.data || sourceSlices.length > 1);
+  const summarySource =
+    source ??
+    (product?.sources.length === 1
+      ? product.sources[0]
+      : product?.sources.find((item) => item.id === singleSource?.group?.label));
+  const sourceTotal = canCompareSources ? singleSource?.value : s?.total;
   const outcomes = useMemo(
     () =>
       s?.success_rate == null
@@ -200,9 +211,41 @@ function ProductOverview() {
       />
       <div className="overview-dashboard">
         <div className="overview-toolbar">
-          <span className="overview-toolbar-copy">
-            {source ? "Source snapshot" : "Project snapshot"}
-          </span>
+          <div className="overview-toolbar-context">
+            {!showSources && summarySource ? (
+              <Link
+                className="overview-source-summary"
+                to="/projects/$projectSlug/explore"
+                params={{ projectSlug: product.slug }}
+                search={{ drilldown: { sourceId: summarySource.id, ...range } }}
+                aria-label={`Explore ${summarySource.name}`}
+              >
+                <SourceIcon name={summarySource.name} icon={summarySource.icon} />
+                <span className="source-summary-name" title={summarySource.name}>
+                  {summarySource.name}
+                </span>
+                {sourceTotal === undefined ? (
+                  <Skeleton className="h-3 w-10" />
+                ) : (
+                  <span className="source-summary-count">
+                    {number(sourceTotal)} {sourceTotal === 1 ? "event" : "events"}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <span className="overview-toolbar-copy">
+                {source ? "Source snapshot" : "Project snapshot"}
+              </span>
+            )}
+            {!showSources && canCompareSources && sources.error && (
+              <div className="widget-error" role="alert">
+                <span className="widget-error-message">{sources.error}</span>
+                <Button variant="ghost" size="sm" onClick={refresh}>
+                  Retry
+                </Button>
+              </div>
+            )}
+          </div>
           <ToggleGroup
             aria-label="Chart interval"
             variant="outline"
@@ -230,7 +273,11 @@ function ProductOverview() {
             ))}
           </ToggleGroup>
         </div>
-        <div className="overview-grid" aria-busy={query.loading}>
+        <div
+          className="overview-grid"
+          data-source-comparison={showSources}
+          aria-busy={query.loading}
+        >
           <OverviewWidget
             title="Activity over time"
             className="activity-widget"
@@ -265,97 +312,65 @@ function ProductOverview() {
               </WidgetContent>
             </div>
           </OverviewWidget>
-          <OverviewWidget
-            title="Sources"
-            className="sources-widget"
-            error={sources.error}
-            retry={refresh}
-            footer={
-              singleSource
-                ? "All matching events come from this source."
-                : sources.data
+          {showSources && (
+            <OverviewWidget
+              title="Sources"
+              className="sources-widget"
+              error={sources.error}
+              retry={refresh}
+              footer={
+                sources.data
                   ? `${number(sources.data.summary.total)} events in this range`
                   : "Share of events by source"
-            }
-          >
-            <WidgetContent
-              label="sources"
-              loading={sources.loading}
-              empty={
-                !sources.data
-                  ? "Sources unavailable."
-                  : sources.data.summary.total === 0
-                    ? "No events in this range."
-                    : undefined
               }
             >
-              {singleSource ? (
-                <div className="flex flex-1 items-center">
-                  <WidgetValue
-                    value={number(singleSource.value)}
-                    label={singleSource.value === 1 ? "event" : "events"}
-                    loading={false}
-                  />
-                </div>
-              ) : (
+              <WidgetContent
+                label="sources"
+                loading={sources.loading}
+                empty={!sources.data ? "Sources unavailable." : undefined}
+              >
                 <DonutChart
                   data={sourceSlices}
                   label="Events by source"
                   value={compactCount.format(sources.data?.summary.total ?? 0)}
                   detail="events"
                 />
-              )}
-              <div className="widget-legend">
-                {sourceSlices.map((slice) => {
-                  const target = slice.group && drilldown("source_id", slice.group);
-                  const content = (
-                    <>
-                      {singleSource ? (
-                        <SourceIcon
-                          name={slice.label}
-                          icon={
-                            product.sources.find((source) => source.id === slice.group?.label)?.icon
-                          }
-                        />
-                      ) : (
+                <div className="widget-legend">
+                  {sourceSlices.map((slice) => {
+                    const target = slice.group && drilldown("source_id", slice.group);
+                    const content = (
+                      <>
                         <span className="legend-dot" style={{ background: slice.color }} />
-                      )}
-                      <span className="legend-name" title={slice.label}>
-                        {slice.label}
-                      </span>
-                      {!singleSource && (
-                        <>
-                          <strong>{number(slice.value)}</strong>
-                          <span>
-                            {number((slice.value / (sources.data?.summary.total || 1)) * 100, 1)}%
-                          </span>
-                        </>
-                      )}
-                    </>
-                  );
-                  return target ? (
-                    <Link
-                      className={singleSource ? "legend-row single-source-row" : "legend-row"}
-                      key={slice.id}
-                      to="/projects/$projectSlug/explore"
-                      params={{ projectSlug: product.slug }}
-                      search={{ drilldown: target }}
-                      aria-label={`Explore ${slice.label}`}
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <div
-                      className={singleSource ? "legend-row single-source-row" : "legend-row"}
-                      key={slice.id}
-                    >
-                      {content}
-                    </div>
-                  );
-                })}
-              </div>
-            </WidgetContent>
-          </OverviewWidget>
+                        <span className="legend-name" title={slice.label}>
+                          {slice.label}
+                        </span>
+                        <strong>{number(slice.value)}</strong>
+                        <span>
+                          {number((slice.value / (sources.data?.summary.total || 1)) * 100, 1)}%
+                        </span>
+                      </>
+                    );
+                    return target ? (
+                      <Link
+                        className="legend-row"
+                        key={slice.id}
+                        to="/projects/$projectSlug/explore"
+                        params={{ projectSlug: product.slug }}
+                        search={{ drilldown: target }}
+                        aria-label={`Explore ${slice.label}`}
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <div className="legend-row" key={slice.id}>
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              </WidgetContent>
+            </OverviewWidget>
+          )}
           <OverviewWidget
             title="Breakdown"
             className="breakdown-widget"

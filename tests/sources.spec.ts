@@ -87,8 +87,9 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await expect(sources.locator(".ts-chart-tooltip")).toBeHidden();
   await select(page, "Select source", "Website");
   await expect(sources.locator("[data-chart-kind='donut']")).toHaveCount(0);
-  await expect(sources.locator(".widget-value")).toHaveText("1");
-  await expect(sources.getByRole("link", { name: "Explore Website", exact: true })).toBeVisible();
+  await expect(sources).toHaveCount(0);
+  await expect(page.locator(".source-summary-count")).toHaveText("1 event");
+  await expect(page.getByRole("link", { name: "Explore Website", exact: true })).toBeVisible();
   await select(page, "Select source", "All sources");
   await expect(donut).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore iOS app", exact: true })).toBeVisible();
@@ -146,7 +147,7 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Select source", "Mobile app");
-  await expect(page.locator(".overview-widget")).toHaveCount(6);
+  await expect(page.locator(".overview-widget")).toHaveCount(5);
   await expect(page.getByText("No actor IDs received")).toBeVisible();
   await select(page, "Breakdown", "Screens");
   await page.screenshot({
@@ -266,7 +267,6 @@ test("automatic and pinned source icons survive renames without changing analyti
   const metrics = await page.locator(".overview-widget h2").allTextContents();
   expect(metrics).toEqual([
     "Activity over time",
-    "Sources",
     "Breakdown",
     "Identified actors",
     "Success rate",
@@ -281,6 +281,12 @@ test("automatic and pinned source icons survive renames without changing analyti
   await expect(dialog).not.toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page.locator(".workspace-source-name")).toContainText("Orbit iOS");
+  await expect(page.locator(".overview-source-summary")).toHaveAccessibleName("Explore Orbit iOS");
+  await expect(page.locator(".overview-source-summary [data-source-icon]")).toHaveAttribute(
+    "data-source-icon",
+    "ios",
+  );
+  await expect(page.locator(".source-summary-count")).toHaveText("2 events");
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
   expect(await page.locator(".overview-widget h2").allTextContents()).toEqual(metrics);
   await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();
