@@ -75,7 +75,7 @@ Existing projects migrate automatically to an initial source; existing keys and 
 
 ## Privacy defaults
 
-Collection starts without visitor, session, or installation identifiers. The browser tracker honors DNT/GPC, leaves campaign capture off until explicitly configured, and offers pre-send filtering plus an opt-out that discards queued data. The CLI example requires an explicit opt-in. New projects created in Settings start with 30-day retention.
+Collection starts without visitor, session, or installation identifiers. The browser tracker honors DNT/GPC, leaves campaign capture off until explicitly configured, and offers pre-send filtering plus an opt-out that discards queued data. The CLI example requires an explicit opt-in. New projects created in Settings start with one-year retention (365 days). Retention is configurable per project in Settings; existing projects keep their configured value.
 
 Piko does not derive analytics identity from IP addresses or user-agent information. Paths, custom properties, and optional persistent IDs are still data you choose to collect; they are not automatically anonymized. Read [the privacy model and collection controls](docs/privacy.md) before integrating private application routes.
 

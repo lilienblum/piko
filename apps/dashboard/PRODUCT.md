@@ -20,7 +20,7 @@ Projects group named sources from websites, mobile apps, and developer tools und
 
 ## Operating Context
 
-Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Persistent project/source/date selection; optional live refresh through Tako ephemeral channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
+Overview for regular checks, Explore for server-side queries and event inspection, Settings for product metadata, retention, ingestion keys, and integration snippets. Retention is configured per project in Settings, with a 365-day default for new projects; existing values are preserved. The sidebar does not display retention. Persistent project/source/date selection; optional live refresh through Tako ephemeral channels. Desktop is the main work surface; mobile supports inspection and management. Daily use by developers is an inference from the brief, not user research.
 
 ## Capabilities and Constraints
 

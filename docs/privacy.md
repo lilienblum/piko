@@ -41,7 +41,7 @@ Changing identity to `none` stops using IDs but does not itself erase IDs from a
 
 ## Retention and deletion
 
-Retention is per product; the internal cleanup job runs hourly. Changing the default for new products does not shorten existing products' configured retention. Cleanup logically removes expired rows from the active databases; it is not a secure disk erase. Old backups, snapshots, and migration files require their own retention policy. The original shared `events.duckdb` file retained during migration is outside active cleanup.
+Retention is configured per project in Settings and applies to all its sources; the internal cleanup job runs hourly. New projects created in Settings default to one year (365 days). Changing the default for new products does not shorten existing products' configured retention. Cleanup logically removes expired rows from the active databases; it is not a secure disk erase. Old backups, snapshots, and migration files require their own retention policy. The original shared `events.duckdb` file retained during migration is outside active cleanup.
 
 There is no automatic personal-data classification or per-person erasure workflow in v1. Minimize collection up front, keep retention short, and verify the stored events in Explore before rolling out a collector broadly.
 
