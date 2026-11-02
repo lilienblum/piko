@@ -1941,41 +1941,24 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Keep the plot's SSR/loading geometry while Bklit measures its container. */
-.series-chart > .bklit-plot {
+/* Keep the plot's SSR/loading geometry while TanStack measures its container. */
+.series-chart > .analytics-plot {
   height: 100%;
-  /* Contain the previous SVG width until ResizeObserver measures a narrower viewport. */
   overflow-x: clip;
+  --ts-chart-tooltip-background: var(--card);
+  --ts-chart-tooltip-color: var(--foreground);
+  --ts-chart-tooltip-border: 1px solid var(--border);
+  --ts-chart-tooltip-border-radius: 6px;
+  --ts-chart-tooltip-shadow: 0 8px 20px color-mix(in srgb, var(--foreground) 10%, transparent);
+  --ts-chart-tooltip-padding: 12px;
+  --ts-chart-tooltip-font: 400 13px / 1.5 "Geist Variable", sans-serif;
 }
-.chart-tooltip-content {
-  display: grid;
-  gap: 8px;
-  min-width: 160px;
-  padding: 12px;
-}
-.chart-tooltip-date {
+.analytics-plot .ts-chart-tooltip__title {
   color: var(--muted-foreground);
   font-size: 12px;
 }
-.chart-tooltip-value {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 13px;
-}
-.chart-tooltip-value strong {
+.analytics-plot .ts-chart-tooltip__row > span:last-child {
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-@media (prefers-reduced-motion: reduce) {
-  .series-chart *,
-  .series-chart *::before,
-  .series-chart *::after {
-    /* biome-ignore lint/complexity/noImportantStyles: Override registry inline transitions for reduced motion. */
-    transition-duration: 0s !important;
-    /* biome-ignore lint/complexity/noImportantStyles: Override registry inline animations for reduced motion. */
-    animation-duration: 0s !important;
-  }
 }
 
 /* Report controls share the content grid; there is no separate application bar. */

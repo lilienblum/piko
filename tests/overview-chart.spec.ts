@@ -238,12 +238,12 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   await expect(page.locator(".chart-card [data-slot='chart']")).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.locator(".bklit-plot svg circle")).toHaveCount(1);
-  const ticks = await page.locator(".bklit-plot span").evaluateAll((elements) =>
+  await expect(page.locator('.analytics-plot svg circle[r="2.5"]')).toHaveCount(1);
+  const ticks = await page.locator(".analytics-plot svg text").evaluateAll((elements) =>
     elements
       .filter((element) => element.textContent?.endsWith(" ms"))
       .map((element) => {
-        const svg = element.closest(".bklit-plot");
+        const svg = element.closest(".analytics-plot");
         if (!svg) throw new Error("Expected axis tick inside chart");
         return {
           left: element.getBoundingClientRect().left,
