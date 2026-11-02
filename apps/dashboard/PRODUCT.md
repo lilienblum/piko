@@ -26,11 +26,11 @@ Overview for regular checks, Explore for server-side queries and event inspectio
 
 Two Tako applications: Rust API and TanStack Start dashboard. Per-product DuckDB analytics; SQLite application state. Preserve bounded ingestion, durable acknowledgments, typed queries, deduplication, and external authentication through Cloudflare Access. No new backend scope for this redesign. Bun tooling only; MIT license.
 
-Light, Dark, and Auto themes, Hugeicons, accessible shadcn Base UI primitives, TanStack Charts, and server-paginated tables remain. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
+One fixed Kanagawa Wave theme, Hugeicons, accessible shadcn Base UI primitives, TanStack Charts, and server-paginated tables remain. Theme selection and saved/system appearance preferences are removed. Existing privacy controls and stable refresh behavior must survive. No log search, funnels, session replay, dashboard builders, or multi-user administration in v1.
 
 ## Brand Commitments
 
-Piko is the working name. The user selected Yuzu: restrained yellow, warm ink, and a sharper graphic feel. Subsequent feedback calls for soft stone Light surfaces with less glare and deeper, nearly neutral charcoal Dark surfaces without a yellow cast. Carry it beyond colors through compact squared controls with shallow raised edges and framed tabs, Geist typography, a straight three-bar mark and matching favicon, and flat analytical surfaces. Accessible shadcn Base UI primitives remain, with a distinct Piko treatment. Use straightforward product language and keep analytics terminology accurate.
+Piko is the working name. The user selected Kanagawa colors and one theme without an appearance selector. Use Wave's sumi-ink surfaces and warm text, with Surimi Orange for primary actions, Carp Yellow highlights, violet/aqua chart categories, and green outcomes; avoid making the interface uniformly blue. Preserve the established compact squared controls, Geist typography, straight three-bar mark and matching favicon, flat analytical surfaces, and six-widget Overview. Accessible shadcn Base UI primitives remain. Use straightforward product language and accurate analytics terminology.
 
 ## Evidence on Hand
 

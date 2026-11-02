@@ -1,55 +1,37 @@
 ---
 
 name: "Piko"
-description: "Yuzu: a compact measurement tool with soft stone, deep charcoal, and restrained yellow accents."
+description: "Kanagawa Wave: a single sumi-ink theme with warm text, orange actions, yellow highlights, and seasonal chart accents."
 colors:
-  background: "#e7e8e4"
-  foreground: "#2e302c"
-  card: "#eff0eb"
-  primary: "#33362e"
-  primary-foreground: "#eee4a5"
-  secondary: "#dedfd5"
-  muted: "#dddfd8"
-  muted-foreground: "#5d6158"
-  accent: "#dddcc1"
-  destructive: "#a33c37"
-  destructive-foreground: "#ffffff"
-  border: "#c9ccc2"
-  input: "#7a8073"
-  control-highlight: "#fafbf7"
+  background: "#1f1f28"
+  foreground: "#dcd7ba"
+  heading: "#dcd7ba"
+  card: "#2a2a37"
+  primary: "#ffa066"
+  primary-foreground: "#16161d"
+  secondary: "#363646"
+  muted: "#363646"
+  muted-foreground: "#c8c093"
+  accent: "#49443c"
+  destructive: "#ff5d62"
+  destructive-foreground: "#16161d"
+  border: "#54546d"
+  input: "#938aa9"
+  success: "#98bb6c"
+  subtle: "#1a1a22"
+  data: "#e6c384"
+  data-secondary: "#957fb8"
+  data-tertiary: "#7aa89f"
+  control-highlight: "#54546d"
   control-edge: "color-mix(in oklab, var(--input) 65%, var(--background))"
-  success: "#50632d"
-  subtle: "#e1e3dc"
-  data: "#7c691c"
-  data-clay: "#956052"
-  sidebar: "#ded9ad"
-  sidebar-foreground: "#34362a"
-  sidebar-accent: "#d2cca0"
-  sidebar-accent-foreground: "#34362a"
-  sidebar-border: "#c5c197"
-  dark-background: "#121416"
-  dark-foreground: "#e2e4de"
-  dark-card: "#1b1d1f"
-  dark-primary: "#d9ca62"
-  dark-primary-foreground: "#272a20"
-  dark-secondary: "#292c2b"
-  dark-muted: "#242728"
-  dark-muted-foreground: "#a5aaa4"
-  dark-accent: "#30322b"
-  dark-destructive: "#f2a195"
-  dark-destructive-foreground: "#3b211d"
-  dark-border: "#353a38"
-  dark-input: "#737b74"
-  dark-control-highlight: "#3b3f3c"
-  dark-success: "#adbf85"
-  dark-subtle: "#17191b"
-  dark-data: "#d1c360"
-  dark-data-clay: "#d5a38b"
-  dark-sidebar: "#17191b"
-  dark-sidebar-foreground: "#d4d8d0"
-  dark-sidebar-accent: "#272b29"
-  dark-sidebar-accent-foreground: "#e2e4de"
-  dark-sidebar-border: "#313632"
+  sidebar: "#16161d"
+  sidebar-foreground: "#dcd7ba"
+  sidebar-primary: "#ffa066"
+  sidebar-primary-foreground: "#16161d"
+  sidebar-accent: "#2a2a37"
+  sidebar-accent-foreground: "#dcd7ba"
+  sidebar-border: "#54546d"
+  sidebar-ring: "#ffa066"
 typography:
   display:
     fontFamily: "Geist Variable, sans-serif"
@@ -172,50 +154,46 @@ components:
 
 ## Overview
 
-**Creative North Star: "Yuzu"**
+**Creative North Star: "Kanagawa Wave"**
 
-Piko is a compact measurement tool with a graphic identity. Muted yellow navigation in Light, charcoal surfaces in Dark, and ochre plots give the workspace its user-selected Yuzu character. Self-hosted Geist, shallow raised controls, framed tabs, solid ink selections, and the straight three-bar mark make the identity visible beyond its palette.
+Piko is a compact measurement tool using the user-selected Kanagawa palette. Sumi-ink surfaces and warm Fuji text frame Surimi Orange actions, Carp Yellow measurements, violet/aqua source categories, and green outcomes. Self-hosted Geist, shallow raised controls, framed tabs, and the straight three-bar mark preserve the existing interface character. The request changes colors and removes theme selection; it does not replace typography or page composition.
 
-Analytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. Light, Dark, and Auto belong to the same visual world.
+Analytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into square widgets; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. One palette is present in server-rendered HTML and CSS. There is no appearance selector, theme preference, or system-theme listener.
 
 **Key Characteristics:**
 
-- Soft stone in Light, deep charcoal in Dark, ink actions, and restrained Yuzu measurements.
+- Sumi-ink surfaces, warm text, orange actions, and yellow/violet/aqua data accents.
 - Geist typography with restrained headings and prominent measurements.
 - Flat analytical fields and square Overview widgets; contained forms and inspection.
 - Tactile squared controls, explicit focus, and stable loading geometry.
 
 ## Colors
 
-The palette uses soft stone working surfaces in Light and deep, nearly neutral charcoal in Dark. Yellow is reserved for navigation tint in Light, dark-mode actions, the mark, and plotted data; it must not wash over dark surfaces or body text. Frontmatter values are normative; unprefixed tokens are Light, and matching `dark-` tokens are Dark overrides from the stylesheet. Auto follows the system preference. Components use semantic CSS variables rather than choosing theme values directly.
+The palette is drawn from the [official Kanagawa colors](https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/colors.lua). Frontmatter values are normative. Piko uses one dark Wave palette; the user's later feedback selects warm primary/accents instead of blue controls. All components use semantic CSS variables.
 
 ### Primary
 
-- **Warm action ink** (`primary`): filled actions, active navigation, and focus outlines. In Dark, this becomes a yellow accent with dark text for readable filled controls.
-- **Primary foreground** (`primary-foreground`): text on filled primary controls.
-- **Success** (`success`): healthy-state indicators and outcome proportions, with a separate green in each theme; source categories also reuse this color with explicit labels.
-- **Chart ochre** (`data`): plotted measurements and legend marks; it becomes a lighter yellow in Dark.
-- **Category clay** (`data-clay`): a restrained third source category, paired with ochre and green; it becomes lighter in Dark. Labels and exact values remain necessary, since category color alone carries no meaning.
+- **Surimi Orange** (`primary`): filled actions, active navigation, focus rings, and the shared logo/favicon. Sumi-ink text (`primary-foreground`) keeps filled controls readable.
+- **Carp Yellow** (`data`): time-series strokes and the first source category.
+- **Seasonal categories** (`data-secondary`, `data-tertiary`): Oni Violet and Wave Aqua for additional sources. Exact labels and values remain available independently of color.
+- **Spring Green** (`success`): successful outcomes and healthy-state indicators.
 
 ### Secondary
 
-- **Navigation ground** (`sidebar`): muted yellow in Light and deep charcoal in Dark.
-- **Rail hover** (`sidebar-accent`, `sidebar-accent-foreground`): hovered navigation. Active navigation instead uses the solid primary action pair.
-- **Quiet field** (`secondary`, `accent`): low-chroma badges, hover fields, and quantitative breakdown fills. The two roles stay subordinate to primary actions.
-- **Error red** (`destructive`, `destructive-foreground`): invalid fields, error text, and destructive status. It communicates a state rather than introducing another decorative accent.
+- **Winter Yellow field** (`accent`): a muted warm selection field and proportional breakdown fill.
+- **Quiet controls** (`secondary`, `muted`): raised sumi-ink surfaces; outlined actions remain subordinate to filled orange actions.
+- **Peach Red** (`destructive`): errors and destructive actions, with dark foreground on filled destructive controls.
 
 ### Neutral
 
-- **Workspace ground** (`background`): soft stone in Light, deep charcoal in Dark.
-- **Working surface** (`card`): slightly lighter stone or charcoal for fields, editing cards, popovers, and local messages. Avoid near-white glare in Light and olive tint in Dark.
-- **Warm ink** (`foreground`): headings, body text, and values.
-- **Quiet ink** (`muted-foreground`): explanatory text, metadata, axes, and labels.
-- **Muted ground** (`muted`, `subtle`): code/context regions and table headers.
-- **Fine seam** (`border`, `sidebar-border`): analytical divisions and container boundaries.
-- **Field stroke** (`input`): stronger boundaries for interactive fields and outlined buttons.
-- **Navigation ink** (`sidebar-foreground`): readable labels on each navigation ground.
+- **Sumi-ink workspace** (`background`, `sidebar`, `subtle`): layered dark surfaces, with a deeper sidebar.
+- **Working surface** (`card`): lighter sumi ink for fields, widgets, popovers, and editing regions.
+- **Fuji White** (`foreground`, `heading`): warm primary text and measurements.
+- **Old White** (`muted-foreground`): readable supporting text, axes, and metadata. Do not use the palette's darker comment gray for small interface labels.
+- **Fine seam** (`border`, `sidebar-border`): passive divisions and container boundaries.
+- **Spring Violet stroke** (`input`): visible boundaries on interactive controls.
 
-**The Measured Color Rule.** Use ink primary for actions and navigation selection, data ochre for time-series measurements, and semantic success/destructive colors for outcomes. Source distributions use the bounded ochre/green/clay palette with explicit labels; keep surrounding evidence neutral.
+**The Measured Color Rule.** Orange marks actions and selection; yellow, violet, and aqua distinguish measurements; green and red label outcomes. Keep surrounding surfaces in sumi ink and do not make every control or chart blue.
 
 ## Typography
 
@@ -239,9 +217,9 @@ The logo is a distinct wordmark treatment, not an additional heading scale. Use 
 
 ## Layout
 
-The persistent shell places a muted yellow rail in Light, or charcoal rail in Dark, beside a continuous workspace. The expanded rail is (15rem), the collapsed rail (3.5rem), and controls share the report heading’s content grid rather than a separate top bar. Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
+The persistent shell places a deeper sumi-ink rail beside a continuous workspace. The expanded rail is (15rem), the collapsed rail (3.5rem), and controls share the report heading’s content grid rather than a separate top bar. Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
 
-The sidebar owns project selection, destination navigation, and a visible source list. All sources and individual source rows are mutually exclusive scope controls; their active treatment is quieter than active destination navigation. Source lists scroll independently, long names truncate with accessible full labels, and real retention information anchors the footer. Desktop navigation rows are (36px), collapsed rows (32px), and mobile drawer rows at least (40px). The sidebar supplies project/source context; report headings sit beside dates, refresh, and appearance. At (1150px) and below, controls move to their own row inside the same content layout. Settings omits dates and refresh, keeping appearance alongside the mobile project picker. Mobile moves source selection into the drawer. Connection status and version/license text are not product chrome.
+The sidebar owns project selection, destination navigation, and a visible source list. All sources and individual source rows are mutually exclusive scope controls; their active treatment is quieter than active destination navigation. Source lists scroll independently, long names truncate with accessible full labels, and real retention information anchors the footer. Desktop navigation rows are (36px), collapsed rows (32px), and mobile drawer rows at least (40px). The sidebar supplies project/source context; report headings sit beside dates and refresh. At (1150px) and below, controls move to their own row inside the same content layout. Settings omits dates and refresh. Mobile moves source selection into the drawer. Connection status and version/license text are not product chrome.
 
 Overview is a collection of six equally sized square widgets: activity, sources, breakdowns, identified actors, outcomes, and duration. A shared Hourly/Daily/Weekly/Monthly button group controls its two time series; metric and dimension choices live in the corresponding widgets. The three-column grid becomes two columns at an available container width of (870px), then one at (550px), with a readable minimum-height fallback below (300px). Weekly/monthly queries aggregate raw events on the server, with UTC calendar labels and partial-boundary notes. Empty ranges retain the six sections and their controls. This is the user-requested Overview composition, not a universal page layout; its detailed hierarchy and geometry belong in the Overview surface brief. Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
 
@@ -249,7 +227,7 @@ At (1150px) and below, Explore's results stack and query controls wrap. At (800p
 
 ## Elevation & Depth
 
-Analytical regions stay flat. Interactive controls use shallow, crisp depth inspired by the buttons and framed elements on [turbopuffer](https://turbopuffer.com/): a fine top highlight, squared face, and short lower edge. This distinction makes actions visible without raising every data region. Modal dialogs and sheets retain their existing larger shadow; the chart's faint ochre area fill remains a data treatment.
+Analytical regions stay flat. Interactive controls use shallow, crisp depth inspired by the buttons and framed elements on [turbopuffer](https://turbopuffer.com/): a fine top highlight, squared face, and short lower edge. This distinction makes actions visible without raising every data region. Modal dialogs and sheets retain their existing larger shadow; the chart's faint yellow area fill remains a data treatment.
 
 ### Shadow Vocabulary
 
@@ -263,7 +241,7 @@ Analytical regions stay flat. Interactive controls use shallow, crisp depth insp
 
 ## Shapes
 
-Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Open analytical fields, proportional bars, and tab underlines remain square; Overview widgets use the medium corner without raised depth. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=4` asset; its fixed yellow tile and dark bars remain consistent across themes.
+Corners are deliberately squared: raised buttons and fields use the small radius, badges and navigation items the small radius, and contained cards and overlays the large radius. Open analytical fields, proportional bars, and tab underlines remain square; Overview widgets use the medium corner without raised depth. Small circular status dots remain purposeful status marks. The upright three-bar logo and favicon are the same `/favicon.svg?v=7` asset, with a Surimi Orange tile and dark sumi-ink bars.
 
 The select arrow compartment uses a (2px) inner corner to nest inside its (3px) outer corner and (1px) border; it is not another standalone radius token.
 
@@ -289,7 +267,7 @@ Clear, compact instruments. Inputs use a card surface, field stroke, small (3px)
 
 ### Navigation
 
-The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout. The date range is a connected 7d / 30d / 90d button group using the chart interval control treatment, with one selected choice and arrow-key navigation. Drilldowns show a selected Fixed dates segment until a rolling range is chosen. Appearance lives in the sidebar footer above Documentation, with the current Light, Dark, or Auto choice shown in the expanded rail. It stays available as an icon in the collapsed rail and inside the mobile navigation sheet.
+The three destinations sit on the deeper sumi-ink rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; report controls retain the date range within the content layout. The date range is a connected 7d / 30d / 90d button group using the chart interval control treatment, with one selected choice and arrow-key navigation. Drilldowns show a selected Fixed dates segment until a rolling range is chosen. The footer contains retention context and Documentation; no theme selector appears in expanded, collapsed, or mobile navigation.
 
 ### Tabs
 
@@ -297,7 +275,7 @@ The line variant now uses a shared bottom rule and a framed active tab, like a s
 
 ### Shared measurements and event inspection
 
-Time series use an angular single-series line with linear interpolation, the data ochre stroke, light horizontal grid marks, muted axes, and a faint ochre area fill. Overview adds source and outcome donuts paired with labeled values; their center labels summarize rather than replacing the exact legend and footer values. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
+Time series use an angular single-series line with linear interpolation, the Carp Yellow stroke, light horizontal grid marks, muted axes, and a faint yellow area fill. Overview adds source and outcome donuts paired with labeled values; their center labels summarize rather than replacing the exact legend and footer values. Breakdown rows place the proportional accent fill behind the label and align values and shares on the right. Event tables use a subtle header field, fine row divisions, and clear event, context, identity, and time hierarchy. The inspector contains full properties and metadata without changing the surrounding analytical identity.
 
 ### Charts
 
@@ -311,8 +289,8 @@ Transitions clarify state rather than introducing spectacle. The rail uses a sho
 
 ### Do:
 
-- **Do** reuse semantic theme variables so Light, Dark, and Auto retain the same hierarchy.
-- **Do** preserve the shared upright three-bar logo/favicon, Geist, and the Yuzu ink/yellow/ochre relationship.
+- **Do** reuse semantic theme variables to preserve one consistent palette from the first server paint.
+- **Do** preserve the shared upright three-bar logo/favicon, Geist, and the Kanagawa sumi-ink/orange/yellow relationship.
 - **Do** align measurements and use fine dividers to connect analytical regions.
 - **Do** keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.
 - **Do** preserve chart and table geometry while data loads or refreshes.

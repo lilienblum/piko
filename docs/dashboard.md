@@ -61,7 +61,7 @@ Refresh and Run query indicate request activity and prevent duplicate submission
 
 A newly created key remains available to copy if refreshing the key list fails. Retrying the list does not create another key. If product creation succeeds but refreshing the product selector fails, Retry loading product fetches the catalog without submitting another creation request.
 
-Placeholders follow the selected theme and respect reduced-motion preferences. Route placeholders have no minimum display duration, so a ready page is shown immediately.
+Placeholders use the fixed Kanagawa palette and respect reduced-motion preferences. Route placeholders have no minimum display duration, so a ready page is shown immediately.
 
 
 ## Interface icons
@@ -80,6 +80,10 @@ Overview and Explore use TanStack Charts. Hover or touch a time-series to inspec
 
 ## Component foundation
 
-Dashboard primitives use the official shadcn **Base UI** registry (`base-vega`) and `@base-ui/react`, with Hugeicons and Piko’s existing Yuzu classes. Radix is not a dependency. Add or update components from the Base UI registry, merge local styling and behavior, and use `render` composition instead of `asChild`. Buttons rendering navigation links must retain link semantics.
+Dashboard primitives use the official shadcn **Base UI** registry (`base-vega`) and `@base-ui/react`, with Hugeicons and Piko’s Kanagawa colors and existing compact control styles. Radix is not a dependency. Add or update components from the Base UI registry, merge local styling and behavior, and use `render` composition instead of `asChild`. Buttons rendering navigation links must retain link semantics.
 
-`ValueSelect` uses Base UI’s non-modal mode so opening a picker leaves the page scrollbar and viewport unchanged. An enclosing dialog keeps its own scroll lock. It supplies value/label items for server-rendered labels and uses a fixed popup positioner so opening a selector cannot scroll the document. Initial chart loading disables its controls until the result is ready; background refresh keeps them mounted. Appearance choices close their menu on selection. Dialogs, mobile navigation, tabs, and the event inspector preserve keyboard navigation and focus restoration. The sidebar continues to store its preference without cookies.
+`ValueSelect` uses Base UI’s non-modal mode so opening a picker leaves the page scrollbar and viewport unchanged. An enclosing dialog keeps its own scroll lock. It supplies value/label items for server-rendered labels and uses a fixed popup positioner so opening a selector cannot scroll the document. Initial chart loading disables its controls until the result is ready; background refresh keeps them mounted. Dialogs, mobile navigation, tabs, and the event inspector preserve keyboard navigation and focus restoration. The sidebar continues to store its preference without cookies.
+
+## Appearance
+
+Piko has one fixed Kanagawa Wave theme. Sumi-ink surfaces, warm text, orange primary actions, and yellow/violet/aqua chart accents are present from the first server-rendered paint. There is no appearance menu or theme preference, and old saved Light/Dark/Auto values are ignored.
