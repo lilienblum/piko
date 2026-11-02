@@ -68,7 +68,7 @@ for (const route of ["/", "/explore", "/settings"]) {
         const before = await shell.boundingBox();
         const content = await page.locator(".page-content").boundingBox();
         const toolbar = await page.locator(".topbar").elementHandle();
-        expect(before?.x).toBe(width < 768 ? 0 : collapsed ? 56 : 208);
+        expect(before?.x).toBe(width < 768 ? 0 : collapsed ? 56 : 240);
         await page.screenshot({ path: test.info().outputPath("before-hydration.png") });
         release();
         if ((await (await runtime).json()).live)

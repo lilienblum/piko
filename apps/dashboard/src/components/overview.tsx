@@ -1,3 +1,5 @@
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { bucketLabels, type TimeBucket } from "@/lib/time-buckets";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,7 +11,7 @@ import { useQuery } from "@/lib/use-query";
 import { number, sourceGroups, type Group } from "@/lib/api";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
-import { Breakdown, BreakdownRows, ErrorState, NoEvents, SeriesChart } from "./shared";
+import { Breakdown, BreakdownRows, ErrorState, SeriesChart } from "./shared";
 import { ValueSelect } from "./value-select";
 
 type ChartChoice = {
@@ -64,11 +66,11 @@ function ProductOverview() {
   );
   const choices = chartChoices;
   const [chartMetric, setChartMetric] = useState("count");
-  const [chartInterval, setChartInterval] = useState("day");
+  const [chartInterval, setChartInterval] = useState<TimeBucket>("day");
   const [chartRetry, setChartRetry] = useState(0);
   const choice = choices.find((option) => option.id === chartMetric) ?? choices[0];
   const hourlyAvailable = Date.parse(range.to) - Date.parse(range.from) <= 31 * 86400000;
-  const bucket = chartInterval === "hour" && hourlyAvailable ? "hour" : "day";
+  const bucket = chartInterval === "hour" && !hourlyAvailable ? "day" : chartInterval;
   const separateChart = choice.id !== "count" || bucket !== "day";
   const chartQuery = useQuery(
     separateChart ? product?.id : undefined,
@@ -148,15 +150,17 @@ function ProductOverview() {
       emptyMessage={
         !chartResult.data
           ? undefined
-          : choice.measure === "actors" && !chartResult.data.summary.value
-            ? choice.identity_kind === "visitor"
-              ? "No visitor IDs received in this range."
-              : choice.identity_kind === "installation"
-                ? "No installation IDs received in this range."
-                : "No actor IDs received in this range."
-            : choice.unit && chartResult.data.summary.value === null
-              ? "No numeric durations received in this range."
-              : undefined
+          : s?.total === 0
+            ? "No events in this range. Try another date range or connect a source in Settings."
+            : choice.measure === "actors" && !chartResult.data.summary.value
+              ? choice.identity_kind === "visitor"
+                ? "No visitor IDs received in this range."
+                : choice.identity_kind === "installation"
+                  ? "No installation IDs received in this range."
+                  : "No actor IDs received in this range."
+              : choice.unit && chartResult.data.summary.value === null
+                ? "No numeric durations received in this range."
+                : undefined
       }
       controls={
         <div className="chart-controls">
@@ -167,20 +171,32 @@ function ProductOverview() {
             onValueChange={setChartMetric}
             options={choices.map((option) => [option.id, option.label])}
           />
-          <ValueSelect
-            label="Chart interval"
+          <ToggleGroup
+            aria-label="Chart interval"
+            variant="outline"
+            spacing={0}
+            value={[bucket]}
             disabled={query.loading}
-            value={bucket}
-            onValueChange={setChartInterval}
-            options={
-              hourlyAvailable
-                ? [
-                    ["day", "Daily"],
-                    ["hour", "Hourly"],
-                  ]
-                : [["day", "Daily"]]
-            }
-          />
+            onValueChange={(values) => {
+              const value = values[0];
+              if (value && value in bucketLabels) setChartInterval(value as TimeBucket);
+            }}
+          >
+            {(["hour", "day", "week", "month"] as const).map((interval) => (
+              <ToggleGroupItem
+                key={interval}
+                value={interval}
+                disabled={interval === "hour" && !hourlyAvailable}
+                title={
+                  interval === "hour" && !hourlyAvailable
+                    ? "Hourly is available for ranges up to 31 days."
+                    : undefined
+                }
+              >
+                {bucketLabels[interval]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       }
     />
@@ -227,63 +243,55 @@ function ProductOverview() {
                 </Card>
               ))}
             </div>
-            {s?.total === 0 ? (
-              <NoEvents />
-            ) : (
-              <>
-                {chart}
-                <div className="breakdowns">
-                  <Breakdown
-                    title="Top events"
-                    description="Events ranked by count"
-                    groups={query.data.groups}
-                    total={s?.total}
-                    drilldown={(group) => drilldown(body.group_by, group)}
+            {chart}
+            <div className="breakdowns overview-breakdowns">
+              <Breakdown
+                title="Top events"
+                description="Events ranked by count"
+                groups={query.data.groups}
+                total={s?.total}
+                drilldown={(group) => drilldown(body.group_by, group)}
+              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Breakdown</CardTitle>
+                  <CardDescription>Choose a dimension to look closer.</CardDescription>
+                  <ValueSelect
+                    label="Breakdown"
+                    value={dimension}
+                    onValueChange={setDimension}
+                    options={dimensions}
                   />
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Breakdown</CardTitle>
-                      <CardDescription>Choose a dimension to look closer.</CardDescription>
-                      <ValueSelect
-                        label="Breakdown"
-                        value={dimension}
-                        onValueChange={setDimension}
-                        options={dimensions}
-                      />
-                    </CardHeader>
-                    <CardContent>
-                      {secondary.error && !secondary.data ? (
-                        <ErrorState message={secondary.error} retry={refresh} />
-                      ) : secondary.loading ? (
-                        <BreakdownLoading />
-                      ) : (
-                        <BreakdownRows
-                          title={
-                            dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"
-                          }
-                          groups={
-                            dimension === "source_id"
-                              ? sourceGroups(secondary.data?.groups ?? [], product.sources)
-                              : (secondary.data?.groups ?? [])
-                          }
-                          total={secondary.data?.summary.total}
-                          drilldown={(group) => drilldown(dimension, group)}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="insight-note">
-                  <span className="status-dot" />
-                  {product.retention_days}-day retention<span>·</span>
-                  No identity is inferred from IP addresses or user agents.
-                  <Link to="/settings">
-                    Manage collection
-                    <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" />
-                  </Link>
-                </div>
-              </>
-            )}
+                </CardHeader>
+                <CardContent>
+                  {secondary.error && !secondary.data ? (
+                    <ErrorState message={secondary.error} retry={refresh} />
+                  ) : secondary.loading ? (
+                    <BreakdownLoading />
+                  ) : (
+                    <BreakdownRows
+                      title={dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"}
+                      groups={
+                        dimension === "source_id"
+                          ? sourceGroups(secondary.data?.groups ?? [], product.sources)
+                          : (secondary.data?.groups ?? [])
+                      }
+                      total={secondary.data?.summary.total}
+                      drilldown={(group) => drilldown(dimension, group)}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            <div className="insight-note">
+              <span className="status-dot" />
+              {product.retention_days}-day retention<span>·</span>
+              No identity is inferred from IP addresses or user agents.
+              <Link to="/settings">
+                Manage collection
+                <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" />
+              </Link>
+            </div>
           </>
         )
       )}

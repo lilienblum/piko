@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 const endpoint = process.env.PIKO_API_URL ?? "http://127.0.0.1:3001";
 async function select(page: Page, name: string, value: string) {
+  if (name === "Select source") {
+    if (!(await page.getByRole("navigation", { name: "Project sources" }).isVisible()))
+      await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await page
+      .getByRole("navigation", { name: "Project sources" })
+      .getByRole("button", { name: value, exact: true })
+      .click();
+    return;
+  }
   await page.getByRole("combobox", { name, exact: true }).click();
   await page.getByRole("option", { name: value, exact: true }).click();
 }
@@ -74,7 +83,7 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await expect(page.getByText("across 1 matching events")).toBeVisible();
   const linked = page.url();
   await page.reload();
-  await expect(page.getByRole("combobox", { name: "Select source" })).toContainText("iOS app");
+  await expect(page.locator(".workspace-source-name")).toContainText("iOS app");
   await expect(page.locator(".event-card tbody")).toContainText("screen_view");
   await expect(page.locator(".event-card tbody")).not.toContainText("page_view");
   await select(page, "Measure", "Numeric sum");
@@ -93,11 +102,18 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await select(page, "Select source", "Website");
   await expect(page.getByText("across 1 matching events")).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("combobox", { name: "Select source" })).toContainText("Website");
+  await expect(page.locator(".workspace-source-name")).toContainText("Website");
   await page.goto(linked);
-  await expect(page.getByRole("combobox", { name: "Select source" })).toContainText("iOS app");
+  await expect(page.locator(".workspace-source-name")).toContainText("iOS app");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await select(page, "Select source", "All sources");
+  await expect(page.getByRole("dialog", { name: "Sidebar", exact: true })).not.toBeVisible();
+  await expect(page.locator(".workspace-source-name")).toHaveText("All sources");
+  await expect(page.getByText("across 2 matching events")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Select project", exact: true })).toBeVisible();
+  await select(page, "Select source", "iOS app");
+  await expect(page.locator(".workspace-source-name")).toHaveText("iOS app");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -112,7 +128,7 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await expect(dialog).not.toBeVisible();
   await expect(page.locator(".source-row")).toContainText(["Website", "Mobile app"]);
   await page.goto(linked);
-  await expect(page.getByRole("combobox", { name: "Select source" })).toContainText("Mobile app");
+  await expect(page.locator(".workspace-source-name")).toContainText("Mobile app");
   await expect(page.getByText("across 1 matching events")).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
@@ -244,9 +260,7 @@ test("automatic and pinned source icons survive renames without changing analyti
   await dialog.getByRole("button", { name: "Save source", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.getByRole("combobox", { name: "Select source", exact: true })).toContainText(
-    "Orbit iOS",
-  );
+  await expect(page.locator(".workspace-source-name")).toContainText("Orbit iOS");
   await expect(page.locator(".metric-value").first()).toHaveText("2");
   expect(await page.locator(".metric-label").allTextContents()).toEqual(metrics);
   await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();

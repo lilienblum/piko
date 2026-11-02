@@ -19,6 +19,7 @@ export function ValueSelect({
   placeholder,
   disabled,
   className,
+  contentClassName,
   icon,
 }: {
   value: string;
@@ -29,6 +30,7 @@ export function ValueSelect({
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  contentClassName?: string;
   icon?: ReactNode;
 }) {
   return (
@@ -50,7 +52,7 @@ export function ValueSelect({
           </span>
         </SelectValue>
       </SelectTrigger>
-      <SelectContent alignItemWithTrigger={false} align="start">
+      <SelectContent alignItemWithTrigger={false} align="start" className={contentClassName}>
         <SelectGroup>
           {options.map(([key, text, optionIcon]) => (
             <SelectItem key={key} value={key}>

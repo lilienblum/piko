@@ -131,7 +131,7 @@ components:
     textColor: "{colors.primary-foreground}"
     rounded: "{rounded.sm}"
     padding: "8px"
-    height: "48px"
+    height: "36px"
   badge-outline:
     backgroundColor: "transparent"
     textColor: "{colors.foreground}"
@@ -231,9 +231,11 @@ The logo is a distinct wordmark treatment, not an additional heading scale. Use 
 
 ## Layout
 
-The persistent shell places a muted yellow rail in Light, or charcoal rail in Dark, beside a continuous workspace. The expanded rail is (13rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
+The persistent shell places a muted yellow rail in Light, or charcoal rail in Dark, beside a continuous workspace. The expanded rail is (15rem), the collapsed rail (3.5rem), and the context toolbar has a minimum height of (64px). Content centers within a maximum width of (1480px), with the observed desktop gutter (32px). Small gaps group labels and actions; the repeated spacing scale in frontmatter governs fields, sections, and container padding.
 
-Product and date context precede page-level actions. Overview places related measurements on shared rows; Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
+The sidebar owns project selection, destination navigation, and a visible source list. All sources and individual source rows are mutually exclusive scope controls; their active treatment is quieter than active destination navigation. Source lists scroll independently, long names truncate with accessible full labels, and real retention information anchors the footer. Desktop navigation rows are (36px), collapsed rows (32px), and mobile drawer rows at least (40px). The header shows current project/source context plus dates, refresh, live status, and appearance. Mobile retains a header project picker and moves source selection into the drawer.
+
+Overview places related measurements on shared rows, then a full-width chart and two equal-width breakdowns. Chart metrics sit beside a single-select Hourly/Daily/Weekly/Monthly button group; below (640px), these controls stack at full width. Weekly/monthly queries aggregate raw events on the server, with UTC calendar labels and partial-boundary notes. Paired breakdown headers share the same title/control row and description row, so their first data rows align. Empty ranges preserve the chart and controls. Settings uses enclosed editing regions. Explore is one implemented expression: a shallow query region, a result count, a two-thirds plot and one-third categorical breakdown, then the event stream. Its desktop plot and compact rows support the first viewport; those dimensions are surface-specific and remain in the surface brief rather than becoming universal chart or table tokens.
 
 At (1150px) and below, Explore's results stack and query controls wrap. At (800px) and below, metric rows become two columns and Settings/breakdown regions stack. Below (768px), navigation becomes a sheet. At (640px) and below, toolbar controls wrap, page gutters become (16px), and buttons, selects, and inputs have a minimum height of (40px). The compact event view retains event/context columns and inline time; inspection exposes full metadata. Loading layouts retain the content's regions instead of replacing the whole page with an unrelated spinner.
 
@@ -279,7 +281,7 @@ Clear, compact instruments. Inputs use a card surface, field stroke, small (3px)
 
 ### Navigation
 
-The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The context toolbar retains product/date scope across destinations.
+The three destinations sit on the muted yellow Light rail or charcoal Dark rail. Active links use the solid primary fill and primary foreground with a stronger weight (650), a fine top highlight, and the same shallow lower edge as action buttons. Inactive hover uses the sidebar accent; active hover preserves the solid selection. The rail can collapse to icons with labels available accessibly; on mobile it opens as a sheet. Use the shared straight three-bar logo asset alongside the Geist wordmark. The sidebar retains project/source scope across destinations; the context toolbar retains the date range and shows the selected scope.
 
 ### Tabs
 

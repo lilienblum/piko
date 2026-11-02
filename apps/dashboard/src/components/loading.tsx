@@ -88,8 +88,8 @@ export function OverviewLoading({ labels, chart }: { labels: string[]; chart: Re
         ))}
       </div>
       {chart}
-      <div className="breakdowns">
-        <BreakdownCardLoading title="Top activity" />
+      <div className="breakdowns overview-breakdowns">
+        <BreakdownCardLoading title="Top events" />
         <BreakdownCardLoading title="Breakdown" />
       </div>
     </section>

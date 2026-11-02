@@ -356,7 +356,10 @@ test("server HTML includes real navigation and controls without a full-page skel
     expect(html).toContain("Last 30 days");
     expect(html).toContain('aria-label="Loading workspace"');
     expect(html).not.toContain('aria-label="Loading page"');
-    expect(html).not.toContain('data-slot="skeleton"');
+    expect(html).toContain('aria-label="Project sources"');
+    const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? "";
+    expect(main).toContain('id="main-content"');
+    expect(main).not.toContain('data-slot="skeleton"');
   }
 });
 

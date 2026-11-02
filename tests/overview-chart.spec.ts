@@ -131,17 +131,18 @@ test("visitor chart excludes installation identities without shrinking overview 
   await expect(page.locator(".metric-value").first()).toHaveText("6");
   await expect(page.locator(".breakdowns .breakdown-value").first()).toHaveText("6");
   const hourly = chartResponse(page, "actors", "hour");
-  await select(page, "Chart interval", "Hourly");
+  await page.getByRole("button", { name: "Hourly", exact: true }).click();
   expect((await result(hourly)).summary.value).toBe(2);
   await expect(page.getByText("Visitors counted once per hour.")).toBeVisible();
   await expect(page.locator(".chart-period-note")).toContainText("Last hour is partial");
   const wider = chartResponse(page, "actors");
   await select(page, "Date range", "Last 90 days");
   await result(wider);
-  await expect(page.getByRole("combobox", { name: "Chart interval" })).toContainText("Daily");
-  await page.getByRole("combobox", { name: "Chart interval" }).click();
-  await expect(page.getByRole("option", { name: "Hourly", exact: true })).toHaveCount(0);
-  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Daily", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("button", { name: "Hourly", exact: true })).toBeDisabled();
 });
 
 test("CLI duration aggregates ignore strings and booleans, and product switches reset chart choices", async ({
@@ -253,4 +254,42 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   expect(ticks.length).toBeGreaterThan(0);
   for (const tick of ticks) expect(tick.left).toBeGreaterThanOrEqual(tick.plotLeft);
   await page.screenshot({ path: test.info().outputPath("cli-chart-mobile.png") });
+});
+
+test("calendar interval buttons query raw weekly and monthly aggregates and retain selection", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+  const weekly = chartResponse(page, "count", "week");
+  await page.getByRole("button", { name: "Weekly", exact: true }).click();
+  const weeks = await result(weekly);
+  expect(weeks.series.every((point) => new Date(point.time).getUTCDay() === 1)).toBe(true);
+  expect(weeks.series.reduce((sum, point) => sum + (point.value ?? 0), 0)).toBe(6);
+  await expect(page.locator(".chart-period-note")).toContainText("Monday start");
+  await page.getByRole("button", { name: "Weekly", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Weekly", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await select(page, "Select project", products.tool.name);
+  const p95 = chartResponse(page, "p95");
+  await select(page, "Chart metric", "p95 duration");
+  await result(p95);
+  const monthly = chartResponse(page, "p95", "month");
+  await page.getByRole("button", { name: "Monthly", exact: true }).click();
+  const months = await result(monthly);
+  expect(months.series.every((point) => new Date(point.time).getUTCDate() === 1)).toBe(true);
+  expect(months.summary.value).toBe(290);
+  expect(months.series.find((point) => point.value !== null)?.value).toBe(290);
+  const group = page.getByRole("group", { name: "Chart interval" });
+  await group.getByRole("button", { name: "Monthly" }).press("ArrowLeft");
+  await expect(group.getByRole("button", { name: "Weekly" })).toBeFocused();
+  const keyboard = chartResponse(page, "p95", "week");
+  await page.keyboard.press("Space");
+  await result(keyboard);
+  await expect(group.getByRole("button", { name: "Weekly" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });

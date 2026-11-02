@@ -11,46 +11,19 @@ import {
 } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Add01Icon,
-  ArrowRight01Icon,
-  ArrowUpRight01Icon,
-  Calendar03Icon,
-  Cancel01Icon,
-  CubeIcon,
-  DashboardSquare01Icon,
-  HelpCircleIcon,
-  RefreshIcon,
-  Search01Icon,
-  Settings02Icon,
-} from "@hugeicons/core-free-icons";
+import { Add01Icon, Calendar03Icon, CubeIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
 import { ThemeMenu } from "./theme-provider";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { WorkspaceSidebar } from "./workspace-sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { api, type Product, type Source } from "@/lib/api";
 import { readPreference, savePreference } from "@/lib/preferences";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
 import { Spinner } from "@/components/ui/spinner";
-import { SourceIcon } from "./source-icon";
 import { LiveUpdates } from "./live-updates";
 
 type Context = {
@@ -77,14 +50,6 @@ export function useAnalyticsPending(pending: boolean) {
     setAnalyticsPending(pending);
     return () => setAnalyticsPending(false);
   }, [pending, setAnalyticsPending]);
-}
-export function Logo() {
-  return (
-    <span className="brand">
-      <img className="brand-mark" src="/favicon.svg?v=4" width="30" height="30" alt="" />
-      <span className="brand-word">piko</span>
-    </span>
-  );
 }
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -183,6 +148,26 @@ export function AppShell() {
     if (error) void reload().catch((e) => setError(e.message));
   };
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
+  const projectPicker = (
+    <ValueSelect
+      label="Select project"
+      value={product?.id ?? ""}
+      disabled={!products.length}
+      placeholder={
+        loading ? "Loading projects…" : drilldown ? "Project unavailable" : "No projects yet"
+      }
+      className="product-select"
+      contentClassName="min-w-56 max-w-[calc(100vw-32px)]"
+      icon={<HugeiconsIcon icon={CubeIcon} strokeWidth={2} aria-hidden="true" />}
+      onValueChange={(value) => {
+        clearDrilldown();
+        setSelected(value);
+        savePreference("piko:product", value);
+        setNow(Date.now());
+      }}
+      options={products.map((p) => [p.id, p.name])}
+    />
+  );
   return (
     <Workspace.Provider
       value={{
@@ -207,64 +192,40 @@ export function AppShell() {
           setSidebarOpen(open);
           savePreference("piko:sidebar", open ? "expanded" : "collapsed");
         }}
-        style={{ "--sidebar-width": "13rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
+        style={{ "--sidebar-width": "15rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
       >
-        <Navigation path={path} />
+        <WorkspaceSidebar
+          path={path}
+          product={product}
+          sourceId={sourceId}
+          picker={projectPicker}
+          loading={loading}
+          onSourceChange={(id) => {
+            if (!product) return;
+            clearDrilldown();
+            setSourceSelection((current) => ({ ...current, [product.id]: id }));
+            savePreference(`piko:source:${product.id}`, id);
+            setNow(Date.now());
+            if (path === "/settings") void navigate({ to: "/" });
+          }}
+        />
         <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
           <header className="topbar">
             <div className="topbar-left">
               <SidebarTrigger disabled={!preferencesReady} />
               <Separator orientation="vertical" className="h-5" />
-              <ValueSelect
-                label="Select project"
-                value={product?.id ?? ""}
-                disabled={!products.length}
-                placeholder={
-                  loading
-                    ? "Loading projects…"
-                    : drilldown
-                      ? "Project unavailable"
-                      : "No projects yet"
-                }
-                className="product-select"
-                icon={<HugeiconsIcon icon={CubeIcon} strokeWidth={2} aria-hidden="true" />}
-                onValueChange={(value) => {
-                  clearDrilldown();
-                  setSelected(value);
-                  savePreference("piko:product", value);
-                }}
-                options={products.map((p) => [p.id, p.name])}
-              />
-              {path !== "/settings" && (
-                <ValueSelect
-                  label="Select source"
-                  value={sourceId ?? "all"}
-                  disabled={!product || loading}
-                  className="source-select"
-                  icon={<SourceIcon name={source?.name ?? ""} icon={source?.icon} />}
-                  onValueChange={(value) => {
-                    if (!product) return;
-                    clearDrilldown();
-                    const id = value === "all" ? "" : value;
-                    setSourceSelection((current) => ({ ...current, [product.id]: id }));
-                    savePreference(`piko:source:${product.id}`, id);
-                  }}
-                  options={[
-                    ["all", "All sources"],
-                    ...(product?.sources ?? []).map(
-                      (source) =>
-                        [
-                          source.id,
-                          source.name,
-                          <SourceIcon key={source.id} name={source.name} icon={source.icon} />,
-                        ] as const,
-                    ),
-                  ]}
-                />
-              )}
-              <div className="breadcrumbs">
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" />
-                <strong>{label}</strong>
+              <div className="mobile-project-picker">{projectPicker}</div>
+              <div
+                className="breadcrumbs workspace-context"
+                title={`${product?.name ?? "Workspace"} / ${path === "/settings" ? "Settings" : (source?.name ?? "All sources")}`}
+              >
+                <strong className="workspace-project-name">{product?.name ?? "Workspace"}</strong>
+                <span className="workspace-context-divider" aria-hidden="true">
+                  /
+                </span>
+                <span className="workspace-source-name">
+                  {path === "/settings" ? "Settings" : (source?.name ?? "All sources")}
+                </span>
               </div>
             </div>
             <div className="topbar-controls">
@@ -329,96 +290,6 @@ export function AppShell() {
         </SidebarInset>
       </SidebarProvider>
     </Workspace.Provider>
-  );
-}
-function Navigation({ path }: { path: string }) {
-  const { isMobile, setOpenMobile } = useSidebar();
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="h-16 flex-row items-center justify-between py-0">
-        <Link
-          to="/"
-          aria-label="Piko overview"
-          className="brand-link"
-          onClick={() => setOpenMobile(false)}
-        >
-          <Logo />
-        </Link>
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close navigation"
-            onClick={() => setOpenMobile(false)}
-          >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
-          </Button>
-        )}
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <nav aria-label="Main navigation">
-              <SidebarMenu>
-                {(
-                  [
-                    ["/", "Overview", DashboardSquare01Icon],
-                    ["/explore", "Explore", Search01Icon],
-                    ["/settings", "Settings", Settings02Icon],
-                  ] as const
-                ).map(([to, label, icon]) => (
-                  <SidebarMenuItem key={to}>
-                    <SidebarMenuButton
-                      isActive={path === to}
-                      tooltip={label}
-                      size="lg"
-                      render={<Link to={to} onClick={() => setOpenMobile(false)} />}
-                    >
-                      <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
-                      <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </nav>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="pb-5">
-        <div className="local-note group-data-[collapsible=icon]:hidden">
-          <span className="status-dot" />
-          Self-hosted analytics
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Documentation"
-              render={
-                <a
-                  href="https://github.com/lilienblum/piko#readme"
-                  target="_blank"
-                  rel="noreferrer"
-                />
-              }
-            >
-              <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} aria-hidden="true" />
-              <span className="group-data-[collapsible=icon]:sr-only">Documentation</span>
-              <HugeiconsIcon
-                icon={ArrowUpRight01Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-                className="ml-auto group-data-[collapsible=icon]:hidden"
-              />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <Separator className="my-2" />
-        <div className="sidebar-footer group-data-[collapsible=icon]:hidden">
-          Piko <span>v0.1 · MIT</span>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
   );
 }
 export function PageHeader({
