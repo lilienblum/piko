@@ -208,3 +208,134 @@ test("project paths win over legacy query slugs and project switching updates th
   await page.goto("/settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`/projects/${other.slug}/settings`);
 });
+
+for (const [label, dates] of Object.entries<Record<string, string>>({
+  "custom dates": { from: "2025-01-01T00:00:00.000Z", to: "2025-01-08T00:00:00.000Z" },
+  "calendar period": { period: "last-month" },
+})) {
+  test(`switching projects resets Overview filters and ${label}`, async ({ page }) => {
+    const search = new URLSearchParams({
+      ...dates,
+      source: other.sources[0].id,
+      days: "90",
+      filter: JSON.stringify({ field: "property:success", value: true }),
+      metric: "average",
+      breakdown: "property:command",
+      duration: "p95",
+    });
+    await page.goto(`/projects/${other.slug}?${search}`);
+    await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText(
+      "Average duration",
+    );
+    const previous = page.url();
+    const request = page.waitForRequest(
+      (r) =>
+        r.url().endsWith(`/products/${project.id}/query`) && r.postDataJSON().group_by === "name",
+    );
+    await select(page, "Select project", project.name);
+    await expect(page.locator(".activity-widget .widget-value")).toHaveText("31");
+    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+    await expect(page.getByRole("button", { name: "Choose date range" })).toContainText(
+      "Last 30 days",
+    );
+    await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText("Events");
+    await expect(page.getByRole("combobox", { name: "Breakdown" })).toContainText("Top events");
+    const body = (await request).postDataJSON();
+    expect(body).toMatchObject({ measure: "count", group_by: "name", filters: [] });
+    expect(body.source_id).toBeUndefined();
+    expect(body.event).toBeUndefined();
+    expect(body.source).toBeUndefined();
+    expect(Date.parse(body.to) - Date.parse(body.from)).toBeGreaterThanOrEqual(29 * 86400000);
+    expect(Date.parse(body.to) - Date.parse(body.from)).toBeLessThanOrEqual(30 * 86400000);
+    await page.goBack();
+    await expect(page).toHaveURL(previous);
+    await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText(
+      "Average duration",
+    );
+    expect(JSON.parse(params(page).get("filter") ?? "null")).toEqual({
+      field: "property:success",
+      value: true,
+    });
+    await page.goForward();
+    await expect(page.locator(".activity-widget .widget-value")).toHaveText("31");
+    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+  });
+}
+
+test("switching projects resets Explore queries, drafts, drilldowns and pagination", async ({
+  page,
+}) => {
+  const search = new URLSearchParams({
+    source: other.sources[0].id,
+    days: "7",
+    snapshot: "2025-01-08T00:00:00.000Z",
+    drilldown: JSON.stringify({
+      productId: other.id,
+      sourceId: other.sources[0].id,
+      from: "2025-01-01T00:00:00.000Z",
+      to: "2025-01-08T00:00:00.000Z",
+      event: "command_run",
+      source: "cli",
+      filter: { property: "success", value: true },
+    }),
+    query: JSON.stringify({
+      event: "command_run",
+      source: "cli",
+      measure: "avg",
+      group: "property:command",
+      filterProperty: "success",
+      filterValue: "true",
+    }),
+    page: "2",
+    pageSize: "30",
+  });
+  await page.goto(`/projects/${other.slug}/explore?${search}`);
+  await expect(page.getByRole("region", { name: "Overview selection" })).toBeVisible();
+  await expect(page.getByLabel("Typed value")).toHaveValue("true");
+  await page.getByLabel("Typed value").fill("false");
+  const previous = page.url();
+  const request = page.waitForRequest((r) => r.url().endsWith(`/products/${project.id}/query`));
+  await select(page, "Select project", project.name);
+  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe(`/projects/${project.slug}/explore`);
+  expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+  expect((await request).postDataJSON()).toMatchObject({
+    measure: "count",
+    group_by: "name",
+    filters: [],
+    page: 0,
+    page_size: 15,
+  });
+  expect((await request).postDataJSON().source_id).toBeUndefined();
+  expect((await request).postDataJSON().event).toBeUndefined();
+  expect((await request).postDataJSON().source).toBeUndefined();
+  await expect(page.getByRole("region", { name: "Overview selection" })).toBeHidden();
+  await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
+    "All events",
+  );
+  await expect(page.getByRole("combobox", { name: "Measure", exact: true })).toContainText(
+    "Event count",
+  );
+  await expect(page.getByRole("button", { name: "Filter", exact: true })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await expect(page.getByText("Page 1 of 3")).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(previous);
+  await expect(page.getByRole("region", { name: "Overview selection" })).toBeVisible();
+  await expect(page.getByLabel("Typed value")).toHaveValue("true");
+  expect(params(page).get("page")).toBe("2");
+  expect(params(page).get("pageSize")).toBe("30");
+  await page.goForward();
+  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  await page.getByRole("button", { name: "Run query", exact: true }).click();
+  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  expect(JSON.parse(params(page).get("query") ?? "null")).toMatchObject({
+    event: "",
+    source: "",
+    measure: "count",
+    filterProperty: "",
+    filterValue: "",
+  });
+});

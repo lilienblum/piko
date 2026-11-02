@@ -117,6 +117,21 @@ export function AppShell() {
   useLayoutEffect(() => {
     if (preferencesReady) delete document.documentElement.dataset.sidebarInitial;
   }, [preferencesReady]);
+  function selectProject(project: Product) {
+    return navigate({
+      ...workspaceTarget(view, project.slug),
+      search: {
+        source: "all",
+        days: 30,
+        // Explicitly clear the dates retained by the root search middleware.
+        period: undefined,
+        snapshot: undefined,
+        from: undefined,
+        to: undefined,
+      },
+      resetScroll: false,
+    });
+  }
   async function reload(select?: string) {
     const result = await api<Product[]>("/products");
     setProducts(result);
@@ -124,19 +139,7 @@ export function AppShell() {
       setSelected(select);
       savePreference("piko:product", select);
       const project = result.find((p) => p.id === select);
-      if (project)
-        await navigate({
-          ...workspaceTarget(view, project.slug),
-          search: {
-            source: "all",
-            days,
-            period: search.period,
-            snapshot: search.snapshot,
-            from: search.from,
-            to: search.to,
-          },
-          resetScroll: false,
-        });
+      if (project) await selectProject(project);
     }
     setError("");
   }
@@ -249,19 +252,7 @@ export function AppShell() {
       icon={<ProjectIcon product={product} />}
       onValueChange={(value) => {
         const project = products.find((p) => p.id === value);
-        if (project)
-          void navigate({
-            ...workspaceTarget(view, project.slug),
-            search: {
-              source: "all",
-              days,
-              period: search.period,
-              snapshot: search.snapshot,
-              from: search.from,
-              to: search.to,
-            },
-            resetScroll: false,
-          });
+        if (project) void selectProject(project);
       }}
       options={products.map((p) => [p.id, p.name, <ProjectIcon key={p.id} product={p} />])}
     />
