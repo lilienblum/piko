@@ -66,11 +66,10 @@ test("Overview choices are allowlisted before driving API queries", () => {
       breakdown: "property:command",
       duration: "p95",
     }),
-  ).toEqual({ metric: "p95", interval: "week", breakdown: "property:command", duration: "p95" });
-  expect(validateOverviewSearch({ metric: ["count"], interval: ["day"] }).interval).toBeUndefined();
+  ).toEqual({ metric: "p95", breakdown: "property:command", duration: "p95" });
+  expect(validateOverviewSearch({ interval: "hour" })).not.toHaveProperty("interval");
   expect(validateOverviewSearch({ metric: "sql", interval: "forever" })).toEqual({
     metric: undefined,
-    interval: undefined,
     breakdown: undefined,
     duration: undefined,
   });
@@ -90,4 +89,20 @@ test("custom URL ranges require a complete, ordered UTC pair within the query li
     { snapshot: "2024-01-02T00:00:00.000Z" },
   ])
     expect(validateWorkspaceSearch({ ...range, ...patch }).invalidWorkspace).toBe(true);
+});
+
+test("overview filters preserve primitive types and reject malformed links", () => {
+  for (const value of [true, 12.5, "12.5"])
+    expect(
+      validateOverviewSearch({ filter: { field: "property:amount", value } }).filter?.value,
+    ).toBe(value);
+  for (const filter of [
+    null,
+    [],
+    { field: "sql", value: "test" },
+    { field: "name", value: true },
+    { field: "property:amount", value: { secret: 1 } },
+    { field: "property:amount", value: Infinity },
+  ])
+    expect(validateOverviewSearch({ filter }).invalidFilter).toBe(true);
 });

@@ -1,3 +1,4 @@
+import { DAY_MS, type AnalyticsRange } from "./date-range";
 export type TimeBucket = "hour" | "day" | "week" | "month";
 
 export const bucketLabels: Record<TimeBucket, string> = {
@@ -6,6 +7,15 @@ export const bucketLabels: Record<TimeBucket, string> = {
   week: "Weekly",
   month: "Monthly",
 };
+
+/** Choose chart detail from the selected dates, independently of the event volume. */
+export function automaticBucket(range: AnalyticsRange): TimeBucket {
+  const days = (Date.parse(range.to) - Date.parse(range.from)) / DAY_MS;
+  if (days <= 2) return "hour";
+  if (days <= 31) return "day";
+  if (days <= 180) return "week";
+  return "month";
+}
 
 /** Mirrors DuckDB date_trunc: UTC calendar months and Monday-based weeks. */
 export function bucketStart(time: number, bucket: TimeBucket): number {

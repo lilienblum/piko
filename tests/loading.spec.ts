@@ -94,12 +94,15 @@ test("date changes use stable placeholders and breakdown loading stays local", a
   const metric = await page.locator(".overview-widget").first().boundingBox();
   const release = await hold(page, "**/api/products/*/query");
   try {
+    await page.getByRole("button", { name: "Choose date range", exact: true }).click();
     await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
     const pending = page.locator(".overview-grid");
     await expect(pending).toHaveAttribute("aria-busy", "true");
     await expect(pending).toBeVisible();
     await expect(pending.locator(".overview-widget")).toHaveCount(5);
-    await expect(pending.locator(".widget-value [skullet-loading]")).toHaveCount(3);
+    await expect(pending.locator(".overview-widget .widget-value [skullet-loading]")).toHaveCount(
+      3,
+    );
     await expect(pending.locator("[skullet-bar]").first()).toBeVisible();
     await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "true");
     const pendingChart = await pending.locator(".activity-widget").boundingBox();
@@ -132,7 +135,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
   } finally {
     releaseBreakdown();
   }
-  await expect(page.getByRole("link", { name: "Explore newsletter", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Filter by newsletter", exact: true })).toBeVisible();
 });
 
 test("explore loading matches results and pending query recovers after error", async ({ page }) => {

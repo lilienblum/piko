@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { bucketStart, nextBucket, partialBucketNote } from "../apps/dashboard/src/lib/time-buckets";
+import {
+  automaticBucket,
+  bucketStart,
+  nextBucket,
+  partialBucketNote,
+} from "../apps/dashboard/src/lib/time-buckets";
 const time = Date.parse;
 
 describe("UTC chart calendar buckets", () => {
@@ -31,4 +36,24 @@ describe("UTC chart calendar buckets", () => {
     expect(nextBucket(time("2026-11-01T23:30:00Z"), "day")).toBe(time("2026-11-02T00:00:00Z"));
     expect(nextBucket(time("2026-11-01T23:30:00Z"), "hour")).toBe(time("2026-11-02T00:00:00Z"));
   });
+});
+
+test("chart detail follows the selected range at each boundary", () => {
+  const from = "2026-01-01T00:00:00.000Z";
+  for (const [days, expected] of [
+    [1, "hour"],
+    [2, "hour"],
+    [2 + 1 / 86400000, "day"],
+    [7, "day"],
+    [30, "day"],
+    [31, "day"],
+    [31 + 1 / 86400000, "week"],
+    [90, "week"],
+    [180, "week"],
+    [180 + 1 / 86400000, "month"],
+    [366, "month"],
+  ] as const) {
+    const to = new Date(Date.parse(from) + days * 86400000).toISOString();
+    expect(automaticBucket({ from, to })).toBe(expected);
+  }
 });

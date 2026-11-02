@@ -122,7 +122,7 @@ test("visitor chart excludes installation identities without shrinking overview 
   await page.goto("/");
   await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("6");
-  expect(new Set(queries.map((query) => JSON.stringify(query))).size).toBe(2);
+  expect(new Set(queries.map((query) => JSON.stringify(query))).size).toBe(3);
   const visitors = chartResponse(page, "actors");
   await select(page, "Chart metric", "Unique visitors");
   const daily = await result(visitors);
@@ -135,20 +135,26 @@ test("visitor chart excludes installation identities without shrinking overview 
   await expect(page.locator(".activity-widget .widget-value")).toHaveText("2");
   await expect(page.locator(".breakdowns .breakdown-value").first()).toHaveText("6");
   const hourly = chartResponse(page, "actors", "hour");
-  await page.getByRole("button", { name: "Hourly", exact: true }).click();
+  const hourlyUrl = new URL(page.url());
+  hourlyUrl.searchParams.set(
+    "from",
+    `${new Date(Date.now() - 86400000).toISOString().slice(0, 10)}T00:00:00.000Z`,
+  );
+  hourlyUrl.searchParams.set("to", new Date().toISOString());
+  await page.goto(hourlyUrl.toString());
   expect((await result(hourly)).summary.value).toBe(2);
   await expect(
     page.locator('.activity-widget svg[aria-label="Unique visitors by UTC hour"]'),
   ).toBeVisible();
   await expect(page.locator(".chart-period-note")).toContainText("Last hour is partial");
-  const wider = chartResponse(page, "actors");
+  const wider = chartResponse(page, "actors", "week");
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
   await result(wider);
-  await expect(page.getByRole("button", { name: "Daily", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await expect(page.getByRole("button", { name: "Hourly", exact: true })).toBeDisabled();
+  await expect(
+    page.locator('.activity-widget svg[aria-label="Unique visitors by UTC week"]'),
+  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "Chart interval" })).toHaveCount(0);
 });
 
 test("CLI duration aggregates ignore strings and booleans, and product switches reset chart choices", async ({
@@ -267,52 +273,53 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   await page.screenshot({ path: test.info().outputPath("cli-chart-mobile.png") });
 });
 
-test("calendar interval buttons query raw weekly and monthly aggregates and retain selection", async ({
+test("dates automatically choose raw weekly and monthly aggregates and retain the range", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   const weekly = chartResponse(page, "count", "week");
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
+  await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
   const weeks = await result(weekly);
   expect(weeks.series.every((point) => new Date(point.time).getUTCDay() === 1)).toBe(true);
   expect(weeks.series.reduce((sum, point) => sum + (point.value ?? 0), 0)).toBe(6);
+  await expect(page.locator(".chart-period-note")).toContainText("One point per week");
   await expect(page.locator(".chart-period-note")).toContainText("Monday start");
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Weekly", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await select(page, "Select project", products.tool.name);
-  const p95 = chartResponse(page, "p95");
-  await select(page, "Chart metric", "p95 duration");
-  await result(p95);
+  await expect(page.getByRole("group", { name: "Chart interval" })).toHaveCount(0);
+  const from = new Date(Date.now() - 365 * 86400000).toISOString();
+  const to = new Date().toISOString();
+  const url = `/projects/${products.tool.slug}?source=all&metric=p95&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   const monthly = chartResponse(page, "p95", "month");
-  await page.getByRole("button", { name: "Monthly", exact: true }).click();
+  await page.goto(url);
   const months = await result(monthly);
   expect(months.series.every((point) => new Date(point.time).getUTCDate() === 1)).toBe(true);
   expect(months.summary.value).toBe(290);
   expect(months.series.find((point) => point.value !== null)?.value).toBe(290);
-  const group = page.getByRole("group", { name: "Chart interval" });
-  await group.getByRole("button", { name: "Monthly" }).press("ArrowLeft");
-  await expect(group.getByRole("button", { name: "Weekly" })).toBeFocused();
-  const keyboard = chartResponse(page, "p95", "week");
-  await page.keyboard.press("Space");
-  await result(keyboard);
-  await expect(group.getByRole("button", { name: "Weekly" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  await expect(page.locator(".activity-widget .chart-period-note")).toContainText(
+    "One point per month",
   );
+  const reloaded = chartResponse(page, "p95", "month");
+  await page.reload();
+  expect((await result(reloaded)).summary.value).toBe(290);
+  expect(new URL(page.url()).searchParams.get("from")).toBe(from);
+  expect(new URL(page.url()).searchParams.get("to")).toBe(to);
 });
 
 for (const width of [1440, 894, 390]) {
-  test(`Overview uses a wide activity chart and compact single-source summary at ${width}px`, async ({
+  test(`Overview uses square metrics, a wide chart, and paired reports at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
     await expect(page.locator(".overview-widget")).toHaveCount(5);
+    await expect(page.locator(".metric-widget")).toHaveCount(6);
+    for (const tile of await page.locator(".metric-widget").all()) {
+      const box = await tile.boundingBox();
+      expect(Math.abs((box?.width ?? 0) - (box?.height ?? 0))).toBeLessThan(2);
+    }
+    await page.screenshot({ path: `/tmp/piko-overview-${width}.png`, fullPage: true });
     const bounds = await page.locator(".overview-widget").evaluateAll((widgets) =>
       widgets.map((widget) => {
         const rect = widget.getBoundingClientRect();
@@ -329,9 +336,7 @@ for (const width of [1440, 894, 390]) {
       }),
     );
     for (const bound of bounds) {
-      if (!bound.activity || width === 390)
-        expect(Math.abs(bound.width - bound.height)).toBeLessThan(2);
-      else expect(bound.width).toBeGreaterThan(bound.height * 1.9);
+      expect(bound.height).toBe(bound.activity ? (width === 390 ? 350 : 430) : 300);
       expect(bound.bodyBottom).toBeLessThanOrEqual(bound.footerTop);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -341,9 +346,8 @@ for (const width of [1440, 894, 390]) {
     await expect(page.locator(".outcomes-widget")).toContainText("No success values received");
     await expect(page.locator(".audience-widget .widget-value")).toHaveText("3");
     await expect(page.locator(".sources-widget")).toHaveCount(0);
-    await expect(page.locator(".source-summary-count")).toHaveText("6 events");
-    await expect(page.getByRole("link", { name: "Explore Events", exact: true })).toBeVisible();
-    await page.getByRole("link", { name: "Explore Events", exact: true }).click();
+    if (width === 390) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
     await expect(page.getByText("across 6 matching events")).toBeVisible();
   });
 }
@@ -355,12 +359,38 @@ test("duration widget switches to the server p95 without treating missing or str
   await select(page, "Select project", products.tool.name);
   const widget = page.locator(".duration-widget");
   await expect(widget.locator(".widget-value")).toHaveText("200 ms");
-  const p95 = chartResponse(page, "p95");
   await widget.getByRole("button", { name: "p95", exact: true }).click();
-  expect((await result(p95)).summary.value).toBe(290);
   await expect(widget.locator(".widget-value")).toHaveText("290 ms");
-  await expect(widget.locator(".series-chart")).toBeVisible();
+  await expect(widget).toContainText("95% of recorded durations");
   await select(page, "Select project", products.anonymous.name);
   await expect(widget.locator(".widget-value")).toHaveText("—");
   await expect(widget.locator(".series-chart")).toHaveCount(0);
+});
+
+test("source discovery keeps the main chart and breakdown in their original positions", async ({
+  page,
+}) => {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/products/*/query", async (route) => {
+    if (route.request().postDataJSON().group_by === "source_id") await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto("/");
+    await expect(page.locator(".activity-widget .widget-value")).toHaveText("6");
+    await expect(page.locator(".breakdown-widget footer")).toContainText("6 events");
+    await expect(page.getByRole("status", { name: "Loading sources", exact: true })).toBeVisible();
+    const chart = await page.locator(".activity-widget").boundingBox();
+    const breakdown = await page.locator(".breakdown-widget").boundingBox();
+    release();
+    await expect(page.locator(".sources-widget")).toHaveCount(0);
+    await expect(page.locator(".audience-widget .widget-value")).toHaveText("3");
+    expect(await page.locator(".activity-widget").boundingBox()).toEqual(chart);
+    expect(await page.locator(".breakdown-widget").boundingBox()).toEqual(breakdown);
+  } finally {
+    release();
+  }
 });

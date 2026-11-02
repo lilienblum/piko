@@ -55,16 +55,15 @@ test("project URL wins over saved preferences and applies a portable calendar ra
   await page.goto(`/projects/${project.slug}?source=all&days=7`);
   await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(project.name);
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("31");
-  await expect(page.getByRole("button", { name: "Last 7 days" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  await expect(page.getByRole("button", { name: "Choose date range" })).toContainText(
+    "Last 7 days",
   );
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
   await select(page, "Breakdown", "Commands");
-  await expect.poll(() => params(page).get("interval")).toBe("week");
+  expect(params(page).has("interval")).toBe(false);
   await expect.poll(() => params(page).get("breakdown")).toBe("property:command");
   await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "Date range", exact: true });
+  await picker.getByRole("button", { name: "Custom range", exact: true }).click();
   const start = await picker.getByLabel("Start date", { exact: true }).inputValue();
   const end = await picker.getByLabel("End date", { exact: true }).inputValue();
   await picker.getByRole("button", { name: "Apply range", exact: true }).click();
@@ -84,9 +83,8 @@ test("project URL wins over saved preferences and applies a portable calendar ra
     await expect(recipient.getByRole("combobox", { name: "Select project" })).toContainText(
       project.name,
     );
-    await expect(recipient.getByRole("button", { name: "Weekly", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
+    await expect(recipient.locator(".activity-widget .chart-period-note")).toContainText(
+      "One point per day",
     );
     await expect(recipient.getByRole("combobox", { name: "Breakdown", exact: true })).toContainText(
       "Commands",
@@ -103,10 +101,10 @@ test("project URL wins over saved preferences and applies a portable calendar ra
   expect(params(page).get("from")).toBe(from);
   expect(params(page).get("to")).toBe(to);
   await page.goBack();
-  await expect(page.getByRole("button", { name: "Weekly", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  await expect(page.locator(".activity-widget .chart-period-note")).toContainText(
+    "One point per day",
   );
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   await page.getByRole("button", { name: "Last 30 days", exact: true }).click();
   await expect.poll(() => params(page).has("from")).toBe(false);
   expect(params(page).has("to")).toBe(false);

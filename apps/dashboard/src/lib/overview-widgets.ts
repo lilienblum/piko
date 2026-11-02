@@ -10,7 +10,7 @@ export type DistributionSlice = {
 const sourceColors = ["var(--data)", "var(--data-secondary)", "var(--data-tertiary)"];
 
 // The API returns only the top twelve groups. Include the entire tail in Other,
-// so the donut always describes all events, not just the visible leaders.
+// so the shares describe all events, not just the visible leaders.
 export function sourceDistribution(groups: Group[], total: number): DistributionSlice[] {
   if (!total) return [];
   const slices = groups

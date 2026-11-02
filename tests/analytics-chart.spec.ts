@@ -137,8 +137,8 @@ for (const interval of ["Hourly", "Monthly"]) {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await page.getByRole("button", { name: interval, exact: true }).click();
+    const from = interval === "Hourly" ? "2026-10-31T12:00:00.000Z" : "2026-01-01T00:00:00.000Z";
+    await page.goto(`/?from=${encodeURIComponent(from)}&to=2026-11-02T00%3A00%3A00.000Z`);
     const plot = page.locator(".activity-widget .analytics-plot");
     await expect(plot.locator("svg.ts-chart")).toHaveAccessibleName(
       interval === "Hourly" ? /UTC hour/ : /UTC month/,

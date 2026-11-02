@@ -14,7 +14,9 @@ import { sidebarScript } from "@/lib/preferences";
 import styles from "../styles.css?url";
 export const Route = createRootRoute({
   validateSearch: validateWorkspaceSearch,
-  search: { middlewares: [retainSearchParams(["source", "days", "snapshot", "from", "to"])] },
+  search: {
+    middlewares: [retainSearchParams(["source", "days", "period", "snapshot", "from", "to"])],
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

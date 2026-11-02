@@ -1,9 +1,10 @@
-import { DAY_MS, MAX_RANGE_DAYS } from "./date-range";
+import { DAY_MS, MAX_RANGE_DAYS, periodLabels, type DatePeriod } from "./date-range";
 export type WorkspaceSearch = {
   /** Legacy entry input only; canonical URLs use /projects/$projectSlug. */
   project?: string;
   source?: string;
   days?: 7 | 30 | 90;
+  period?: DatePeriod;
   snapshot?: string;
   from?: string;
   to?: string;
@@ -24,6 +25,11 @@ export const validKey = (value: unknown): value is string =>
 export function validateWorkspaceSearch(search: Record<string, unknown>): WorkspaceSearch {
   if (
     search.invalidWorkspace === true ||
+    (search.period !== undefined &&
+      (typeof search.period !== "string" ||
+        !Object.hasOwn(periodLabels, search.period) ||
+        search.from !== undefined ||
+        search.snapshot !== undefined)) ||
     (search.project !== undefined &&
       (typeof search.project !== "string" ||
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(search.project) ||
@@ -51,6 +57,7 @@ export function validateWorkspaceSearch(search: Record<string, unknown>): Worksp
   return {
     project: search.project as string | undefined,
     source: search.source as string | undefined,
+    period: search.period as DatePeriod | undefined,
     days: search.days === undefined ? undefined : (Number(search.days) as 7 | 30 | 90),
     snapshot: search.snapshot as string | undefined,
     from: search.from as string | undefined,
@@ -58,23 +65,36 @@ export function validateWorkspaceSearch(search: Record<string, unknown>): Worksp
   };
 }
 
+export type OverviewFilter = { field: string; value: string | number | boolean };
 export type OverviewSearch = {
+  filter?: OverviewFilter;
+  invalidFilter?: true;
   metric?: "count" | "actors" | "visitors" | "installations" | "average" | "p95";
-  interval?: "hour" | "day" | "week" | "month";
   breakdown?: string;
   duration?: "avg" | "p95";
 };
 export function validateOverviewSearch(s: Record<string, unknown>): OverviewSearch {
+  const filter = s.filter as Partial<OverviewFilter> | undefined;
+  const valid =
+    filter &&
+    typeof filter === "object" &&
+    typeof filter.field === "string" &&
+    (["name", "source"].includes(filter.field) ||
+      (filter.field.startsWith("property:") && validKey(filter.field.slice(9)))) &&
+    ((typeof filter.value === "string" && filter.value.length <= 512) ||
+      typeof filter.value === "boolean" ||
+      (typeof filter.value === "number" && Number.isFinite(filter.value))) &&
+    (!["name", "source"].includes(filter.field) || typeof filter.value === "string");
   return {
+    ...(s.filter !== undefined
+      ? valid
+        ? { filter: filter as OverviewFilter }
+        : { invalidFilter: true as const }
+      : {}),
     metric: ["count", "actors", "visitors", "installations", "average", "p95"].includes(
       typeof s.metric === "string" ? s.metric : "",
     )
       ? (s.metric as OverviewSearch["metric"])
-      : undefined,
-    interval: ["hour", "day", "week", "month"].includes(
-      typeof s.interval === "string" ? s.interval : "",
-    )
-      ? (s.interval as OverviewSearch["interval"])
       : undefined,
     breakdown: [
       "name",

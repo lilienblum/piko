@@ -1,3 +1,5 @@
+import { reportLink } from "@/lib/report-link";
+import { automaticBucket } from "@/lib/time-buckets";
 import { workspaceTarget } from "@/lib/workspace-route";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch, useNavigate } from "@tanstack/react-router";
@@ -78,7 +80,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     const query = typeof next === "function" ? next(applied) : next;
     void navigate({ search: (previous) => ({ ...previous, query, page: 1 }), resetScroll: false });
   };
-  // A rolling end time advances without changing the chosen interval or URL.
+  const bucket = automaticBucket(range);
+  // A rolling end time advances without changing the selected dates or URL.
   const rangeKey =
     drilldown || search.snapshot || search.from ? `${range.from}:${range.to}` : range.from;
   const pageSize = search.pageSize ?? 15;
@@ -101,6 +104,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     product?.id,
     {
       ...range,
+      bucket,
       source_id: sourceId,
       event: applied.event || undefined,
       source: applied.source || undefined,
@@ -403,15 +407,19 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <SeriesChart
                     data={data}
                     title="Results over time"
+                    bucket={bucket}
                     description={
                       ["count", "actors"].includes(applied.measure)
-                        ? "UTC daily buckets"
-                        : "UTC daily buckets · missing numeric values are excluded"
+                        ? `One point per ${bucket} · UTC`
+                        : `One point per ${bucket} · UTC · missing numeric values are excluded`
                     }
                     label={measureLabels[applied.measure]}
                   />
                   <Breakdown
                     title="Breakdown"
+                    externalHref={(group) =>
+                      reportLink(applied.group, group.label, product?.website_url)
+                    }
                     description={`Grouped by ${applied.group.replace("property:", "")}`}
                     groups={
                       applied.group === "source_id"

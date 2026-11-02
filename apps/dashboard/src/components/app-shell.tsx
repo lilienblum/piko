@@ -1,3 +1,4 @@
+import { presetRange } from "@/lib/date-range";
 import { DateRangePicker } from "./date-range-picker";
 import { workspaceTarget, workspaceView } from "@/lib/workspace-route";
 import { ProjectIcon } from "./project-icon";
@@ -23,7 +24,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ValueSelect } from "./value-select";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkspaceSidebar } from "./workspace-sidebar";
@@ -43,6 +43,7 @@ type Context = {
   range: { from: string; to: string };
   refresh: () => void;
   refreshKey: number;
+  now: number;
   setAnalyticsPending: (pending: boolean) => void;
 };
 const Workspace = createContext<Context | null>(null);
@@ -129,6 +130,7 @@ export function AppShell() {
           search: {
             source: "all",
             days,
+            period: search.period,
             snapshot: search.snapshot,
             from: search.from,
             to: search.to,
@@ -203,6 +205,7 @@ export function AppShell() {
     product?.id,
     sourceId,
     days,
+    search.period,
     search.snapshot,
     search.from,
     search.to,
@@ -216,12 +219,13 @@ export function AppShell() {
   }
   const defaultRange = useMemo(() => {
     if (search.from && search.to) return { from: search.from, to: search.to };
+    if (search.period) return presetRange(search.period, now);
     const end = new Date(search.snapshot ?? now);
     const start = new Date(end);
     start.setUTCHours(0, 0, 0, 0);
     start.setUTCDate(start.getUTCDate() - days + 1);
     return { from: start.toISOString(), to: end.toISOString() };
-  }, [days, now, search.snapshot, search.from, search.to]);
+  }, [days, now, search.period, search.snapshot, search.from, search.to]);
   const range = drilldown ? { from: drilldown.from, to: drilldown.to } : defaultRange;
   const refresh = () => {
     refreshBackground();
@@ -251,6 +255,7 @@ export function AppShell() {
             search: {
               source: "all",
               days,
+              period: search.period,
               snapshot: search.snapshot,
               from: search.from,
               to: search.to,
@@ -272,6 +277,7 @@ export function AppShell() {
         range,
         refresh,
         refreshKey,
+        now,
         setAnalyticsPending,
       }}
     >
@@ -301,6 +307,7 @@ export function AppShell() {
                 project: undefined,
                 source: id || "all",
                 days,
+                period: search.period,
                 snapshot: search.snapshot,
                 from: search.from,
                 to: search.to,
@@ -318,6 +325,7 @@ export function AppShell() {
               sourceId,
               days,
               drilldown,
+              search.period,
               search.snapshot,
               search.from,
               search.to,
@@ -339,20 +347,16 @@ export function AppShell() {
             {view !== "/settings" && (
               <div className="workspace-toolbar">
                 <div className="workspace-toolbar-actions">
-                  <ToggleGroup
-                    aria-label="Date range"
-                    className="date-presets"
-                    spacing={1}
-                    disabled={!preferencesReady}
-                    value={drilldown || search.snapshot || search.from ? [] : [String(days)]}
-                    onValueChange={(values) => {
-                      const value = values[0];
-                      if (!value || value === "linked") return;
+                  <DateRangePicker
+                    days={days}
+                    period={search.period}
+                    onPreset={(preset) => {
                       void navigate({
                         ...workspaceTarget(view, product?.slug),
                         search: (previous) => ({
                           ...previous,
-                          days: Number(value) as 7 | 30 | 90,
+                          days: typeof preset === "number" ? preset : days,
+                          period: typeof preset === "string" ? preset : undefined,
                           snapshot: undefined,
                           from: undefined,
                           to: undefined,
@@ -363,19 +367,6 @@ export function AppShell() {
                         resetScroll: false,
                       });
                     }}
-                  >
-                    {[7, 30, 90].map((days) => (
-                      <ToggleGroupItem
-                        className="date-preset"
-                        key={days}
-                        value={String(days)}
-                        aria-label={`Last ${days} days`}
-                      >
-                        {days}d
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                  <DateRangePicker
                     range={range}
                     fixed={!!(drilldown || search.snapshot || search.from)}
                     disabled={!preferencesReady || !product || !!selectionError}
@@ -384,6 +375,7 @@ export function AppShell() {
                         ...workspaceTarget(view, product?.slug),
                         search: (previous) => ({
                           ...previous,
+                          period: undefined,
                           from: next.from,
                           to: next.to,
                           snapshot: undefined,

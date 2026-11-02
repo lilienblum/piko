@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AnalyticsUpIcon,
+  LinkSquare02Icon,
   ArrowRight01Icon,
   ArrowRight02Icon,
   RefreshIcon,
@@ -168,6 +169,8 @@ type BreakdownProps = {
   unit?: string;
   total?: number;
   drilldown?: (group: Group) => ExploreDrilldown | undefined;
+  destination?: "overview" | "explore";
+  externalHref?: (group: Group) => string | undefined;
 };
 export function Breakdown({ description, ...props }: BreakdownProps & { description: string }) {
   return (
@@ -188,6 +191,8 @@ export function BreakdownRows({
   unit = "Events",
   total,
   drilldown,
+  externalHref,
+  destination = "explore",
 }: BreakdownProps) {
   const { projectSlug } = useParams({ strict: false });
   const max = Math.max(...groups.map((g) => g.value ?? 0), 1);
@@ -203,6 +208,7 @@ export function BreakdownRows({
       {groups.length ? (
         groups.map((g) => {
           const target = drilldown?.(g);
+          const href = externalHref?.(g);
           const label = g.display ?? groupLabel(g.label);
           const content = (
             <>
@@ -210,9 +216,50 @@ export function BreakdownRows({
                 className="breakdown-fill"
                 style={{ width: `${Math.max(0, (g.value ?? 0) / max) * 85}%` }}
               />
-              <span className="breakdown-label" title={label}>
-                {label}
-              </span>
+              {target ? (
+                <Link
+                  className="breakdown-label breakdown-filter"
+                  {...workspaceTarget(destination === "overview" ? "/" : "/explore", projectSlug)}
+                  search={(previous) =>
+                    destination === "overview"
+                      ? {
+                          ...previous,
+                          source: target.sourceId ?? "all",
+                          filter: target.event
+                            ? { field: "name", value: target.event }
+                            : target.source
+                              ? { field: "source", value: target.source }
+                              : target.filter
+                                ? {
+                                    field: `property:${target.filter.property}`,
+                                    value: target.filter.value,
+                                  }
+                                : previous.filter,
+                        }
+                      : { drilldown: target }
+                  }
+                  aria-label={`${destination === "overview" ? "Filter by" : "Explore"} ${label}`}
+                  title={label}
+                >
+                  <span className="breakdown-link-text">{label}</span>
+                </Link>
+              ) : (
+                <span className="breakdown-label" title={label}>
+                  {label}
+                </span>
+              )}
+              {href && (
+                <a
+                  className="breakdown-external"
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open ${label} in a new tab`}
+                  title="Open in a new tab"
+                >
+                  <HugeiconsIcon icon={LinkSquare02Icon} strokeWidth={2} aria-hidden="true" />
+                </a>
+              )}
               <span className="breakdown-values">
                 <span className="breakdown-value">{number(g.value, 1)}</span>
                 {total !== undefined && (
@@ -231,17 +278,7 @@ export function BreakdownRows({
               </span>
             </>
           );
-          return target ? (
-            <Link
-              className="breakdown-row"
-              {...workspaceTarget("/explore", projectSlug)}
-              search={{ drilldown: target }}
-              key={JSON.stringify(g.label)}
-              aria-label={`Explore ${label}`}
-            >
-              {content}
-            </Link>
-          ) : (
+          return (
             <div className="breakdown-row" key={JSON.stringify(g.label)}>
               {content}
             </div>

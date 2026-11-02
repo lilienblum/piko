@@ -94,7 +94,7 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   await select(page, "Select project", tool.name);
   await expect(page.locator(".activity-widget .widget-measure-label")).toBeVisible();
-  await expect(page.locator(".outcomes-widget .donut-total strong")).toHaveText("50%");
+  await expect(page.locator(".outcomes-widget .widget-value")).toHaveText("50%");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await select(page, "Measure", "Numeric average");
   await page.getByRole("button", { name: "Run query" }).click();
@@ -110,40 +110,46 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await page.getByRole("button", { name: "Run query" }).click();
   await expect(page.locator(".explore-summary strong")).toHaveText("250 ms");
   await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("Page 1 of 2")).toBeVisible();
   expect(errors).toEqual([]);
 });
-test("date range buttons support keyboard selection, persistence, and narrow layouts", async ({
+test("date picker supports keyboard selection, persistence, and narrow layouts", async ({
   page,
 }) => {
   await openWorkspace(page);
   await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
+  const trigger = page.getByRole("button", { name: "Choose date range", exact: true });
+  await expect(trigger).toContainText("Last 30 days");
+  await trigger.click();
   const group = page.getByRole("group", { name: "Date range", exact: true });
-  const seven = group.getByRole("button", { name: "Last 7 days", exact: true });
   const thirty = group.getByRole("button", { name: "Last 30 days", exact: true });
   const ninety = group.getByRole("button", { name: "Last 90 days", exact: true });
-  await expect(thirty).toBeEnabled();
-  await thirty.click();
-  await expect(thirty).toHaveAttribute("aria-pressed", "true");
-  await thirty.press("ArrowRight");
+  await thirty.focus();
+  await thirty.press("ArrowDown");
   await expect(ninety).toBeFocused();
-  const request = page.waitForRequest((r) => r.url().endsWith("/query"));
+  const request = page.waitForRequest(
+    (r) => r.url().endsWith("/query") && r.postDataJSON().group_by === "name",
+  );
   await ninety.press("Space");
   const range = (await request).postDataJSON();
   const duration = (Date.parse(range.to) - Date.parse(range.from)) / 86400000;
   expect(duration).toBeGreaterThanOrEqual(89);
   expect(duration).toBeLessThanOrEqual(90);
-  await expect(ninety).toHaveAttribute("aria-pressed", "true");
-  await expect(group.locator('[aria-pressed="true"]')).toHaveCount(1);
+  await expect(trigger).toContainText("Last 90 days");
+  await expect(group).toBeHidden();
+  await expect(trigger).toBeFocused();
   await page.reload();
-  await expect(ninety).toHaveAttribute("aria-pressed", "true");
+  await expect(trigger).toContainText("Last 90 days");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
-  await expect(ninety).toHaveAttribute("aria-pressed", "true");
+  await expect(trigger).toContainText("Last 90 days");
   await page.setViewportSize({ width: 320, height: 844 });
+  await trigger.click();
+  const seven = group.getByRole("button", { name: "Last 7 days", exact: true });
+  await expect(seven).toHaveCSS("height", "40px");
   await seven.click();
-  await expect(seven).toHaveAttribute("aria-pressed", "true");
-  expect((await seven.boundingBox())?.height).toBeGreaterThanOrEqual(40);
+  await expect(trigger).toContainText("Last 7 days");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test("create product, edit retention, create and revoke a key", async ({ page }) => {
@@ -330,22 +336,23 @@ test("website breakdown links preserve product and dates across reload and histo
   await openWorkspace(page);
   await select(page, "Select project", web.name);
   await select(page, "Breakdown", "Pages");
-  const docs = page.getByRole("link", { name: "Explore /docs", exact: true });
-  await expect(docs).toContainText("50%");
+  const docs = page.getByRole("link", { name: "Filter by /docs", exact: true });
+  await expect(docs.locator("..")).toContainText("50%");
   const clicked = new URL((await docs.getAttribute("href")) ?? "", dashboard);
-  const selection = JSON.parse(clicked.searchParams.get("drilldown") ?? "null");
-  expect(clicked.pathname).toBe(`/projects/${web.slug}/explore`);
-  expect(selection.productId).toBeUndefined();
-  expect(selection.filter).toEqual({ property: "path", value: "/docs" });
+  expect(clicked.pathname).toBe(`/projects/${web.slug}`);
+  expect(JSON.parse(clicked.searchParams.get("filter") ?? "null")).toEqual({
+    field: "property:path",
+    value: "/docs",
+  });
   const request = page.waitForRequest(
     (r) => r.url().endsWith(`/products/${web.id}/query`) && r.postDataJSON().filters?.length === 1,
   );
   await docs.click();
   expect((await request).postDataJSON()).toMatchObject({
-    from: selection.from,
-    to: selection.to,
     filters: [{ property: "path", op: "eq", value: "/docs" }],
   });
+  await expect(page.locator(".activity-widget .widget-value")).toHaveText("16");
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Choose date range", exact: true }),
@@ -356,6 +363,7 @@ test("website breakdown links preserve product and dates across reload and histo
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(web.name);
   await expect(page.getByText("across 16 matching events")).toBeVisible();
+  const selection = JSON.parse(new URL(page.url()).searchParams.get("drilldown") ?? "null");
   const refresh = page.waitForRequest((r) => r.url().endsWith(`/products/${web.id}/query`));
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   expect((await refresh).postDataJSON()).toMatchObject({ from: selection.from, to: selection.to });
@@ -379,20 +387,24 @@ test("breakdown choices drill into referrers and campaigns, with missing values 
   await openWorkspace(page);
   await select(page, "Select project", web.name);
   await select(page, "Breakdown", "Referrers");
-  await page.getByRole("link", { name: "Explore Direct", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by Direct", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("referrer");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Breakdown", "Campaign sources");
-  await page.getByRole("link", { name: "Explore newsletter", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by newsletter", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("utm_source");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Breakdown", "Campaigns");
   await expect(page.getByText("Not provided", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore Not provided" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Explore launch", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by launch", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
@@ -406,17 +418,19 @@ test("tool command and version links work in the narrow dark layout", async ({ p
   await openWorkspace(page);
   await select(page, "Select project", tool.name);
   await select(page, "Breakdown", "Versions");
-  await expect(page.getByRole("link", { name: "Explore 1.0.0", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Filter by 1.0.0", exact: true })).toBeVisible();
   await page.screenshot({
     path: test.info().outputPath("tool-breakdown-dark-mobile.png"),
     fullPage: true,
   });
-  await page.getByRole("link", { name: "Explore 1.0.0", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by 1.0.0", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await expect(page.getByLabel("Property", { exact: true })).toHaveValue("version");
   await page.goBack();
   await select(page, "Breakdown", "Commands");
-  await page.getByRole("link", { name: "Explore build", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by build", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
     "All events",
@@ -433,18 +447,20 @@ test("generic client links use envelope filters and shares include groups outsid
   await openWorkspace(page);
   await select(page, "Select project", generic.name);
   await select(page, "Breakdown", "Clients");
-  const source = page.getByRole("link", { name: "Explore sdk", exact: true });
-  await expect(source).toContainText("25%");
+  const source = page.getByRole("link", { name: "Filter by sdk", exact: true });
+  await expect(source.locator("..")).toContainText("25%");
   const request = page.waitForRequest(
     (r) => r.url().endsWith(`/products/${generic.id}/query`) && r.postDataJSON().source === "sdk",
   );
   await source.click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   expect((await request).postDataJSON()).toMatchObject({ source: "sdk", filters: [] });
   await expect(page.getByText("across 8 matching events")).toBeVisible();
   await page.getByRole("button", { name: "Remove client filter" }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await page.getByRole("link", { name: "Explore activity", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by activity", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Event", exact: true })).toContainText(
     "activity",
   );
@@ -504,7 +520,7 @@ test("secondary breakdown choices show pending and retry states without stale ro
   await openWorkspace(page);
   await select(page, "Select project", web.name);
   await select(page, "Breakdown", "Referrers");
-  await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Filter by Direct", exact: true })).toBeVisible();
   let release = () => {};
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -522,14 +538,18 @@ test("secondary breakdown choices show pending and retry states without stale ro
   try {
     await select(page, "Breakdown", "Campaign sources");
     await expect(page.getByRole("status", { name: "Loading breakdown" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).not.toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Filter by Direct", exact: true }),
+    ).not.toBeVisible();
     release();
     await expect(page.getByText("Temporary breakdown failure")).toBeVisible();
     await page
       .locator(".breakdown-widget")
       .getByRole("button", { name: "Retry", exact: true })
       .click();
-    await expect(page.getByRole("link", { name: "Explore newsletter", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Filter by newsletter", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("Temporary breakdown failure")).not.toBeVisible();
   } finally {
     release();
@@ -619,7 +639,8 @@ test("property inspection filters the server using applied context and retains b
   await openWorkspace(page);
   await select(page, "Select project", tool.name);
   await select(page, "Breakdown", "Commands");
-  await page.getByRole("link", { name: "Explore build", exact: true }).click();
+  await page.getByRole("link", { name: "Filter by build", exact: true }).click();
+  await page.getByRole("link", { name: "View matching events", exact: true }).click();
   await select(page, "Measure", "Numeric average");
   const stream = page.locator(".event-card");
   await expect(stream.locator("tbody tr").first()).toContainText("build");
@@ -815,6 +836,7 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
     timeout: 3000,
   });
   await select(page, "Select project", tool.name);
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();

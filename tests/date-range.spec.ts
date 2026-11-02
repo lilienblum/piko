@@ -57,6 +57,7 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
   await open(page);
   const original = page.url();
   await trigger(page).click();
+  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
   await expect(picker(page).getByRole("grid")).toHaveCount(2);
   await picker(page).locator(`button[data-day="${start}"]`).click();
   await expect(
@@ -92,6 +93,7 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
     await shared.goto(link);
     await expect(shared.locator(".activity-widget .widget-value").first()).toHaveText("2");
     await trigger(shared).click();
+    await picker(shared).getByRole("button", { name: "Custom range", exact: true }).click();
     await expect(picker(shared).getByLabel("Start date", { exact: true })).toHaveValue(start);
     await expect(picker(shared).getByLabel("End date", { exact: true })).toHaveValue(end);
     await expect(picker(shared).locator(`button[data-day="${start}"]`)).toHaveAttribute(
@@ -101,8 +103,9 @@ test("calendar applies inclusive UTC dates, preserves scope, and shares across t
   } finally {
     await recipient.close();
   }
+  await trigger(page).click();
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
-  await expect(trigger(page)).toContainText("Custom range");
+  await expect(trigger(page)).toContainText("Last 7 days");
   expect(new URL(page.url()).searchParams.has("from")).toBe(false);
   expect(new URL(page.url()).searchParams.has("to")).toBe(false);
   await page.goBack();
@@ -120,6 +123,7 @@ for (const width of [1440, 390]) {
     const url = page.url();
     const before = await page.locator("#main-content").boundingBox();
     await trigger(page).click();
+    await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
     await expect(picker(page).getByRole("grid")).toHaveCount(width < 768 ? 1 : 2);
     expect(await page.locator("#main-content").boundingBox()).toEqual(before);
     const box = await picker(page).boundingBox();
@@ -140,6 +144,7 @@ for (const width of [1440, 390]) {
     await expect(trigger(page)).toBeFocused();
     expect(page.url()).toBe(url);
     await trigger(page).click();
+    await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
     await expect(picker(page).getByLabel("Start date", { exact: true })).not.toHaveValue(
       "2026-02-30",
     );
@@ -177,6 +182,7 @@ test("changing calendar dates preserves a drilldown's event and typed filter", a
   );
   await expect(page.getByText("across 1 matching events")).toBeVisible();
   await trigger(page).click();
+  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
   const widerStart = new Date(Date.parse(from) - day).toISOString().slice(0, 10);
   await picker(page).getByLabel("Start date", { exact: true }).fill(widerStart);
   await picker(page).getByLabel("End date", { exact: true }).fill(today);
@@ -198,6 +204,7 @@ test("calendar supports keyboard focus, range selection, and dismissal", async (
   await open(page);
   const url = page.url();
   await trigger(page).click();
+  await picker(page).getByRole("button", { name: "Custom range", exact: true }).click();
   await expect(picker(page).locator('button[data-range-start="true"]')).toBeFocused();
   const first = picker(page).locator(`button[data-day="${start}"]`);
   await first.focus();
@@ -218,4 +225,34 @@ test("calendar supports keyboard focus, range selection, and dismissal", async (
   await expect(picker(page)).toBeHidden();
   await expect(trigger(page)).toBeFocused();
   expect(page.url()).toBe(url);
+});
+
+test("one period picker navigates days and calendar months without future dates", async ({
+  page,
+}) => {
+  await open(page);
+  await trigger(page).click();
+  await picker(page).getByRole("button", { name: "Today", exact: true }).click();
+  await expect(trigger(page)).toContainText("Today");
+  await expect(page.getByRole("button", { name: "Next period", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Previous period", exact: true }).click();
+  const yesterday = new Date(midnight - day).toISOString();
+  await expect.poll(() => new URL(page.url()).searchParams.get("from")).toBe(yesterday);
+  await page.getByRole("button", { name: "Next period", exact: true }).click();
+  await expect(trigger(page)).toContainText("Today");
+  await trigger(page).click();
+  await picker(page).getByRole("button", { name: "Month to date", exact: true }).click();
+  await page.getByRole("button", { name: "Previous period", exact: true }).click();
+  const first = new Date(`${today.slice(0, 7)}-01T00:00:00.000Z`);
+  const previous = new Date(first);
+  previous.setUTCMonth(previous.getUTCMonth() - 1);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("from"))
+    .toBe(previous.toISOString());
+  expect(new URL(page.url()).searchParams.get("to")).toBe(first.toISOString());
+  await page.reload();
+  await page.getByRole("button", { name: "Next period", exact: true }).click();
+  await expect(trigger(page)).toContainText("Month to date");
+  await expect(page.getByRole("button", { name: "Next period", exact: true })).toBeDisabled();
+  await expect(page.getByRole("group", { name: "Chart interval" })).toHaveCount(0);
 });
