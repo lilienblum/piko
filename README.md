@@ -26,7 +26,7 @@ Open **https://piko.test**. The independent API runs at **https://piko-api.test*
 SSL_CERT_FILE=.tako/dev-ca.pem PIKO_API_URL=https://piko-api.test bun seed
 ```
 
-This creates one **Orbit** project with **Website**, **iOS app**, and **CLI** sources, with 30 days of sample page views, signups, mobile screens/subscriptions, commands, and configuration events. Earlier demo projects remain untouched. Overview refreshes through ephemeral Tako channels after new events commit; reconnects query the API to catch up. Explore offers **Refresh results** so incoming data does not interrupt inspection or pagination. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
+This creates one **Orbit** project with **Website**, **iOS app**, and **CLI** sources, with 30 days of sample page views, signups, mobile screens/subscriptions, commands, and configuration events. Earlier demo projects remain untouched. Overview and Explore update automatically through ephemeral Tako channels after events commit. Returning to the tab or reconnecting catches up; a 30-second check covers missed hints and standalone mode. Draft queries, the selected page, and open event inspection stay intact. Stable event IDs make seeding the same UTC dates idempotent; each run creates a fresh sample ingestion key. Sample data is opt-in and never loaded in production automatically.
 
 See [Tako setup, deployment, and realtime delivery](docs/tako.md). Development uses Tako's trusted local HTTPS proxy. If the CLI reports missing host prerequisites, complete `tako doctor` / Tako's local setup first.
 
