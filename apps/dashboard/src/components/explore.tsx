@@ -1,6 +1,7 @@
+import { workspaceTarget } from "@/lib/workspace-route";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearch } from "@tanstack/react-router";
-import type { ExploreDrilldown } from "@/lib/explore-search";
+import { Link, useSearch, useNavigate } from "@tanstack/react-router";
+import { defaultSpec, type ExploreSpec as Spec, type ExploreDrilldown } from "@/lib/explore-search";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, FilterHorizontalIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
@@ -17,36 +18,20 @@ import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-
 import { Breakdown, ErrorState, NoEvents, SeriesChart } from "./shared";
 import { ExploreLoading } from "./loading";
 import { Spinner } from "@/components/ui/spinner";
-type Spec = {
-  event: string;
-  source: string;
-  measure: string;
-  property: string;
-  group: string;
-  filterProperty: string;
-  filterOp: string;
-  filterValue: string;
-};
-const defaultSpec: Spec = {
-  event: "",
-  source: "",
-  measure: "count",
-  property: "duration_ms",
-  group: "name",
-  filterProperty: "",
-  filterOp: "eq",
-  filterValue: "",
-};
 export function Explore() {
   const { product, sourceId } = useWorkspace();
-  const { drilldown, invalidDrilldown } = useSearch({ from: "/explore" });
-  if (invalidDrilldown || (drilldown && (!product || (drilldown.sourceId && !sourceId))))
+  const { drilldown, invalidDrilldown, invalidQuery } = useSearch({ strict: false });
+  if (
+    invalidQuery ||
+    invalidDrilldown ||
+    (drilldown && (!product || (drilldown.sourceId && !sourceId)))
+  )
     return (
       <>
         <PageHeader
           title="This selection is unavailable"
           description={
-            invalidDrilldown
+            invalidDrilldown || invalidQuery
               ? "The link contains an invalid project, date range, or filter. Clear it to explore your projects."
               : "The project or source in this link is not available in this workspace."
           }
@@ -55,7 +40,7 @@ export function Explore() {
           variant="outline"
           nativeButton={false}
           role="link"
-          render={<Link to="/explore" search={{}} />}
+          render={<Link {...workspaceTarget("/explore", product?.slug)} search={{}} />}
         >
           Clear selection
         </Button>
@@ -72,24 +57,33 @@ export function Explore() {
 }
 function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
   const { product, source, sourceId, range, refresh, refreshKey } = useWorkspace();
-  const initial: Spec = {
+  const search = useSearch({ strict: false });
+  const navigate = useNavigate({ from: "/projects/$projectSlug/explore" });
+  const applied: Spec = search.query ?? {
     ...defaultSpec,
     event: drilldown?.event ?? "",
     source: drilldown?.source ?? "",
     filterProperty: drilldown?.filter?.property ?? "",
     filterValue: drilldown?.filter ? JSON.stringify(drilldown.filter.value) : "",
   };
-  const [draft, setDraft] = useState<Spec>(initial);
-  const [applied, setApplied] = useState<Spec>(initial);
-  // A rolling end time advances on refresh without changing the selected interval.
-  const rangeKey = drilldown ? `${range.from}:${range.to}` : range.from;
-  const [pageSize, setPageSize] = useState(15);
-  const [pagination, setPagination] = useState({ rangeKey, page: 0 });
-  const page = pagination.rangeKey === rangeKey ? pagination.page : 0;
-  const setPage = (next: number | ((current: number) => number)) => {
-    setPagination({ rangeKey, page: typeof next === "function" ? next(page) : next });
+  const appliedKey = JSON.stringify(applied);
+  const [draft, setDraft] = useState<Spec>(applied);
+  const [showFilter, setShowFilter] = useState(!!applied.filterProperty);
+  useEffect(() => {
+    const applied: Spec = JSON.parse(appliedKey);
+    setDraft(applied);
+    setShowFilter(!!applied.filterProperty);
+  }, [appliedKey]);
+  const setApplied = (next: Spec | ((value: Spec) => Spec)) => {
+    const query = typeof next === "function" ? next(applied) : next;
+    void navigate({ search: (previous) => ({ ...previous, query, page: 1 }), resetScroll: false });
   };
-  const [showFilter, setShowFilter] = useState(!!drilldown?.filter);
+  // A rolling end time advances without changing the chosen interval or URL.
+  const rangeKey = drilldown || search.snapshot ? `${range.from}:${range.to}` : range.from;
+  const pageSize = search.pageSize ?? 15;
+  const page = (search.page ?? 1) - 1;
+  const setPage = (page: number) =>
+    void navigate({ search: (previous) => ({ ...previous, page: page + 1 }), resetScroll: false });
   const [validation, setValidation] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const retry = () => setRetryKey((key) => key + 1);
@@ -173,7 +167,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                     onClick={() => {
                       setDraft((d) => ({ ...d, source: "" }));
                       setApplied((d) => ({ ...d, source: "" }));
-                      setPage(0);
                     }}
                   >
                     <HugeiconsIcon
@@ -198,7 +191,7 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
             size="sm"
             nativeButton={false}
             role="link"
-            render={<Link to="/explore" search={{}} />}
+            render={<Link {...workspaceTarget("/explore", product?.slug)} search={{}} />}
           >
             <HugeiconsIcon
               icon={Cancel01Icon}
@@ -222,7 +215,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                 return;
               }
               setApplied({ ...draft });
-              setPage(0);
               refresh();
             }}
           >
@@ -365,7 +357,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                     onClick={() => {
                       setDraft((d) => ({ ...d, filterProperty: "", filterValue: "" }));
                       setApplied((d) => ({ ...d, filterProperty: "", filterValue: "" }));
-                      setPage(0);
                       setShowFilter(false);
                     }}
                   >
@@ -441,8 +432,10 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   onRetry={retry}
                   onPageChange={setPage}
                   onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setPage(0);
+                    void navigate({
+                      search: (previous) => ({ ...previous, pageSize: size, page: 1 }),
+                      resetScroll: false,
+                    });
                   }}
                   onFilterProperty={(property, value) => {
                     const next = {
@@ -455,7 +448,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                     setApplied(next);
                     setValidation("");
                     setShowFilter(true);
-                    setPage(0);
                     requestAnimationFrame(() => document.getElementById("filter-value")?.focus());
                   }}
                 />

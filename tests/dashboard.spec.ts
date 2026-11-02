@@ -19,7 +19,7 @@ async function select(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
-let web: { id: string; name: string; key: string };
+let web: { id: string; name: string; key: string; slug: string };
 let tool: { id: string; name: string; key: string };
 let generic: { id: string; name: string; key: string };
 const range = () => ({
@@ -334,7 +334,8 @@ test("website breakdown links preserve product and dates across reload and histo
   await expect(docs).toContainText("50%");
   const clicked = new URL((await docs.getAttribute("href")) ?? "", dashboard);
   const selection = JSON.parse(clicked.searchParams.get("drilldown") ?? "null");
-  expect(selection.productId).toBe(web.id);
+  expect(clicked.pathname).toBe(`/projects/${web.slug}/explore`);
+  expect(selection.productId).toBeUndefined();
   expect(selection.filter).toEqual({ property: "path", value: "/docs" });
   const request = page.waitForRequest(
     (r) => r.url().endsWith(`/products/${web.id}/query`) && r.postDataJSON().filters?.length === 1,

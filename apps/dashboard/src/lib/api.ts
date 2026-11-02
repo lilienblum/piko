@@ -8,6 +8,7 @@ export type Source = {
   created_at: string;
 };
 export type Product = {
+  slug: string;
   website_url: string | null;
   favicon_version: string | null;
   id: string;

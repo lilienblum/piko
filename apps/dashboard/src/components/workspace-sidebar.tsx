@@ -1,3 +1,4 @@
+import { workspaceTarget } from "@/lib/workspace-route";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -49,7 +50,7 @@ export function WorkspaceSidebar({
     <Sidebar collapsible="icon" className="workspace-sidebar">
       <SidebarHeader className="workspace-brand-row">
         <Link
-          to="/"
+          {...workspaceTarget("/", product?.slug)}
           aria-label="Piko overview"
           className="brand-link"
           onClick={() => setOpenMobile(false)}
@@ -90,7 +91,12 @@ export function WorkspaceSidebar({
                     <SidebarMenuButton
                       isActive={path === to}
                       tooltip={label}
-                      render={<Link to={to} onClick={() => setOpenMobile(false)} />}
+                      render={
+                        <Link
+                          {...workspaceTarget(to, product?.slug)}
+                          onClick={() => setOpenMobile(false)}
+                        />
+                      }
                     >
                       <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
                       <span className="group-data-[collapsible=icon]:sr-only">{label}</span>

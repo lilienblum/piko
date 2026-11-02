@@ -1,3 +1,4 @@
+import { workspaceTarget, workspaceView } from "@/lib/workspace-route";
 import { ProjectIcon } from "./project-icon";
 import {
   createContext,
@@ -10,7 +11,14 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  Link,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearch,
+} from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -57,7 +65,7 @@ export function AppShell() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
   const [sourceSelection, setSourceSelection] = useState<Record<string, string>>({});
-  const [days, setDays] = useState(30);
+  const [savedDays, setSavedDays] = useState<7 | 30 | 90>(30);
   const [now, setNow] = useState(Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
   const refreshBackground = useCallback(() => {
@@ -67,30 +75,19 @@ export function AppShell() {
   }, []);
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
-  const [rangePath, setRangePath] = useState(path);
-  // Mount the next view with a current rolling interval, before its queries start.
-  if (rangePath !== path) {
-    setRangePath(path);
-    setNow(Date.now());
-  }
+  const view = workspaceView(path);
+  const { projectSlug } = useParams({ strict: false });
   const navigate = useNavigate();
-  const exploreSearch = useSearch({ from: "/explore", shouldThrow: false });
-  const drilldown = exploreSearch?.drilldown;
-  const linkedProductId = drilldown?.productId;
-  useEffect(() => {
-    if (linkedProductId && products.some((p) => p.id === linkedProductId)) {
-      setSelected(linkedProductId);
-      savePreference("piko:product", linkedProductId);
-    }
-  }, [linkedProductId, products]);
-  const clearDrilldown = () => {
-    if (path === "/explore") void navigate({ to: "/explore", search: {} });
-  };
+  const search = useSearch({ from: "__root__" });
+  const currentSearch = useSearch({ strict: false });
+  const drilldown = view === "/explore" ? currentSearch.drilldown : undefined;
+  const requestedProject = projectSlug ?? search.project;
+  const days = search.days ?? (requestedProject ? 30 : savedDays);
   useEffect(() => {
     setSidebarOpen(readPreference("piko:sidebar") !== "collapsed");
     setSelected(readPreference("piko:product") ?? "");
     const saved = Number(readPreference("piko:days"));
-    if ([7, 30, 90].includes(saved)) setDays(saved);
+    if ([7, 30, 90].includes(saved)) setSavedDays(saved as 7 | 30 | 90);
     setPreferencesReady(true);
     const controller = new AbortController();
     api<Product[]>("/products", "GET", undefined, controller.signal)
@@ -124,46 +121,126 @@ export function AppShell() {
     if (select) {
       setSelected(select);
       savePreference("piko:product", select);
+      const project = result.find((p) => p.id === select);
+      if (project)
+        await navigate({
+          ...workspaceTarget(view, project.slug),
+          search: { source: "all", days, snapshot: search.snapshot },
+          resetScroll: false,
+        });
     }
     setError("");
   }
-  const product = drilldown
-    ? products.find((p) => p.id === drilldown.productId)
-    : (products.find((p) => p.id === selected) ?? products[0]);
+  const product = search.invalidWorkspace
+    ? undefined
+    : requestedProject
+      ? products.find((p) => p.slug === requestedProject)
+      : drilldown?.productId
+        ? products.find((p) => p.id === drilldown.productId)
+        : (products.find((p) => p.id === selected) ?? products[0]);
   const requestedSource = drilldown
-    ? (drilldown.sourceId ?? "")
-    : (sourceSelection[product?.id ?? ""] ?? "");
+    ? (drilldown.sourceId ?? "all")
+    : (search.source ?? (requestedProject ? "all" : (sourceSelection[product?.id ?? ""] ?? "all")));
   const source = product?.sources?.find((source) => source.id === requestedSource);
   const sourceId = source?.id;
+  const missingSource = !!requestedSource && requestedSource !== "all" && !source;
+  const selectionError =
+    !loading &&
+    (search.invalidWorkspace ||
+      (requestedProject && !product) ||
+      (product && drilldown?.productId && product.id !== drilldown.productId) ||
+      (!drilldown && search.source && missingSource));
+  const resolvingProject =
+    !!product && !projectSlug && !selectionError && !(drilldown && missingSource);
+  useEffect(() => {
+    if (!preferencesReady || loading || !product || selectionError || (drilldown && missingSource))
+      return;
+    savePreference("piko:product", product.id);
+    savePreference("piko:days", String(days));
+    savePreference(`piko:source:${product.id}`, sourceId ?? "");
+    if (
+      projectSlug !== product.slug ||
+      search.project !== undefined ||
+      search.source !== (sourceId ?? "all") ||
+      search.days !== days
+    )
+      void navigate({
+        ...workspaceTarget(view, product.slug),
+        search: (previous) => ({
+          ...previous,
+          project: undefined,
+          source: sourceId ?? "all",
+          days,
+        }),
+        replace: true,
+        resetScroll: false,
+      });
+  }, [
+    preferencesReady,
+    loading,
+    product,
+    selectionError,
+    drilldown,
+    missingSource,
+    days,
+    sourceId,
+    projectSlug,
+    view,
+    search.project,
+    search.source,
+    search.days,
+    navigate,
+  ]);
+  const rangeIdentity = JSON.stringify([
+    view,
+    product?.id,
+    sourceId,
+    days,
+    search.snapshot,
+    drilldown,
+  ]);
+  const [rangePath, setRangePath] = useState(rangeIdentity);
+  // Canonicalizing a bare URL does not restart queries; changing actual scope does.
+  if (rangePath !== rangeIdentity) {
+    setRangePath(rangeIdentity);
+    setNow(Date.now());
+  }
   const defaultRange = useMemo(() => {
-    const end = new Date(now);
-    const start = new Date(now);
+    const end = new Date(search.snapshot ?? now);
+    const start = new Date(end);
     start.setUTCHours(0, 0, 0, 0);
     start.setUTCDate(start.getUTCDate() - days + 1);
     return { from: start.toISOString(), to: end.toISOString() };
-  }, [days, now]);
+  }, [days, now, search.snapshot]);
   const range = drilldown ? { from: drilldown.from, to: drilldown.to } : defaultRange;
   const refresh = () => {
     refreshBackground();
     if (error) void reload().catch((e) => setError(e.message));
   };
-  const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
+  const label = view === "/explore" ? "Explore" : view === "/settings" ? "Settings" : "Overview";
   const projectPicker = (
     <ValueSelect
       label="Select project"
       value={product?.id ?? ""}
       disabled={!products.length}
       placeholder={
-        loading ? "Loading projects…" : drilldown ? "Project unavailable" : "No projects yet"
+        loading
+          ? "Loading projects…"
+          : drilldown || requestedProject || selectionError
+            ? "Project unavailable"
+            : "No projects yet"
       }
       className="product-select"
       contentClassName="min-w-56 max-w-[calc(100vw-32px)]"
       icon={<ProjectIcon product={product} />}
       onValueChange={(value) => {
-        clearDrilldown();
-        setSelected(value);
-        savePreference("piko:product", value);
-        setNow(Date.now());
+        const project = products.find((p) => p.id === value);
+        if (project)
+          void navigate({
+            ...workspaceTarget(view, project.slug),
+            search: { source: "all", days, snapshot: search.snapshot },
+            resetScroll: false,
+          });
       }}
       options={products.map((p) => [p.id, p.name, <ProjectIcon key={p.id} product={p} />])}
     />
@@ -194,32 +271,44 @@ export function AppShell() {
         style={{ "--sidebar-width": "15rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
       >
         <WorkspaceSidebar
-          path={path}
+          path={view}
           product={product}
           sourceId={sourceId}
           picker={projectPicker}
           loading={loading}
           onSourceChange={(id) => {
             if (!product) return;
-            clearDrilldown();
-            setSourceSelection((current) => ({ ...current, [product.id]: id }));
-            savePreference(`piko:source:${product.id}`, id);
-            setNow(Date.now());
-            if (path === "/settings") void navigate({ to: "/" });
+            void navigate({
+              ...workspaceTarget(view === "/settings" ? "/" : view, product.slug),
+              search: {
+                project: undefined,
+                source: id || "all",
+                days,
+                snapshot: search.snapshot,
+              },
+              resetScroll: false,
+            });
           }}
         />
         <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
           <LiveUpdates
-            productId={product?.id}
-            view={path}
-            scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, path])}
-            busy={loading || analyticsPending}
+            productId={selectionError ? undefined : product?.id}
+            view={view}
+            scopeKey={JSON.stringify([
+              product?.id,
+              sourceId,
+              days,
+              drilldown,
+              search.snapshot,
+              view,
+            ])}
+            busy={loading || resolvingProject || analyticsPending}
             onRefresh={refreshBackground}
           />
           <div
             className="page-content"
             data-page={label.toLowerCase()}
-            aria-busy={loading || analyticsPending}
+            aria-busy={loading || resolvingProject || analyticsPending}
           >
             <div className="workspace-toolbar">
               <div className="workspace-toolbar-navigation">
@@ -227,24 +316,36 @@ export function AppShell() {
                 <div className="mobile-project-picker">{projectPicker}</div>
                 <span className="workspace-source-name">{source?.name ?? "All sources"}</span>
               </div>
-              {path !== "/settings" && (
+              {view !== "/settings" && (
                 <div className="workspace-toolbar-actions">
                   <ToggleGroup
                     aria-label="Date range"
                     variant="outline"
                     spacing={0}
                     disabled={!preferencesReady}
-                    value={[drilldown ? "linked" : String(days)]}
+                    value={[drilldown || search.snapshot ? "linked" : String(days)]}
                     onValueChange={(values) => {
                       const value = values[0];
                       if (!value || value === "linked") return;
-                      clearDrilldown();
-                      setDays(Number(value));
-                      savePreference("piko:days", value);
-                      setNow(Date.now());
+                      void navigate({
+                        ...workspaceTarget(view, product?.slug),
+                        search: (previous) => ({
+                          ...previous,
+                          days: Number(value) as 7 | 30 | 90,
+                          snapshot: undefined,
+                          drilldown: undefined,
+                          invalidDrilldown: undefined,
+                          page: undefined,
+                        }),
+                        resetScroll: false,
+                      });
                     }}
                   >
-                    {drilldown && <ToggleGroupItem value="linked">Fixed dates</ToggleGroupItem>}
+                    {(drilldown || search.snapshot) && (
+                      <ToggleGroupItem value="linked" title={`${range.from} – ${range.to}`}>
+                        Fixed dates
+                      </ToggleGroupItem>
+                    )}
                     {[7, 30, 90].map((days) => (
                       <ToggleGroupItem
                         key={days}
@@ -255,14 +356,54 @@ export function AppShell() {
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
+                  {!drilldown && !search.snapshot && product && !selectionError && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        void navigate({
+                          ...workspaceTarget(view, product?.slug),
+                          search: (previous) => ({ ...previous, snapshot: range.to }),
+                          resetScroll: false,
+                        })
+                      }
+                      title="Keep this date range when sharing the URL"
+                    >
+                      Pin dates
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
             {error && <ErrorState message={error} retry={refresh} />}
-            {loading ? (
+            {loading || resolvingProject ? (
               <>
                 <PageHeader title={label} description="Your project analytics" />
                 <PageLoading label="Loading workspace" />
+              </>
+            ) : selectionError ? (
+              <>
+                <PageHeader
+                  title="This selection is unavailable"
+                  description="The link contains an invalid date range, or its project or source is not in this workspace."
+                />
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    void navigate({
+                      to: "/",
+                      search: {
+                        project: undefined,
+                        source: undefined,
+                        days: undefined,
+                        snapshot: undefined,
+                        invalidWorkspace: undefined,
+                      },
+                    })
+                  }
+                >
+                  Clear selection
+                </Button>
               </>
             ) : (
               (!error || products.length > 0) && <Outlet />

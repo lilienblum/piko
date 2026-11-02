@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
 import { useQuery } from "@/lib/use-query";
 import { number, sourceGroups, type Group } from "@/lib/api";
 import { sourceDistribution } from "@/lib/overview-widgets";
+import type { OverviewSearch } from "@/lib/workspace-search";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
 import { BreakdownRows } from "./shared";
@@ -59,10 +60,19 @@ export function Overview() {
 }
 function ProductOverview() {
   const { product, source, sourceId, range, refresh, refreshKey } = useWorkspace();
-  const [dimension, setDimension] = useState<string>("name");
-  const [chartMetric, setChartMetric] = useState("count");
-  const [chartInterval, setChartInterval] = useState<TimeBucket>("day");
-  const [durationMetric, setDurationMetric] = useState("avg");
+  const search = useSearch({ strict: false });
+  const navigate = useNavigate({ from: "/projects/$projectSlug/" });
+  const dimension = search.breakdown ?? "name";
+  const chartMetric = search.metric ?? "count";
+  const chartInterval = search.interval ?? "day";
+  const durationMetric = search.duration ?? "avg";
+  const update = (patch: OverviewSearch) =>
+    void navigate({ search: (previous) => ({ ...previous, ...patch }), resetScroll: false });
+  const setDimension = (breakdown: string) => update({ breakdown });
+  const setChartMetric = (metric: string) => update({ metric: metric as OverviewSearch["metric"] });
+  const setChartInterval = (interval: TimeBucket) => update({ interval });
+  const setDurationMetric = (duration: string) =>
+    update({ duration: duration as OverviewSearch["duration"] });
   const body = { ...range, source_id: sourceId, measure: "count", group_by: "name" };
   const scope = JSON.stringify([range.from, sourceId]);
   const query = useQuery(product?.id, body, refreshKey, scope);
@@ -145,7 +155,7 @@ function ProductOverview() {
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
     if (group.label === null) return;
-    const context = { productId: product.id, sourceId, ...range };
+    const context = { sourceId, ...range };
     if (groupBy === "source_id" && typeof group.label === "string")
       return { ...context, sourceId: group.label };
     if (groupBy === "name" && typeof group.label === "string")
@@ -299,7 +309,8 @@ function ProductOverview() {
                     <Link
                       className="legend-row"
                       key={slice.id}
-                      to="/explore"
+                      to="/projects/$projectSlug/explore"
+                      params={{ projectSlug: product.slug }}
                       search={{ drilldown: target }}
                       aria-label={`Explore ${slice.label}`}
                     >

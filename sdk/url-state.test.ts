@@ -1,0 +1,75 @@
+import { expect, test } from "bun:test";
+import {
+  validateWorkspaceSearch,
+  validateOverviewSearch,
+} from "../apps/dashboard/src/lib/workspace-search";
+import { defaultSpec, validateExploreSearch } from "../apps/dashboard/src/lib/explore-search";
+
+test("workspace links accept stable slugs and fixed UTC endpoints, and reject ambiguous scope", () => {
+  const link = {
+    project: "orbit-2",
+    source: "all",
+    days: 7,
+    snapshot: "2026-11-02T08:00:00.000Z",
+  } as const;
+  expect(validateWorkspaceSearch(link)).toEqual(link);
+  for (const patch of [
+    { project: "../../orbit" },
+    { source: "missing" },
+    { days: 0 },
+    { days: [7] },
+    { snapshot: "yesterday" },
+    { snapshot: "-271821-04-20T00:00:00.000Z" },
+  ])
+    expect(validateWorkspaceSearch({ ...link, ...patch }).invalidWorkspace).toBe(true);
+  expect(validateWorkspaceSearch({ ...link, snapshot: "yesterday" }).snapshot).toBeUndefined();
+  expect(validateWorkspaceSearch({ productId: "unvalidated", admin: true })).toEqual({
+    project: undefined,
+    source: undefined,
+    days: undefined,
+    snapshot: undefined,
+  });
+});
+test("Explore URL validation preserves typed filter text and bounded pagination", () => {
+  for (const value of ["true", "42", '"42"', '"build"']) {
+    const parsed = validateExploreSearch({
+      query: { measure: "avg", filterProperty: "success", filterValue: value },
+      page: 2,
+      pageSize: 30,
+    });
+    expect(parsed.query).toEqual({
+      ...defaultSpec,
+      measure: "avg",
+      filterProperty: "success",
+      filterValue: value,
+    });
+    expect(parsed.page).toBe(2);
+    expect(parsed.pageSize).toBe(30);
+  }
+  for (const search of [
+    { page: -1 },
+    { page: 10002 },
+    { pageSize: 1000 },
+    { query: { measure: "sql" } },
+    { query: { filterProperty: "x' OR true" } },
+    { query: { filterValue: "x".repeat(2049) } },
+  ])
+    expect(validateExploreSearch(search).invalidQuery).toBe(true);
+});
+test("Overview choices are allowlisted before driving API queries", () => {
+  expect(
+    validateOverviewSearch({
+      metric: "p95",
+      interval: "week",
+      breakdown: "property:command",
+      duration: "p95",
+    }),
+  ).toEqual({ metric: "p95", interval: "week", breakdown: "property:command", duration: "p95" });
+  expect(validateOverviewSearch({ metric: ["count"], interval: ["day"] }).interval).toBeUndefined();
+  expect(validateOverviewSearch({ metric: "sql", interval: "forever" })).toEqual({
+    metric: undefined,
+    interval: undefined,
+    breakdown: undefined,
+    duration: undefined,
+  });
+});

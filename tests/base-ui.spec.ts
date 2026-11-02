@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const api = process.env.PIKO_API_URL;
 let alpha: { id: string; name: string };
-let zulu: { id: string; name: string };
+let zulu: { id: string; name: string; slug: string };
 
 test.beforeAll(async () => {
   const create = async (name: string) => {
@@ -47,7 +47,7 @@ test("project select supports typeahead, keyboard selection, Escape and human-re
   expect(await context.cookies()).toEqual([]);
   await expect(page.getByRole("link", { name: "Explore", exact: true })).toHaveAttribute(
     "href",
-    "/explore",
+    `/projects/${zulu.slug}/explore?source=all&days=30`,
   );
 });
 

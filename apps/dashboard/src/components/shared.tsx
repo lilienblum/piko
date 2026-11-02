@@ -1,3 +1,4 @@
+import { workspaceTarget } from "@/lib/workspace-route";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
 import type { ReactNode } from "react";
@@ -8,7 +9,7 @@ import {
   ArrowRight02Icon,
   RefreshIcon,
 } from "@hugeicons/core-free-icons";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { AnalyticsChart } from "@/components/analytics-chart";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export function ErrorState({ message, retry }: { message: string; retry?: () => 
   );
 }
 export function NoEvents() {
+  const { projectSlug } = useParams({ strict: false });
   return (
     <Empty>
       <EmptyHeader>
@@ -55,7 +57,12 @@ export function NoEvents() {
           No events match this date range. Try a wider range or connect your project in Settings.
         </EmptyDescription>
       </EmptyHeader>
-      <Button variant="outline" nativeButton={false} role="link" render={<Link to="/settings" />}>
+      <Button
+        variant="outline"
+        nativeButton={false}
+        role="link"
+        render={<Link {...workspaceTarget("/settings", projectSlug)} />}
+      >
         Connect a product
         <HugeiconsIcon
           icon={ArrowRight02Icon}
@@ -182,6 +189,7 @@ export function BreakdownRows({
   total,
   drilldown,
 }: BreakdownProps) {
+  const { projectSlug } = useParams({ strict: false });
   const max = Math.max(...groups.map((g) => g.value ?? 0), 1);
   return (
     <>
@@ -226,7 +234,7 @@ export function BreakdownRows({
           return target ? (
             <Link
               className="breakdown-row"
-              to="/explore"
+              {...workspaceTarget("/explore", projectSlug)}
               search={{ drilldown: target }}
               key={JSON.stringify(g.label)}
               aria-label={`Explore ${label}`}

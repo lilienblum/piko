@@ -16,6 +16,10 @@ import { Route as TrackerDotjsRouteImport } from './routes/tracker[.]js'
 import { Route as PikoChangesRouteImport } from './routes/[_]piko.changes'
 import { Route as PikoRuntimeRouteImport } from './routes/[_]piko.runtime'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
+import { Route as ProjectsProjectSlugRouteImport } from './routes/projects.$projectSlug'
+import { Route as ProjectsProjectSlugIndexRouteImport } from './routes/projects.$projectSlug.index'
+import { Route as ProjectsProjectSlugExploreRouteImport } from './routes/projects.$projectSlug.explore'
+import { Route as ProjectsProjectSlugSettingsRouteImport } from './routes/projects.$projectSlug.settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +56,29 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsProjectSlugRoute = ProjectsProjectSlugRouteImport.update({
+  id: '/projects/$projectSlug',
+  path: '/projects/$projectSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsProjectSlugIndexRoute =
+  ProjectsProjectSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProjectsProjectSlugRoute,
+  } as any)
+const ProjectsProjectSlugExploreRoute =
+  ProjectsProjectSlugExploreRouteImport.update({
+    id: '/explore',
+    path: '/explore',
+    getParentRoute: () => ProjectsProjectSlugRoute,
+  } as any)
+const ProjectsProjectSlugSettingsRoute =
+  ProjectsProjectSlugSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ProjectsProjectSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +88,10 @@ export interface FileRoutesByFullPath {
   '/_piko/changes': typeof PikoChangesRoute
   '/_piko/runtime': typeof PikoRuntimeRoute
   '/api/$': typeof ApiSplatRoute
+  '/projects/$projectSlug': typeof ProjectsProjectSlugRouteWithChildren
+  '/projects/$projectSlug/explore': typeof ProjectsProjectSlugExploreRoute
+  '/projects/$projectSlug/settings': typeof ProjectsProjectSlugSettingsRoute
+  '/projects/$projectSlug/': typeof ProjectsProjectSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +101,9 @@ export interface FileRoutesByTo {
   '/_piko/changes': typeof PikoChangesRoute
   '/_piko/runtime': typeof PikoRuntimeRoute
   '/api/$': typeof ApiSplatRoute
+  '/projects/$projectSlug/explore': typeof ProjectsProjectSlugExploreRoute
+  '/projects/$projectSlug/settings': typeof ProjectsProjectSlugSettingsRoute
+  '/projects/$projectSlug': typeof ProjectsProjectSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +114,10 @@ export interface FileRoutesById {
   '/_piko/changes': typeof PikoChangesRoute
   '/_piko/runtime': typeof PikoRuntimeRoute
   '/api/$': typeof ApiSplatRoute
+  '/projects/$projectSlug': typeof ProjectsProjectSlugRouteWithChildren
+  '/projects/$projectSlug/explore': typeof ProjectsProjectSlugExploreRoute
+  '/projects/$projectSlug/settings': typeof ProjectsProjectSlugSettingsRoute
+  '/projects/$projectSlug/': typeof ProjectsProjectSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +129,10 @@ export interface FileRouteTypes {
     | '/_piko/changes'
     | '/_piko/runtime'
     | '/api/$'
+    | '/projects/$projectSlug'
+    | '/projects/$projectSlug/explore'
+    | '/projects/$projectSlug/settings'
+    | '/projects/$projectSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +142,9 @@ export interface FileRouteTypes {
     | '/_piko/changes'
     | '/_piko/runtime'
     | '/api/$'
+    | '/projects/$projectSlug/explore'
+    | '/projects/$projectSlug/settings'
+    | '/projects/$projectSlug'
   id:
     | '__root__'
     | '/'
@@ -109,6 +154,10 @@ export interface FileRouteTypes {
     | '/_piko/changes'
     | '/_piko/runtime'
     | '/api/$'
+    | '/projects/$projectSlug'
+    | '/projects/$projectSlug/explore'
+    | '/projects/$projectSlug/settings'
+    | '/projects/$projectSlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +168,7 @@ export interface RootRouteChildren {
   PikoChangesRoute: typeof PikoChangesRoute
   PikoRuntimeRoute: typeof PikoRuntimeRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  ProjectsProjectSlugRoute: typeof ProjectsProjectSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -172,8 +222,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/$projectSlug': {
+      id: '/projects/$projectSlug'
+      path: '/projects/$projectSlug'
+      fullPath: '/projects/$projectSlug'
+      preLoaderRoute: typeof ProjectsProjectSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$projectSlug/': {
+      id: '/projects/$projectSlug/'
+      path: '/'
+      fullPath: '/projects/$projectSlug/'
+      preLoaderRoute: typeof ProjectsProjectSlugIndexRouteImport
+      parentRoute: typeof ProjectsProjectSlugRoute
+    }
+    '/projects/$projectSlug/explore': {
+      id: '/projects/$projectSlug/explore'
+      path: '/explore'
+      fullPath: '/projects/$projectSlug/explore'
+      preLoaderRoute: typeof ProjectsProjectSlugExploreRouteImport
+      parentRoute: typeof ProjectsProjectSlugRoute
+    }
+    '/projects/$projectSlug/settings': {
+      id: '/projects/$projectSlug/settings'
+      path: '/settings'
+      fullPath: '/projects/$projectSlug/settings'
+      preLoaderRoute: typeof ProjectsProjectSlugSettingsRouteImport
+      parentRoute: typeof ProjectsProjectSlugRoute
+    }
   }
 }
+
+interface ProjectsProjectSlugRouteChildren {
+  ProjectsProjectSlugExploreRoute: typeof ProjectsProjectSlugExploreRoute
+  ProjectsProjectSlugSettingsRoute: typeof ProjectsProjectSlugSettingsRoute
+  ProjectsProjectSlugIndexRoute: typeof ProjectsProjectSlugIndexRoute
+}
+
+const ProjectsProjectSlugRouteChildren: ProjectsProjectSlugRouteChildren = {
+  ProjectsProjectSlugExploreRoute: ProjectsProjectSlugExploreRoute,
+  ProjectsProjectSlugSettingsRoute: ProjectsProjectSlugSettingsRoute,
+  ProjectsProjectSlugIndexRoute: ProjectsProjectSlugIndexRoute,
+}
+
+const ProjectsProjectSlugRouteWithChildren =
+  ProjectsProjectSlugRoute._addFileChildren(ProjectsProjectSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -183,6 +276,7 @@ const rootRouteChildren: RootRouteChildren = {
   PikoChangesRoute: PikoChangesRoute,
   PikoRuntimeRoute: PikoRuntimeRoute,
   ApiSplatRoute: ApiSplatRoute,
+  ProjectsProjectSlugRoute: ProjectsProjectSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

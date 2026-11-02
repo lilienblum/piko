@@ -1,3 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Overview } from "@/components/overview";
-export const Route = createFileRoute("/")({ component: Overview });
+import { validateOverviewSearch } from "@/lib/workspace-search";
+export const Route = createFileRoute("/")({
+  validateSearch: validateOverviewSearch,
+  component: Overview,
+});

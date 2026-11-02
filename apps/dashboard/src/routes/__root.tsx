@@ -1,11 +1,20 @@
 import { SkulletProvider } from "skullet/react";
 import { DisplayPreferencesProvider } from "@/components/display-preferences";
-import { createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  retainSearchParams,
+  HeadContent,
+  Scripts,
+  ScriptOnce,
+} from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
+import { validateWorkspaceSearch } from "@/lib/workspace-search";
 import { sidebarScript } from "@/lib/preferences";
 import styles from "../styles.css?url";
 export const Route = createRootRoute({
+  validateSearch: validateWorkspaceSearch,
+  search: { middlewares: [retainSearchParams(["source", "days", "snapshot"])] },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
