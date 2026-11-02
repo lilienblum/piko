@@ -19,16 +19,6 @@ async function select(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
-async function appearance(page: Page, theme: "Light" | "Dark" | "Auto") {
-  const mobile = (page.viewportSize()?.width ?? 1440) < 768;
-  if (mobile) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
-  await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByRole("menuitemradio", { name: theme, exact: true }).click();
-  if (mobile) {
-    await page.getByRole("button", { name: "Close navigation", exact: true }).click();
-    await expect(page.getByRole("dialog", { name: "Sidebar", exact: true })).toBeHidden();
-  }
-}
 let web: { id: string; name: string; key: string };
 let tool: { id: string; name: string; key: string };
 let generic: { id: string; name: string; key: string };
@@ -285,57 +275,44 @@ test("sidebar collapses, persists and keeps navigation keyboard accessible", asy
   await expect(measure).toContainText("Duration p95");
 });
 
-test("light, dark and auto themes persist and follow system changes", async ({ page }) => {
+test("one theme ignores legacy preferences and operating-system changes", async ({ page }) => {
   const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  await page.emulateMedia({ colorScheme: "dark" });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => localStorage.setItem("piko:theme", "light"));
+  await page.emulateMedia({ colorScheme: "light" });
   await openWorkspace(page);
   await expect(page.locator("html")).toHaveClass("dark");
-  await appearance(page, "Light");
-  await expect(page.locator("html")).toHaveClass("light");
-  await page.reload();
-  await expect(page.locator("html")).toHaveClass("light");
-  await appearance(page, "Dark");
-  await page.emulateMedia({ colorScheme: "light" });
-  await expect(page.locator("html")).toHaveClass("dark");
+  await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(31, 31, 40)");
+  await expect(page.getByRole("button", { name: "Appearance" })).toHaveCount(0);
+  for (const colorScheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.reload();
+    await expect(page.locator("html")).toHaveClass("dark");
+    await expect(page.locator("body")).toHaveCSS("background-color", "rgb(31, 31, 40)");
+  }
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "New project" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  expect(
-    await page.getByRole("dialog").evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe("rgb(18, 20, 22)");
+  await expect(page.getByRole("dialog")).toHaveCSS("background-color", "rgb(31, 31, 40)");
   await page.keyboard.press("Escape");
-  await appearance(page, "Auto");
-  await expect(page.locator("html")).toHaveClass("light");
-  await page.emulateMedia({ colorScheme: "dark" });
-  await expect(page.locator("html")).toHaveClass("dark");
-  await page.reload();
-  await expect(page.locator("html")).toHaveClass("dark");
-  expect(await page.evaluate(() => localStorage.getItem("piko:theme"))).toBe("auto");
-  // A second tab updates the current tab through the browser's storage event.
-  const other = await page.context().newPage();
-  await other.goto("/");
-  await appearance(other, "Light");
-  await expect(page.locator("html")).toHaveClass("light");
-  await other.close();
   expect(errors).toEqual([]);
 });
 
-test("saved appearance is applied before the application JavaScript loads", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("piko:theme", "dark"));
+test("the single theme is present before application JavaScript loads", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("piko:theme", "light"));
   await page.emulateMedia({ colorScheme: "light" });
-  await page.route("**/assets/*.js", (route) => route.abort());
+  await page.route("**/*", (route) =>
+    route.request().resourceType() === "script" ? route.abort() : route.continue(),
+  );
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass("dark");
-  expect(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-    "rgb(18, 20, 22)",
-  );
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(31, 31, 40)");
+  await expect(page.getByRole("button", { name: "Appearance" })).toHaveCount(0);
 });
 
 test("mobile drawer navigates and dark selects fit the screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
-  await appearance(page, "Dark");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Sidebar", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Explore", exact: true }).click();
@@ -428,7 +405,6 @@ test("breakdown choices drill into referrers and campaigns, with missing values 
 test("tool command and version links work in the narrow dark layout", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
-  await appearance(page, "Dark");
   await select(page, "Select project", tool.name);
   await select(page, "Breakdown", "Versions");
   await expect(page.getByRole("link", { name: "Explore 1.0.0", exact: true })).toBeVisible();
@@ -744,7 +720,6 @@ test("inspector preserves numeric and string values and wraps long properties on
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace(page);
-  await appearance(page, "Dark");
   await select(page, "Select project", generic.name);
   await page.goto("/explore");
   const stream = page.locator(".event-card");
@@ -848,7 +823,6 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
     "data-state",
     "collapsed",
   );
-  await appearance(page, "Dark");
   await expect(page.locator("html")).toHaveClass("dark");
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "New project" }).click();

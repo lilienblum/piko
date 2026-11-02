@@ -76,13 +76,6 @@ test("nested source select closes before its dialog and restores keyboard focus"
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   await expect(opener).toBeFocused();
-  const appearance = page.getByRole("button", { name: "Appearance", exact: true });
-  for (let i = 0; i < 2; i++) {
-    await appearance.click();
-    await page.getByRole("menuitemradio", { name: "Dark", exact: true }).click();
-    await expect(page.getByRole("menu")).not.toBeVisible();
-    await expect(appearance).toBeFocused();
-  }
 });
 
 for (const width of [1440, 894, 390]) {

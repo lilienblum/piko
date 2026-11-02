@@ -7,7 +7,7 @@ export type DistributionSlice = {
   color: string;
   group?: Group;
 };
-const sourceColors = ["var(--data)", "var(--success)", "var(--data-clay)"];
+const sourceColors = ["var(--data)", "var(--data-secondary)", "var(--data-tertiary)"];
 
 // The API returns only the top twelve groups. Include the entire tail in Other,
 // so the donut always describes all events, not just the visible leaders.

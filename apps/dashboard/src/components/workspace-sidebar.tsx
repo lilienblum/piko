@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { ThemeMenu } from "./theme-provider";
 import { Link } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -56,7 +55,7 @@ export function WorkspaceSidebar({
           onClick={() => setOpenMobile(false)}
         >
           <span className="brand">
-            <img className="brand-mark" src="/favicon.svg?v=4" width="30" height="30" alt="" />
+            <img className="brand-mark" src="/favicon.svg?v=7" width="30" height="30" alt="" />
             <span className="brand-word">piko</span>
           </span>
         </Link>
@@ -166,9 +165,6 @@ export function WorkspaceSidebar({
           </span>
         </div>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <ThemeMenu />
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Documentation"

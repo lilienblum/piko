@@ -61,7 +61,6 @@ test.beforeAll(async () => {
 test.beforeEach(async ({ page }) => {
   await page.addInitScript((id) => {
     localStorage.setItem("piko:product", id);
-    localStorage.setItem("piko:theme", "light");
   }, product.id);
 });
 
@@ -161,8 +160,6 @@ test("explore loading matches results and pending query recovers after error", a
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
-    await page.getByRole("button", { name: "Appearance", exact: true }).click();
-    await page.getByRole("menuitemradio", { name: "Dark", exact: true }).click();
     await page.getByRole("button", { name: "Close navigation", exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,

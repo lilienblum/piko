@@ -63,8 +63,7 @@ for (const route of ["/", "/explore", "/settings"]) {
           "1",
         );
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeDisabled();
-        if (width >= 768)
-          await expect(page.getByRole("button", { name: "Appearance" })).toBeDisabled();
+        await expect(page.getByRole("button", { name: "Appearance" })).toHaveCount(0);
         if (route !== "/settings")
           await expect(
             page.getByRole("button", { name: "Last 30 days", exact: true }),
@@ -86,8 +85,7 @@ for (const route of ["/", "/explore", "/settings"]) {
           await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
         await expect(page.getByRole("status", { name: "Loading workspace" })).not.toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeEnabled();
-        if (width >= 768)
-          await expect(page.getByRole("button", { name: "Appearance" })).toBeEnabled();
+        await expect(page.getByRole("button", { name: "Appearance" })).toHaveCount(0);
         await expect(
           page.locator("#main-content").getByRole("button", { name: "Appearance" }),
         ).toHaveCount(0);

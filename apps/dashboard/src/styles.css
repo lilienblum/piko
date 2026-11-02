@@ -37,60 +37,39 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
 }
+/* Kanagawa Wave palette: https://github.com/rebelot/kanagawa.nvim */
 :root {
-  color-scheme: light;
-  --background: #e7e8e4;
-  --foreground: #2e302c;
-  --card: #eff0eb;
-  --primary: #33362e;
-  --primary-foreground: #eee4a5;
-  --secondary: #dedfd5;
-  --muted: #dddfd8;
-  --muted-foreground: #5d6158;
-  --accent: #dddcc1;
-  --destructive: #a33c37;
-  --destructive-foreground: #ffffff;
-  --border: #c9ccc2;
-  --input: #7a8073;
-  --success: #50632d;
-  --subtle: #e1e3dc;
-  --data: #7c691c;
+  color-scheme: dark;
+  --background: #1f1f28;
+  --foreground: #dcd7ba;
+  --heading: #dcd7ba;
+  --card: #2a2a37;
+  --primary: #ffa066;
+  --primary-foreground: #16161d;
+  --secondary: #363646;
+  --muted: #363646;
+  --muted-foreground: #c8c093;
+  --accent: #49443c;
+  --destructive: #ff5d62;
+  --destructive-foreground: #16161d;
+  --border: #54546d;
+  --input: #938aa9;
+  --success: #98bb6c;
+  --subtle: #1a1a22;
+  --data: #e6c384;
+  --data-secondary: #957fb8;
+  --data-tertiary: #7aa89f;
   --radius: 6px;
-  --control-highlight: #fafbf7;
+  --control-highlight: #54546d;
   --control-edge: color-mix(in oklab, var(--input) 65%, var(--background));
-  --sidebar: #ded9ad;
-  --sidebar-foreground: #34362a;
+  --sidebar: #16161d;
+  --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: #d2cca0;
-  --sidebar-accent-foreground: #34362a;
-  --sidebar-border: #c5c197;
+  --sidebar-accent: #2a2a37;
+  --sidebar-accent-foreground: var(--heading);
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
-}
-.dark {
-  color-scheme: dark;
-  --control-highlight: #3b3f3c;
-  --background: #121416;
-  --foreground: #e2e4de;
-  --card: #1b1d1f;
-  --primary: #d9ca62;
-  --primary-foreground: #272a20;
-  --secondary: #292c2b;
-  --muted: #242728;
-  --muted-foreground: #a5aaa4;
-  --accent: #30322b;
-  --destructive: #f2a195;
-  --destructive-foreground: #3b211d;
-  --border: #353a38;
-  --input: #737b74;
-  --success: #adbf85;
-  --subtle: #17191b;
-  --data: #d1c360;
-  --sidebar: #17191b;
-  --sidebar-foreground: #d4d8d0;
-  --sidebar-accent: #272b29;
-  --sidebar-accent-foreground: #e2e4de;
-  --sidebar-border: #313632;
 }
 
 * {
@@ -134,6 +113,7 @@ h1,
 h2,
 h3,
 [data-slot="card-title"] {
+  color: var(--heading);
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -300,7 +280,7 @@ h3,
   display: none;
 }
 
-/* Yuzu: compact controls, ink selections, and square quantitative fields. */
+/* Compact controls, solid selections, and square quantitative fields. */
 ::selection {
   background: var(--primary);
   color: var(--primary-foreground);
@@ -887,6 +867,7 @@ h1 {
   margin: 8px 0;
 }
 .integration-card [data-slot="card-title"] {
+  color: var(--heading);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1816,6 +1797,7 @@ h1 {
   gap: 4px 12px;
 }
 .overview-breakdowns [data-slot="card-title"] {
+  color: var(--heading);
   grid-row: 1;
   grid-column: 1;
 }
@@ -2006,12 +1988,6 @@ html {
 }
 
 /* Overview: six equal measurement windows, with shared range and interval controls. */
-:root {
-  --data-clay: #956052;
-}
-.dark {
-  --data-clay: #d5a38b;
-}
 .overview-dashboard {
   container-type: inline-size;
 }
@@ -2088,6 +2064,7 @@ html {
   min-width: 0;
 }
 .widget-value {
+  color: var(--heading);
   font-size: 32px;
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -2168,6 +2145,7 @@ html {
   pointer-events: none;
 }
 .donut-total strong {
+  color: var(--heading);
   font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.03em;
@@ -2297,6 +2275,7 @@ a.legend-row:hover .legend-name {
     padding: 16px;
   }
   .widget-value {
+    color: var(--heading);
     font-size: 28px;
   }
 }
