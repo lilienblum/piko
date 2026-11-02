@@ -2134,14 +2134,22 @@ html {
 
 /* Calendar ranges share the report's date controls without locking page scroll. */
 .date-range-trigger {
+  min-width: 0;
+  flex-shrink: 1;
   max-width: 100%;
 }
 .date-period-popover {
   width: 232px;
+  max-width: calc(100vw - 24px);
+  max-height: min(520px, var(--available-height));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   gap: 6px;
 }
 .date-period-options {
+  flex-shrink: 0;
   width: 100%;
 }
 .date-period-options > :where([data-slot="toggle-group-item"]),
@@ -2230,24 +2238,22 @@ html {
   .workspace-toolbar-actions {
     width: 100%;
   }
+  .date-period-control > button {
+    height: 40px;
+  }
   .date-range-calendar {
     --cell-size: 40px;
   }
 }
 
-.date-period-control,
-.date-period-navigation {
+.date-period-control {
   display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
 }
-.date-period-navigation {
+.date-period-arrow {
   flex-shrink: 0;
-}
-.date-period-popover {
-  max-height: min(520px, var(--available-height));
-  overflow-y: auto;
 }
 .date-period-options
   [data-slot="toggle-group-item"]:is(:nth-child(3), :nth-child(6), :nth-child(8)) {

@@ -22,6 +22,12 @@ bun test:e2e -- tests/date-range.spec.ts tests/overview-chart.spec.ts \
 
 This change is confined to the dashboard and its documentation/tests. Rust API tests and the mixed ingestion/query benchmark were not rerun; the measurements below describe their original runs.
 
+### Date-control layout follow-up
+
+The visible-menu regression reproduced the original horizontal preset row before the fix. The shared ToggleGroup now styles Base UI's `data-orientation` attribute; menu overflow is vertical, with previous/date/next in reading order. Fixed popover positioning prevents calendar autofocus from scrolling the dashboard, and mobile controls share a 40px height.
+
+All 11 date-control tests pass, including geometry, viewport visibility, keyboard scrolling, and long labels at 1440×900, 390×844, 320×568, and 390×420. The 19 dashboard tests also passed during this follow-up. Formatting, typecheck, lint, unit tests, and the production build pass. The live menu was visually inspected with every preset displayed.
+
 ## Previous verification
 
 Verified locally on 1 November 2026 against the two-app Tako architecture, with per-product databases and external access control. Latest toolchain: Bun 1.4.4, Rust 1.95.0, Tako CLI 0.0.0-00ac4d2, JavaScript SDK 0.0.0-9301901, Rust SDK 0.2.1.

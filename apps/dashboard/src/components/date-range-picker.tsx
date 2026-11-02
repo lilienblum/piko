@@ -76,6 +76,25 @@ export function DateRangePicker({
     if (current && next.from === presetRange(current, now).from) onPreset(current);
     else onApply(next);
   }
+  function periodArrow(direction: -1 | 1) {
+    if (!navigable) return null;
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        className="date-period-arrow"
+        disabled={disabled || !shiftRange(range, direction, now, fixed ? undefined : period)}
+        aria-label={direction === -1 ? "Previous period" : "Next period"}
+        onClick={() => move(direction)}
+      >
+        <HugeiconsIcon
+          icon={direction === -1 ? ArrowLeft01Icon : ArrowRight01Icon}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      </Button>
+    );
+  }
   const count = complete ? Math.round((to.getTime() - from.getTime()) / DAY_MS) + 1 : 0;
   const message =
     error ??
@@ -93,7 +112,8 @@ export function DateRangePicker({
     setOpen(next);
   }
   return (
-    <div className="date-period-control">
+    <fieldset className="date-period-control" aria-label="Reporting period">
+      {periodArrow(-1)}
       <Popover open={open} onOpenChange={changeOpen} modal={false}>
         <PopoverTrigger
           render={<Button variant="outline" className="date-range-trigger" disabled={disabled} />}
@@ -267,26 +287,7 @@ export function DateRangePicker({
           )}
         </PopoverContent>
       </Popover>
-      {navigable && (
-        <fieldset className="date-period-navigation" aria-label="Navigate date range">
-          {([-1, 1] as const).map((direction) => (
-            <Button
-              key={direction}
-              variant="outline"
-              size="icon"
-              disabled={disabled || !shiftRange(range, direction, now, fixed ? undefined : period)}
-              aria-label={direction === -1 ? "Previous period" : "Next period"}
-              onClick={() => move(direction)}
-            >
-              <HugeiconsIcon
-                icon={direction === -1 ? ArrowLeft01Icon : ArrowRight01Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-            </Button>
-          ))}
-        </fieldset>
-      )}
-    </div>
+      {periodArrow(1)}
+    </fieldset>
   );
 }

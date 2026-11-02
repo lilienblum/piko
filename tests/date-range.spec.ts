@@ -256,3 +256,75 @@ test("one period picker navigates days and calendar months without future dates"
   await expect(page.getByRole("button", { name: "Next period", exact: true })).toBeDisabled();
   await expect(page.getByRole("group", { name: "Chart interval" })).toHaveCount(0);
 });
+
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+  { width: 320, height: 568 },
+  { width: 390, height: 420 },
+]) {
+  test(`date menu lays out every preset vertically and arrows flank the date at ${size.width}x${size.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await open(page);
+    const before = await trigger(page).boundingBox();
+    await trigger(page).click();
+    const menu = picker(page);
+    await expect(menu).toHaveCSS("opacity", "1");
+    const options = menu.getByRole("group", { name: "Date range", exact: true });
+    await expect(options).toHaveCSS("flex-direction", "column");
+    const rows = await options.getByRole("button").evaluateAll((elements) =>
+      elements.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      }),
+    );
+    expect(rows).toHaveLength(9);
+    for (let index = 1; index < rows.length; index++) {
+      expect(rows[index].y).toBeGreaterThanOrEqual(rows[index - 1].y + rows[index - 1].height - 1);
+      expect(Math.abs(rows[index].x - rows[0].x)).toBeLessThan(1);
+    }
+    expect(await menu.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    const box = await menu.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(size.height);
+    const last = options.getByRole("button", { name: "Last 12 months", exact: true });
+    if (size.height >= 800) {
+      await expect(last).toBeInViewport();
+      await expect(
+        menu.getByRole("button", { name: "Custom range", exact: true }),
+      ).toBeInViewport();
+    } else {
+      await last.focus();
+      await expect(last).toBeInViewport();
+      const custom = menu.getByRole("button", { name: "Custom range", exact: true });
+      await custom.focus();
+      await expect(custom).toBeInViewport();
+      expect(await menu.evaluate((el) => el.scrollLeft)).toBe(0);
+    }
+    await options.getByRole("button", { name: "Today", exact: true }).click();
+    const prev = page.getByRole("button", { name: "Previous period", exact: true });
+    const next = page.getByRole("button", { name: "Next period", exact: true });
+    const previousBox = await prev.boundingBox();
+    const dateBox = await trigger(page).boundingBox();
+    const nextBox = await next.boundingBox();
+    expect((previousBox?.x ?? 0) + (previousBox?.width ?? 0)).toBeLessThanOrEqual(dateBox?.x ?? 0);
+    expect(nextBox?.x).toBeGreaterThanOrEqual((dateBox?.x ?? 0) + (dateBox?.width ?? 0));
+    await expect(next).toBeDisabled();
+    await page.goto(
+      `/projects/${project.slug}?from=2025-12-15T00%3A00%3A00.000Z&to=2026-01-20T00%3A00%3A00.000Z`,
+    );
+    await expect(trigger(page)).toContainText("2025");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await trigger(page).click();
+    await expect(options).toHaveCSS("flex-direction", "column");
+    await expect(menu).toHaveCSS("opacity", "1");
+    await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
+    await page.screenshot({ path: `/tmp/piko-date-menu-${size.width}x${size.height}.png` });
+    await page.keyboard.press("Escape");
+    await expect(trigger(page)).toBeFocused();
+    expect((await trigger(page).boundingBox())?.y).toBe(before?.y);
+  });
+}

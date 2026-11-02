@@ -25,7 +25,9 @@ function PopoverContent({
   >) {
   return (
     <PopoverPrimitive.Portal>
+      {/* Keep popup autofocus from scrolling the page. */}
       <PopoverPrimitive.Positioner
+        positionMethod="fixed"
         align={align}
         alignOffset={alignOffset}
         side={side}
