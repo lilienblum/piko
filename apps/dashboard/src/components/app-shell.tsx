@@ -1,3 +1,4 @@
+import { DateRangePicker } from "./date-range-picker";
 import { workspaceTarget, workspaceView } from "@/lib/workspace-route";
 import { ProjectIcon } from "./project-icon";
 import {
@@ -125,7 +126,13 @@ export function AppShell() {
       if (project)
         await navigate({
           ...workspaceTarget(view, project.slug),
-          search: { source: "all", days, snapshot: search.snapshot },
+          search: {
+            source: "all",
+            days,
+            snapshot: search.snapshot,
+            from: search.from,
+            to: search.to,
+          },
           resetScroll: false,
         });
     }
@@ -197,6 +204,8 @@ export function AppShell() {
     sourceId,
     days,
     search.snapshot,
+    search.from,
+    search.to,
     drilldown,
   ]);
   const [rangePath, setRangePath] = useState(rangeIdentity);
@@ -206,12 +215,13 @@ export function AppShell() {
     setNow(Date.now());
   }
   const defaultRange = useMemo(() => {
+    if (search.from && search.to) return { from: search.from, to: search.to };
     const end = new Date(search.snapshot ?? now);
     const start = new Date(end);
     start.setUTCHours(0, 0, 0, 0);
     start.setUTCDate(start.getUTCDate() - days + 1);
     return { from: start.toISOString(), to: end.toISOString() };
-  }, [days, now, search.snapshot]);
+  }, [days, now, search.snapshot, search.from, search.to]);
   const range = drilldown ? { from: drilldown.from, to: drilldown.to } : defaultRange;
   const refresh = () => {
     refreshBackground();
@@ -238,7 +248,13 @@ export function AppShell() {
         if (project)
           void navigate({
             ...workspaceTarget(view, project.slug),
-            search: { source: "all", days, snapshot: search.snapshot },
+            search: {
+              source: "all",
+              days,
+              snapshot: search.snapshot,
+              from: search.from,
+              to: search.to,
+            },
             resetScroll: false,
           });
       }}
@@ -285,6 +301,8 @@ export function AppShell() {
                 source: id || "all",
                 days,
                 snapshot: search.snapshot,
+                from: search.from,
+                to: search.to,
               },
               resetScroll: false,
             });
@@ -300,6 +318,8 @@ export function AppShell() {
               days,
               drilldown,
               search.snapshot,
+              search.from,
+              search.to,
               view,
             ])}
             busy={loading || resolvingProject || analyticsPending}
@@ -323,7 +343,7 @@ export function AppShell() {
                     variant="outline"
                     spacing={0}
                     disabled={!preferencesReady}
-                    value={[drilldown || search.snapshot ? "linked" : String(days)]}
+                    value={drilldown || search.snapshot || search.from ? [] : [String(days)]}
                     onValueChange={(values) => {
                       const value = values[0];
                       if (!value || value === "linked") return;
@@ -333,6 +353,8 @@ export function AppShell() {
                           ...previous,
                           days: Number(value) as 7 | 30 | 90,
                           snapshot: undefined,
+                          from: undefined,
+                          to: undefined,
                           drilldown: undefined,
                           invalidDrilldown: undefined,
                           page: undefined,
@@ -341,11 +363,6 @@ export function AppShell() {
                       });
                     }}
                   >
-                    {(drilldown || search.snapshot) && (
-                      <ToggleGroupItem value="linked" title={`${range.from} – ${range.to}`}>
-                        Fixed dates
-                      </ToggleGroupItem>
-                    )}
                     {[7, 30, 90].map((days) => (
                       <ToggleGroupItem
                         key={days}
@@ -356,22 +373,27 @@ export function AppShell() {
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
-                  {!drilldown && !search.snapshot && product && !selectionError && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        void navigate({
-                          ...workspaceTarget(view, product?.slug),
-                          search: (previous) => ({ ...previous, snapshot: range.to }),
-                          resetScroll: false,
-                        })
-                      }
-                      title="Keep this date range when sharing the URL"
-                    >
-                      Pin dates
-                    </Button>
-                  )}
+                  <DateRangePicker
+                    range={range}
+                    fixed={!!(drilldown || search.snapshot || search.from)}
+                    disabled={!preferencesReady || !product || !!selectionError}
+                    onApply={(next) => {
+                      void navigate({
+                        ...workspaceTarget(view, product?.slug),
+                        search: (previous) => ({
+                          ...previous,
+                          from: next.from,
+                          to: next.to,
+                          snapshot: undefined,
+                          drilldown: previous.drilldown
+                            ? { ...previous.drilldown, ...next }
+                            : undefined,
+                          page: undefined,
+                        }),
+                        resetScroll: false,
+                      });
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -397,6 +419,8 @@ export function AppShell() {
                         source: undefined,
                         days: undefined,
                         snapshot: undefined,
+                        from: undefined,
+                        to: undefined,
                         invalidWorkspace: undefined,
                       },
                     })

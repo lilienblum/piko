@@ -2201,3 +2201,94 @@ a.legend-row:hover .legend-name {
     font-size: 28px;
   }
 }
+
+/* Calendar ranges share the report's date controls without locking page scroll. */
+.workspace-toolbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.date-range-trigger {
+  min-width: 0;
+  max-width: 100%;
+}
+.date-range-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.date-range-trigger[data-fixed] {
+  border-color: var(--selection-foreground);
+  color: var(--selection-foreground);
+  background: var(--selection);
+}
+.date-range-popover {
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  max-height: var(--available-height);
+  padding: 0;
+  gap: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-menu);
+}
+.date-range-heading {
+  padding: 16px 16px 12px;
+}
+.date-range-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 16px;
+}
+.date-range-fields [data-slot="field"] {
+  gap: 6px;
+  min-width: 0;
+}
+.date-range-fields input {
+  font-variant-numeric: tabular-nums;
+}
+.date-range-calendar {
+  --cell-size: 36px;
+  background: transparent;
+  padding: 16px;
+}
+.date-range-calendar [data-range-middle="true"] {
+  background: var(--selection);
+  color: var(--selection-foreground);
+}
+.date-range-calendar :is([data-range-start="true"], [data-range-end="true"]) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.date-range-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.date-range-footer [role="status"] {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  max-width: 240px;
+}
+.date-range-footer .date-range-error {
+  color: var(--destructive);
+}
+.date-range-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+@media (max-width: 767px) {
+  .workspace-toolbar-actions {
+    width: 100%;
+  }
+  .date-range-calendar {
+    --cell-size: 40px;
+  }
+}

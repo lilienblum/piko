@@ -28,6 +28,8 @@ test("workspace links accept stable slugs and fixed UTC endpoints, and reject am
     source: undefined,
     days: undefined,
     snapshot: undefined,
+    from: undefined,
+    to: undefined,
   });
 });
 test("Explore URL validation preserves typed filter text and bounded pagination", () => {
@@ -72,4 +74,20 @@ test("Overview choices are allowlisted before driving API queries", () => {
     breakdown: undefined,
     duration: undefined,
   });
+});
+
+test("custom URL ranges require a complete, ordered UTC pair within the query limit", () => {
+  const range = { from: "2024-01-01T00:00:00.000Z", to: "2025-01-01T00:00:00.000Z" };
+  expect(validateWorkspaceSearch(range)).toMatchObject(range);
+  for (const patch of [
+    { to: undefined },
+    { from: undefined },
+    { to: range.from },
+    { from: range.to, to: range.from },
+    { to: "2025-01-02T00:00:00.000Z" },
+    { from: "2024-01-01" },
+    { from: "2024-01-01T01:00:00.000+01:00" },
+    { snapshot: "2024-01-02T00:00:00.000Z" },
+  ])
+    expect(validateWorkspaceSearch({ ...range, ...patch }).invalidWorkspace).toBe(true);
 });

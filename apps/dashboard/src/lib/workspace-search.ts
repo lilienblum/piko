@@ -1,9 +1,12 @@
+import { DAY_MS, MAX_RANGE_DAYS } from "./date-range";
 export type WorkspaceSearch = {
   /** Legacy entry input only; canonical URLs use /projects/$projectSlug. */
   project?: string;
   source?: string;
   days?: 7 | 30 | 90;
   snapshot?: string;
+  from?: string;
+  to?: string;
   invalidWorkspace?: true;
 };
 export const validDate = (value: unknown): value is string =>
@@ -28,13 +31,21 @@ export function validateWorkspaceSearch(search: Record<string, unknown>): Worksp
     (search.source !== undefined && search.source !== "all" && !validId(search.source)) ||
     (search.days !== undefined &&
       ![7, 30, 90, "7", "30", "90"].includes(search.days as number | string)) ||
-    (search.snapshot !== undefined && !validDate(search.snapshot))
+    (search.snapshot !== undefined && !validDate(search.snapshot)) ||
+    ((search.from !== undefined || search.to !== undefined) &&
+      (!validDate(search.from) ||
+        !validDate(search.to) ||
+        search.snapshot !== undefined ||
+        Date.parse(search.to) <= Date.parse(search.from) ||
+        Date.parse(search.to) - Date.parse(search.from) > MAX_RANGE_DAYS * DAY_MS))
   )
     return {
       project: undefined,
       source: undefined,
       days: undefined,
       snapshot: undefined,
+      from: undefined,
+      to: undefined,
       invalidWorkspace: true,
     };
   return {
@@ -42,6 +53,8 @@ export function validateWorkspaceSearch(search: Record<string, unknown>): Worksp
     source: search.source as string | undefined,
     days: search.days === undefined ? undefined : (Number(search.days) as 7 | 30 | 90),
     snapshot: search.snapshot as string | undefined,
+    from: search.from as string | undefined,
+    to: search.to as string | undefined,
   };
 }
 

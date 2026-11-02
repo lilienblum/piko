@@ -79,7 +79,8 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
     void navigate({ search: (previous) => ({ ...previous, query, page: 1 }), resetScroll: false });
   };
   // A rolling end time advances without changing the chosen interval or URL.
-  const rangeKey = drilldown || search.snapshot ? `${range.from}:${range.to}` : range.from;
+  const rangeKey =
+    drilldown || search.snapshot || search.from ? `${range.from}:${range.to}` : range.from;
   const pageSize = search.pageSize ?? 15;
   const page = (search.page ?? 1) - 1;
   const setPage = (page: number) =>

@@ -347,10 +347,9 @@ test("website breakdown links preserve product and dates across reload and histo
     filters: [{ property: "path", op: "eq", value: "/docs" }],
   });
   await expect(page.getByText("across 16 matching events")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Fixed dates", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(
+    page.getByRole("button", { name: "Choose date range", exact: true }),
+  ).toHaveAttribute("data-fixed", "true");
   await expect(page.getByLabel("Typed value")).toHaveValue('"/docs"');
   await page.screenshot({ path: test.info().outputPath("website-drilldown.png"), fullPage: true });
   await page.evaluate((id) => localStorage.setItem("piko:product", id), tool.id);

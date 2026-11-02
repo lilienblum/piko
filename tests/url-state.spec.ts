@@ -48,7 +48,7 @@ test.beforeEach(async ({ page }) => {
   }, other.id);
 });
 
-test("project URL wins over saved preferences and pins a portable date range", async ({
+test("project URL wins over saved preferences and applies a portable calendar range", async ({
   page,
   browser,
 }) => {
@@ -63,13 +63,19 @@ test("project URL wins over saved preferences and pins a portable date range", a
   await select(page, "Breakdown", "Commands");
   await expect.poll(() => params(page).get("interval")).toBe("week");
   await expect.poll(() => params(page).get("breakdown")).toBe("property:command");
-  await page.getByRole("button", { name: "Pin dates", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Fixed dates", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  const snapshot = params(page).get("snapshot");
-  expect(Number.isFinite(Date.parse(snapshot ?? ""))).toBe(true);
+  await page.getByRole("button", { name: "Choose date range", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "Date range", exact: true });
+  const start = await picker.getByLabel("Start date", { exact: true }).inputValue();
+  const end = await picker.getByLabel("End date", { exact: true }).inputValue();
+  await picker.getByRole("button", { name: "Apply range", exact: true }).click();
+  await expect(picker).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Choose date range", exact: true }),
+  ).toHaveAttribute("data-fixed", "true");
+  const from = params(page).get("from");
+  const to = params(page).get("to");
+  expect(from).toBe(`${start}T00:00:00.000Z`);
+  expect(to).toBe(new Date(Date.parse(`${end}T00:00:00Z`) + 86400000).toISOString());
   const link = page.url();
   const fresh = await browser.newContext({ ignoreHTTPSErrors: true });
   try {
@@ -86,21 +92,24 @@ test("project URL wins over saved preferences and pins a portable date range", a
       "Commands",
     );
     await expect(recipient.locator(".activity-widget .widget-value").first()).toHaveText("31");
-    expect(params(recipient).get("snapshot")).toBe(snapshot);
+    expect(params(recipient).get("from")).toBe(from);
+    expect(params(recipient).get("to")).toBe(to);
   } finally {
     await fresh.close();
   }
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   expect(new URL(page.url()).pathname).toBe(`/projects/${project.slug}/settings`);
   expect(params(page).has("project")).toBe(false);
-  expect(params(page).get("snapshot")).toBe(snapshot);
+  expect(params(page).get("from")).toBe(from);
+  expect(params(page).get("to")).toBe(to);
   await page.goBack();
   await expect(page.getByRole("button", { name: "Weekly", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
   await page.getByRole("button", { name: "Last 30 days", exact: true }).click();
-  await expect.poll(() => params(page).has("snapshot")).toBe(false);
+  await expect.poll(() => params(page).has("from")).toBe(false);
+  expect(params(page).has("to")).toBe(false);
 });
 
 test("applied Explore queries and pages survive reload and browser history", async ({ page }) => {
@@ -148,6 +157,8 @@ test("source links remain scoped and invalid selections never query a fallback p
     `/projects/does-not-exist`,
     `/projects/${project.slug}?source=${other.sources[0].id}`,
     `/projects/${project.slug}?snapshot=yesterday`,
+    `/projects/${project.slug}?from=2026-01-01T00:00:00.000Z`,
+    `/projects/${project.slug}?from=2026-02-02T00:00:00.000Z&to=2026-02-01T00:00:00.000Z`,
     `/projects/${project.slug}/explore?drilldown=${encodeURIComponent(JSON.stringify({ productId: other.id, from: "2026-11-01T00:00:00.000Z", to: "2026-11-02T00:00:00.000Z" }))}`,
     `/projects/${project.slug}/explore?query=${encodeURIComponent(JSON.stringify({ measure: "sql" }))}`,
   ]) {

@@ -386,8 +386,7 @@ test("fixed-date Explore receives late events without expanding its date range",
   await expect(page.getByText("across 2 matching events")).toBeVisible({ timeout: 10000 });
   expect(bodies.length).toBeGreaterThan(1);
   for (const body of bodies) expect(body).toMatchObject({ from: selection.from, to: selection.to });
-  await expect(page.getByRole("button", { name: "Fixed dates", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(
+    page.getByRole("button", { name: "Choose date range", exact: true }),
+  ).toHaveAttribute("data-fixed", "true");
 });
