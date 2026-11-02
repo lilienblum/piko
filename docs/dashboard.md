@@ -2,40 +2,43 @@
 
 Select a project and source in the sidebar, and a date range beside the report heading. **All sources** combines the project; a named source filters every metric, chart, breakdown, and event row on the server. Every source uses the same overview, includes all event names, and offers the same chart metrics and breakdowns. The URL records the selected project, source, and date range; saved preferences only initialize a bare entry URL. Settings manages every source regardless of the analytics selection.
 
-Click a page, command, event, referrer, or other breakdown row to open its matching events in Explore. Each link carries the project, selected source when applicable, exact UTC interval, and selected value. A source breakdown link uses its stable ID, so renaming does not break links. It works after reload and through browser history, even when the browser previously had a different product selected.
+Click a page, command, event, referrer, or other breakdown row to filter Overview in place. A removable filter and **View matching events** link appear above the metrics. That link opens Explore with the selected source, exact UTC interval, and typed value. Overview supports one event/client/property filter plus source scope; choosing another report value replaces that filter. Source rows change the source scope and preserve the current filter. Reload and browser history restore the selection.
+
+Page and referrer rows can also have a separate external-link icon. It appears on row hover or keyboard focus, stays visible on touch devices, and opens the website in another tab without changing the analytics filter. Page paths require the project's optional website address. Referrers must be HTTP(S) URLs or valid hostnames. Missing or unsafe targets get no external action; outgoing links suppress the referrer and opener.
 
 Explore shows the linked interval and applied filters. Use its query controls to change the measure, grouping, or filter. Running a query writes the applied configuration to the URL, so reloading or sharing it restores those changes. Unsubmitted edits stay local. Clear the drilldown to return to the normal date range. Selecting another project, source, or date range also clears the linked selection. A missing project/source or malformed drilldown shows an error instead of querying another product.
 
 ## Shareable URLs
 
-Projects have stable, unique slugs. An example Overview link is `/projects/orbit?source=all&days=30&interval=week`. A renamed project keeps its slug. Explicit URL selections win over browser preferences; unavailable projects/sources and malformed scope parameters show an error instead of querying a fallback project. Links do not change access permissions.
+Projects have stable, unique slugs. An example Overview link is `/projects/orbit?source=all&period=month`. A renamed project keeps its slug. Explicit URL selections win over browser preferences; unavailable projects/sources and malformed scope parameters show an error instead of querying a fallback project. Links do not change access permissions.
 
 - Project paths: `/projects/<slug>`, `/projects/<slug>/explore`, and `/projects/<slug>/settings`. Bare `/`, `/explore`, and `/settings` open the saved project and replace the URL with its canonical path.
-- Shared query parameters: `source` (`all` or a source UUID), `days` (7, 30, or 90), and optional `from` / `to` (a complete pair of exact UTC ISO timestamps, start inclusive and end exclusive).
-- Overview parameters: `metric`, `interval` (`hour`, `day`, `week`, `month`), `breakdown`, and `duration` (`avg` or `p95`).
+- Shared query parameters: `source` (`all` or a source UUID), `days` (7, 30, or 90), `period` (`today`, `yesterday`, `month`, `last-month`, `year`, or `12months`), and optional `from` / `to` (a complete pair of exact UTC ISO timestamps, start inclusive and end exclusive).
+- Overview parameters: `metric`, `breakdown`, `duration` (`avg` or `p95`), and a JSON `filter` with `field` and typed `value`. Fields are `name`, `source` (client), or `property:<name>`. Old `interval` parameters are ignored.
 - Explore parameters: `query` (TanStack Router's JSON-encoded applied configuration), `page` (one-based), and `pageSize` (15, 30, or 50). Typed filter text is preserved, including the difference between `42` and `"42"`.
 
-The calendar picker shows two months on desktop and one on mobile, with direct YYYY-MM-DD inputs. Pick inclusive start/end days, then choose **Apply range**. Cancel, Escape, and outside dismissal discard drafts. The trigger shows the applied dates; the 7d / 30d / 90d buttons restore a rolling range. Custom ranges span at most 366 UTC days and cannot select future days. Copy the address bar to share the interval and report configuration. Changing dates retains applied Explore queries and drilldown filters. The URL fixes the query interval, not the results: late arrivals and retention can still change counts. Existing `snapshot` links and exact Overview drilldown timestamps remain readable.
+One date picker offers Today, Yesterday, Last 7/30/90 days, Month to date, Last month, Year to date, Last 12 months, and Custom range. A `period` takes precedence over a saved rolling `days` choice. Previous/next arrows move by day, calendar month, calendar year, or the fixed range's covered days; forward navigation stops at the current period. Rolling 7/30/90-day and 12-month windows have no arrows. Returning to the current day/month/year restores its live preset.
+
+Custom range shows two months on desktop and one on mobile, with direct YYYY-MM-DD inputs. Pick inclusive start/end days, then **Apply range**. Cancel, Escape, and outside dismissal discard drafts. Custom ranges span at most 366 UTC days and cannot select future days. Copy the address bar to share dates and report configuration. Changing dates retains applied filters. The URL fixes the interval, not the results: late arrivals and retention can change counts. Existing `snapshot` links and exact Overview drilldown timestamps remain readable.
 
 Project/source/date context follows sidebar navigation. Each route owns its chart or query choices; browser Back/Forward restores them. Automatic updates never rewrite the URL or add history entries, and they preserve unfinished query drafts and pagination.
 
 ## Overview widgets
 
-Overview uses five core widgets and a source comparison when multiple sources contribute events. With no comparison, Activity spans two columns and the remaining widgets stay square; narrow screens stack them:
+Overview starts with six small square metric tiles: **Active now**, **Events**, **Visitors**, **Installations**, **Success rate**, and **Avg. duration**. They form six, three, or two columns depending on available width.
 
-- **Activity over time:** a selected measure and its time-series. Choose events, identified actors, visitors, installations, average duration, or p95 duration. The headline is the selected measure over the full range, calculated by the server.
-- **Sources:** a single contributing source appears as a compact icon/name/count link above the charts, with no dedicated tile or pie. For multiple contributing sources, show a donut with the three largest sources and an **Other sources** slice for all remaining events, including groups beyond the server's top-twelve response. The center uses a compact total; the footer and legend retain exact counts. Named sources link to their events in Explore.
-- **Breakdown:** ranked rows with exact counts, shares, and drilldowns. Top events is the default; use the selector for another dimension. Longer lists scroll inside the widget.
-- **Identified actors:** distinct identities, separate visitor and installation counts, other actor identities, and website sessions when available. Identity is optional; unidentified events still count toward activity.
-- **Success rate:** succeeded/failed shares among events reporting a boolean `success` value. Missing properties and strings are excluded, and the absence of valid values is explained.
-- **Duration:** average/p95 buttons, the overall duration in milliseconds, and a time-series. Only numeric `duration_ms` properties contribute; the overall percentile is calculated from raw events, never averaged from bucket percentiles.
+**Active now** counts distinct optional identities with events in the last five minutes. It follows the project, source, and Overview filter, independently of the historical report dates. Visitor and installation identities remain separate, even if their ID strings match. Unidentified events are never turned into people through fingerprinting. The widget shows an unavailable value when activity has no IDs or its query fails; existing live hints and visible-page refresh keep it current.
 
-The connected **Hourly / Daily / Weekly / Monthly** controls apply to both time-series. Daily is the default. Hourly is available for ranges up to 31 days; longer ranges fall back to Daily. Buckets and labels use UTC, weeks begin Monday, and months follow calendar boundaries. The chart notes when the first or last bucket is partial.
+A single wide **Activity over time** chart follows. Choose events, identified actors, visitors, installations, average duration, or p95 duration. Its headline is the server's selected measure over the full period. Below it, reports form two columns on wider layouts and stack on narrow screens:
 
-Distinct identities are counted within each bucket. Adding daily visitor or installation counts does not give a unique count for the whole period. Missing durations remain gaps; they are not zero-duration commands. When no matching identities or numeric durations are available, the widget explains what is missing.
+- **Breakdown** stays in the first position: ranked rows, exact counts and shares, and in-place filters. Top events is the default; longer lists scroll inside the report.
+- The second position shows **Sources** when multiple sources contribute, otherwise **Identified actors**. Sources ranks the top three plus Other sources, accounting for groups beyond the server's top twelve. A single source gets no redundant comparison panel. Identities show separate visitor, installation, and other actor counts, plus sessions when supplied.
+- **Success rate** reports succeeded/failed shares only among boolean `success` values. Missing properties and strings are excluded.
+- **Duration** offers average/p95 summaries and a numeric comparison. Only numeric `duration_ms` values contribute. Percentiles are calculated from raw events, never averaged from bucket percentiles. There is no second duration chart.
 
-Changing a measure loads only its value and plot; changing a breakdown loads only its rows. The current widget layout and controls stay in place. Refreshing an unchanged selection keeps existing values, plots, and rows visible; errors offer a local Retry action. Skullet placeholders occupy the affected regions for new ranges. Queries remain server-side and scoped to the selected project/source; single-source summaries and default daily counts reuse the main result, a source comparison query runs only for multiple configured sources or a Sources breakdown, and the duration query runs only when numeric durations exist.
+Chart grouping is automatic in Overview and Explore: ranges up to two days use hourly points; up to 31 days use daily points; up to 180 days use weekly points; longer ranges use monthly points. A note states the grouping and any partial buckets. Buckets and labels are UTC; weeks start Monday and months follow calendar boundaries. No separate interval choice is required.
 
+Distinct identities are counted within each bucket; summing bucket counts does not give a period's distinct count. Missing durations remain gaps, not zero-duration commands. Missing measurements are explained. Changing a chart measure or breakdown only loads that region. Automatic refresh retains existing values and mounted plots; errors offer a local Retry. Skullet placeholders occupy affected regions for new scopes. The chart and Breakdown retain their positions while source discovery completes. All aggregation and filtering remain server-side; duration summaries reuse the main response.
 ## Breakdown dimensions
 
 The **Breakdown** selector offers Top events, Sources, Clients, Pages, Commands, Referrers, Campaign sources, Campaigns, Screens, Versions, OS, and Architecture for every source. Property dimensions include all matching events; they do not silently restrict the event name. Missing values remain informational. Use Explore to explicitly filter an event, inspect typed properties, or choose other groupings.
@@ -48,7 +51,7 @@ Settings lets you name sources and choose an optional icon from Hugeicons. **Aut
 
 The [Datafast demo](https://datafa.st/demo) and its [filter documentation](https://datafa.st/docs/datafast-filters) informed the actionable breakdown rows and dimension choices. Piko applies these ideas to both websites and developer tools using its existing event queries.
 
-The [Plausible live dashboard](https://plausible.io/plausible.io) and its [dashboard tour](https://plausible.io/docs/guided-tour) informed chart metric selection, interval controls, and partial-period context. Piko keeps metric and breakdown choices inside their widgets, with interval buttons shared by both time-series.
+The [Plausible live dashboard](https://plausible.io/plausible.io) and its [dashboard tour](https://plausible.io/docs/guided-tour) informed the single period picker, calendar navigation, wide trend chart, paired reports, and separate filtering/external-link actions. Piko adapts that structure with small square metric tiles and automatic chart grouping.
 
 Period comparisons remain a future feature. They need explicit partial-day alignment and a query shape that avoids fetching unused event pages for comparison summaries.
 
@@ -89,7 +92,7 @@ Settings lists sources with their name and icon. Automatic chooses an icon from 
 
 ## Chart inspection
 
-Overview and Explore use TanStack Charts. Hover or touch a time-series to inspect a bucket, or a donut to inspect a category. Exact donut values are also available in the legend. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
+Overview and Explore use TanStack Charts. Hover or touch a time-series to inspect a bucket. Ranked report rows retain exact counts and shares. Keyboard users can focus the chart and use Left/Right, Home/End, and Escape; values are announced to assistive technology. Labels and tooltips use UTC regardless of the device timezone. Zero remains a measured zero, missing numeric values remain gaps, and negative numeric aggregates retain their sign. Touch scrolling remains available across the plot.
 
 ## Component foundation
 

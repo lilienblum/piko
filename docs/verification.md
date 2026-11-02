@@ -1,5 +1,29 @@
 # Verification record
 
+## 2 November 2026: compact overview and reporting periods
+
+Verified the Plausible-inspired dashboard changes on the two isolated Tako test apps:
+
+- `bun fmt`, `bun fmt:check`, `bun typecheck`, and `bun lint`: pass.
+- `bun test`: 49 tests, 289 assertions pass.
+- `bun run build`: TanStack Start client/server and SDK builds pass.
+- Affected Chromium suites: **82 tests pass**, covering dates, overview charts, report interactions, chart accessibility, URL state, sources, loading, automatic refresh, dashboard flows, and shell geometry.
+
+The browser checks cover 1440/894px desktop and 390/320px narrow layouts; square tile proportions; calendar day/month/year navigation; automatic hourly/daily/weekly/monthly aggregation; keyboard preset selection; typed in-place filters and reload/history; real external-tab opening without changing filters; optional live visitor/installation identity counts and five-minute expiry; and stable chart/Breakdown positions while source queries finish. The live preview was also inspected against Plausible's date and report-row interactions. Browser fixtures are synthetic and their temporary apps/databases were removed by teardown.
+
+Run the affected browser set with:
+
+```sh
+bun test:e2e -- tests/date-range.spec.ts tests/overview-chart.spec.ts \
+  tests/overview-interactions.spec.ts tests/analytics-chart.spec.ts \
+  tests/url-state.spec.ts tests/sources.spec.ts tests/loading.spec.ts \
+  tests/refresh.spec.ts tests/dashboard.spec.ts tests/shell.spec.ts
+```
+
+This change is confined to the dashboard and its documentation/tests. Rust API tests and the mixed ingestion/query benchmark were not rerun; the measurements below describe their original runs.
+
+## Previous verification
+
 Verified locally on 1 November 2026 against the two-app Tako architecture, with per-product databases and external access control. Latest toolchain: Bun 1.4.4, Rust 1.95.0, Tako CLI 0.0.0-00ac4d2, JavaScript SDK 0.0.0-9301901, Rust SDK 0.2.1.
 
 | Check                                                      | Result                                                                         |

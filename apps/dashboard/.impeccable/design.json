@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T03:52:15.284Z",
+  "generatedAt": "2026-11-02T11:24:07.270457+00:00",
   "title": "Design System: Piko",
   "extensions": {
     "colorMeta": {
@@ -808,9 +808,9 @@
       "name": "Overview widget",
       "kind": "card",
       "refersTo": "overview-widget",
-      "description": "A flat square analytical section with a steady header, flexible body, and reserved footer.",
+      "description": "A flat rectangular report with a steady header, flexible body, and reserved footer.",
       "html": "<section class=\"ds-overview-widget\"><h2 class=\"ds-widget-title\">Activity over time</h2><div class=\"ds-widget-body\"><strong class=\"ds-widget-value\">1,248</strong><span class=\"ds-widget-label\">Events</span></div><footer class=\"ds-widget-footer\">Example measurement</footer></section>",
-      "css": ".ds-overview-widget{display:flex;flex-direction:column;gap:12px;width:260px;aspect-ratio:1;padding:20px;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--card);color:var(--foreground);font-family:\"Geist Variable\",sans-serif;}.ds-widget-title{margin:0;min-height:32px;font-size:14px;font-weight:600;letter-spacing:-.01em;}.ds-widget-body{display:flex;flex:1;flex-direction:column;gap:10px;min-height:0;}.ds-widget-value{font-size:32px;font-weight:600;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums;}.ds-widget-label{font-size:12px;color:var(--muted-foreground);}.ds-widget-footer{min-height:24px;font-size:11px;line-height:1.5;color:var(--muted-foreground);}"
+      "css": ".ds-overview-widget{display:flex;flex-direction:column;gap:16px;width:320px;height:300px;padding:20px;border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--card);color:var(--foreground);font-family:\"Geist Variable\",sans-serif;}.ds-widget-title{margin:0;min-height:32px;font-size:14px;font-weight:600;letter-spacing:-.01em;}.ds-widget-body{display:flex;flex:1;flex-direction:column;gap:10px;min-height:0;}.ds-widget-value{font-size:32px;font-weight:600;letter-spacing:-.035em;line-height:1.15;font-variant-numeric:tabular-nums;}.ds-widget-label{font-size:12px;color:var(--muted-foreground);}.ds-widget-footer{min-height:24px;font-size:11px;line-height:1.5;color:var(--muted-foreground);}"
     },
     {
       "name": "Select trigger",
@@ -824,8 +824,8 @@
       "name": "Segmented choices",
       "kind": "custom",
       "refersTo": "segmented-group",
-      "description": "One frame groups interval or date choices; selected text is warm yellow.",
-      "html": "<div class=\"ds-segments\" role=\"group\" aria-label=\"Date range\"><button class=\"ds-segment\" aria-pressed=\"false\">7d</button><button class=\"ds-segment\" aria-pressed=\"true\">30d</button><button class=\"ds-segment\" aria-pressed=\"false\">90d</button></div>",
+      "description": "One frame groups related measure choices; selected text is warm yellow.",
+      "html": "<div class=\"ds-segments\" role=\"group\" aria-label=\"Duration measure\"><button class=\"ds-segment\" aria-pressed=\"true\">Average</button><button class=\"ds-segment\" aria-pressed=\"false\">p95</button></div>",
       "css": ".ds-segments{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-inset);}.ds-segment{height:28px;min-width:28px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--muted-foreground);font:500 12px/18px \"Geist Variable\",sans-serif;cursor:pointer;transition:background-color 160ms ease-out,color 160ms ease-out,border-color 160ms ease-out;}.ds-segment:hover{background:var(--surface-hover);color:var(--foreground);}.ds-segment[aria-pressed=true]{background:var(--selection);color:var(--selection-foreground);}.ds-segment:focus-visible{outline:2px solid var(--ring);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-segment{transition:none;}}"
     },
     {
@@ -839,11 +839,11 @@
   ],
   "narrative": {
     "northStar": "Kanagawa Wave",
-    "overview": "Piko is a compact measurement tool using the user-selected Kanagawa palette. Sumi-ink surfaces and warm Fuji text frame Surimi Orange actions, Carp Yellow measurements, violet/aqua source categories, and green outcomes. Self-hosted Geist, softly squared controls, inset fields, single-frame segmented choices, and the upright three-bar mark give the interface its precise, quiet character. Accessible shadcn Base UI primitives and Hugeicons provide the shared component language.\n\nAnalytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview groups related evidence into five core widgets and an optional source comparison; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. One palette is present in server-rendered HTML and CSS. There is no appearance selector, theme preference, or system-theme listener.\n\nWhen only one source contributes, replace the Sources tile with a compact icon/name/count Explore link above the grid and widen Activity to two columns. Multi-source comparisons retain their donut and exact legend; narrow screens stack the core widgets.\n\nThe logo and project picker share one borderless sidebar header, with a subdued, locally served orange/violet gradient fading into the sidebar. Keep this decorative treatment confined to the identity area, preserve text contrast, and do not let image loading change geometry.\n\nReport dates sit left-aligned below the title, pairing flat 7d/30d/90d shortcuts with an accessible shadcn calendar popover. An orange underline marks the active choice; no capsule surrounds the shortcuts. Desktop sidebar toggling stays in the sidebar footer, and mobile navigation occupies a separate row above the title. Custom ranges show their dates on the trigger, use inclusive UTC calendar days, and apply only after confirmation in the picker. Two desktop months become one on mobile; dismissal discards drafts and preserves page geometry.",
+    "overview": "Piko is a compact measurement tool using the user-selected Kanagawa palette. Sumi-ink surfaces and warm Fuji text frame Surimi Orange actions, Carp Yellow measurements, violet/aqua source categories, and green outcomes. Self-hosted Geist, softly squared controls, inset fields, single-frame segmented choices, and the upright three-bar mark give the interface its precise, quiet character. Accessible shadcn Base UI primitives and Hugeicons provide the shared component language.\n\nAnalytical regions use flat surfaces, fine seams, aligned labels, and tabular values. Overview presents small square metrics, one wide activity chart, and paired reports; Explore retains its open analytical field. Editing and inspection use contained surfaces where boundaries clarify the task. Density serves reading: supporting context remains visible, and loading states preserve the geometry of the result they will replace. One palette is present in server-rendered HTML and CSS. There is no appearance selector, theme preference, or system-theme listener.",
     "keyCharacteristics": [
       "Sumi-ink surfaces, warm text, orange actions, and yellow/violet/aqua data accents.",
       "Geist typography with restrained headings and prominent measurements.",
-      "Flat analytical fields and square Overview widgets; contained forms and inspection.",
+      "Flat analytical fields, small square metrics, and rectangular reports; contained forms and inspection.",
       "Softly squared controls, inset fields, warm selection, one focus outline, and stable geometry."
     ],
     "rules": [
@@ -870,8 +870,8 @@
       "Do use inset fields, single-frame segmented choices, and semantic hover/pressed/selection states.",
       "Do keep visible labels, one ring-colored focus outline, readable metadata, and touch-sized controls on narrow screens.",
       "Do preserve chart and table geometry while data loads or refreshes.",
-      "Do use TanStack line and donut charts, actual event identity kinds, and truthful empty or error states.",
-      "Do keep Overview widgets square and flat while preserving their exact measures, local loading, and responsive reading order."
+      "Do use TanStack charts, actual event identity kinds, and truthful empty or error states.",
+      "Do keep Overview metric tiles square and analytical reports flat while preserving their exact measures, local loading, and responsive reading order."
     ],
     "donts": [
       "Don't return to a corporate blue card grid or a black neon terminal identity.",
@@ -879,7 +879,7 @@
       "Don't reintroduce beveled button faces, split-arrow compartments, individual segment frames, or filled orange destination navigation.",
       "Don't add decorative botanical imagery, faux paper textures, or ornamental glow.",
       "Don't replace useful event context with decoration or hide an actual loading failure behind a skeleton.",
-      "Don't turn either the Explore composition or the Overview widget grid into a mandatory layout for every page."
+      "Don't turn either the Explore composition or the Overview report composition into a mandatory layout for every page."
     ]
   }
 }
