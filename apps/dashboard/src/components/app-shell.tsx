@@ -15,7 +15,6 @@ import { Add01Icon, Calendar03Icon, CubeIcon, RefreshIcon } from "@hugeicons/cor
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
 import { ThemeMenu } from "./theme-provider";
-import { Separator } from "@/components/ui/separator";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkspaceSidebar } from "./workspace-sidebar";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
@@ -210,83 +209,75 @@ export function AppShell() {
           }}
         />
         <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
-          <header className="topbar">
-            <div className="topbar-left">
-              <SidebarTrigger disabled={!preferencesReady} />
-              <Separator orientation="vertical" className="h-5" />
-              <div className="mobile-project-picker">{projectPicker}</div>
-              <div
-                className="breadcrumbs workspace-context"
-                title={`${product?.name ?? "Workspace"} / ${path === "/settings" ? "Settings" : (source?.name ?? "All sources")}`}
-              >
-                <strong className="workspace-project-name">{product?.name ?? "Workspace"}</strong>
-                <span className="workspace-context-divider" aria-hidden="true">
-                  /
-                </span>
-                <span className="workspace-source-name">
-                  {path === "/settings" ? "Settings" : (source?.name ?? "All sources")}
-                </span>
+          <LiveUpdates
+            productId={product?.id}
+            view={path}
+            scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, refreshKey])}
+            busy={loading || analyticsPending}
+            onPending={setHasUpdates}
+            onRefresh={refreshBackground}
+          />
+          <div className="page-content" data-page={label.toLowerCase()}>
+            <div className="workspace-toolbar">
+              <div className="workspace-toolbar-navigation">
+                <SidebarTrigger disabled={!preferencesReady} />
+                <div className="mobile-project-picker">{projectPicker}</div>
+                <span className="workspace-source-name">{source?.name ?? "All sources"}</span>
+              </div>
+              <div className="workspace-toolbar-actions">
+                {path !== "/settings" && (
+                  <>
+                    <ValueSelect
+                      label="Date range"
+                      disabled={!preferencesReady}
+                      value={drilldown ? "linked" : String(days)}
+                      icon={
+                        <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />
+                      }
+                      className="date-select"
+                      onValueChange={(value) => {
+                        if (value === "linked") return;
+                        clearDrilldown();
+                        setDays(Number(value));
+                        savePreference("piko:days", value);
+                        setNow(Date.now());
+                      }}
+                      options={[
+                        ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
+                        ["7", "Last 7 days"],
+                        ["30", "Last 30 days"],
+                        ["90", "Last 90 days"],
+                      ]}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Refresh analytics"
+                      onClick={refresh}
+                      disabled={loading || analyticsPending}
+                      aria-busy={loading || analyticsPending}
+                    >
+                      {loading || analyticsPending ? (
+                        <Spinner aria-hidden="true" />
+                      ) : (
+                        <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
+                      )}
+                    </Button>
+                  </>
+                )}
+                <ThemeMenu />
               </div>
             </div>
-            <div className="topbar-controls">
-              <LiveUpdates
-                productId={product?.id}
-                view={path}
-                scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, refreshKey])}
-                busy={loading || analyticsPending}
-                onPending={setHasUpdates}
-                onRefresh={refreshBackground}
-              />
-              <span className="timezone">UTC</span>
-              <ValueSelect
-                label="Date range"
-                disabled={!preferencesReady}
-                value={drilldown ? "linked" : String(days)}
-                icon={<HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />}
-                className="date-select"
-                onValueChange={(value) => {
-                  if (value === "linked") return;
-                  clearDrilldown();
-                  setDays(Number(value));
-                  savePreference("piko:days", value);
-                  setNow(Date.now());
-                }}
-                options={[
-                  ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
-                  ["7", "Last 7 days"],
-                  ["30", "Last 30 days"],
-                  ["90", "Last 90 days"],
-                ]}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Refresh analytics"
-                onClick={refresh}
-                disabled={loading || analyticsPending}
-                aria-busy={loading || analyticsPending}
-              >
-                {loading || analyticsPending ? (
-                  <Spinner aria-hidden="true" />
-                ) : (
-                  <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
-                )}
-              </Button>
-              <ThemeMenu />
-            </div>
-          </header>
-          <div className="page-content" data-page={label.toLowerCase()}>
             {error && <ErrorState message={error} retry={refresh} />}
             {loading ? (
-              <PageLoading label="Loading workspace" />
+              <>
+                <PageHeader title={label} description="Your project analytics" />
+                <PageLoading label="Loading workspace" />
+              </>
             ) : (
               (!error || products.length > 0) && <Outlet />
             )}
           </div>
-          <footer className="page-footer">
-            <span>Piko · Privacy-first analytics</span>
-            <span>All times in UTC · Identity is optional</span>
-          </footer>
         </SidebarInset>
       </SidebarProvider>
     </Workspace.Provider>

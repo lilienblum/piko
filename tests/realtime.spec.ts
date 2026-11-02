@@ -54,8 +54,12 @@ async function ingest(product: Fixture, kind: "website" | "tool", count = 1) {
 }
 async function open(page: Page, product: Fixture, path = "/") {
   await page.addInitScript((id) => localStorage.setItem("piko:product", id), product.id);
+  const connected = page.waitForResponse(
+    (response) => response.url().includes("/_tako/channels/") && response.ok(),
+  );
   await page.goto(path);
-  await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible();
+  await connected;
+  await expect(page.locator(".live-status")).toHaveCount(0);
 }
 
 test("committed website events refresh without replacing charts; retries and other products stay scoped", async ({
@@ -170,9 +174,6 @@ test("reconnect catches up committed data after an interrupted SSE stream", asyn
   await expect.poll(() => connections, { timeout: 10000 }).toBeGreaterThanOrEqual(2);
   await ingest(web, "website", 3);
   release();
-  await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible({
-    timeout: 15000,
-  });
   await expect(page.locator(".metric-value").first()).toHaveText("4", { timeout: 15000 });
 });
 
@@ -277,7 +278,7 @@ test("Explore catches up changes between its initial query and first live connec
       )
       .toBe(true);
     release();
-    await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Refresh results" })).toBeVisible();
     await expect(page.getByText("across 1 matching events")).toBeVisible();
     await page.getByRole("button", { name: "Refresh results" }).click();
     await expect(page.getByText("across 3 matching events")).toBeVisible();

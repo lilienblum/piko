@@ -103,7 +103,7 @@ for (const width of [1440, 894, 390]) {
         };
       });
     const before = await geometry();
-    for (const name of ["Select project", "Date range"]) {
+    for (const name of ["Select project", "Event timezone"]) {
       const select = page.getByRole("combobox", { name, exact: true });
       await select.click();
       await expect(page.getByRole("listbox")).toBeVisible();

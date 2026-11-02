@@ -697,7 +697,19 @@
         "name": "wide",
         "value": "1600px"
       }
-    ]
+    ],
+    "loading": {
+      "library": "skullet",
+      "base": "color-mix(in oklab, var(--foreground) 10%, transparent)",
+      "highlight": "color-mix(in oklab, var(--foreground) 8%, transparent)",
+      "radius": "3px",
+      "animation": "shimmer",
+      "speed": "slow",
+      "reveal": "together",
+      "durationMs": 120,
+      "holdMs": 150,
+      "refresh": "Retain current data; placeholders only for incoming regions."
+    }
   },
   "components": [
     {
@@ -814,7 +826,8 @@
       "Do keep visible labels, focus outlines, readable metadata, and touch-sized controls on narrow screens.",
       "Do preserve chart and table geometry while data loads or refreshes.",
       "Do use the existing line chart, actual event identity kinds, and truthful empty or error states.",
-      "Do use official Bklit UI charts with semantic colors, UTC labels, missing-value gaps, keyboard inspection, touch scrolling, and stable refresh geometry."
+      "Do use official Bklit UI charts with semantic colors, UTC labels, missing-value gaps, keyboard inspection, touch scrolling, and stable refresh geometry.",
+      "Do use official Skullet for component loading, keep report controls within the heading layout, and keep connection state and version/license details out of product chrome."
     ],
     "donts": [
       "Don't return to a corporate blue card grid or a black neon terminal identity.",

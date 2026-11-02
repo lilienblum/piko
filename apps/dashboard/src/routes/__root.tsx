@@ -1,3 +1,5 @@
+import { SkulletProvider } from "skullet/react";
+import { DisplayPreferencesProvider } from "@/components/display-preferences";
 import { createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -29,7 +31,20 @@ export const Route = createRootRoute({
 function Root() {
   return (
     <ThemeProvider>
-      <AppShell />
+      <DisplayPreferencesProvider>
+        <SkulletProvider
+          theme={{
+            light: { base: "var(--skeleton-base)", highlight: "var(--skeleton-highlight)" },
+            dark: { base: "var(--skeleton-base)", highlight: "var(--skeleton-highlight)" },
+            radius: "3px",
+            animation: "shimmer",
+            speed: "slow",
+          }}
+          reveal={{ order: "together", duration: 120, hold: 150 }}
+        >
+          <AppShell />
+        </SkulletProvider>
+      </DisplayPreferencesProvider>
     </ThemeProvider>
   );
 }
@@ -50,7 +65,7 @@ function Shell({ children }: { children: ReactNode }) {
 THESIS: Piko is a compact measurement tool with a graphic identity; evidence remains the main content.
 OWN-WORLD: Yuzu's butter-yellow rail, warm ink, chart ochre, Geist, squared controls, ink navigation selections, and an upright three-bar mark.
 STORY: Choose project, source and dates; follow an event trend; inspect the evidence; manage collection. Identity stays optional.
-FIRST VIEWPORT: Preserve the 13rem rail, 64px toolbar, shallow query controls, two-thirds plot and one-third breakdown, followed by the event stream. Run query stays at the right.
+FIRST VIEWPORT: Keep the 15rem project/source rail, report controls integrated with headings, shallow query controls, two-thirds plot and one-third breakdown, followed by the event stream. Run query stays at the right.
 FORM: User-selected Yuzu from the eight-direction preview. Preserve the approved compact composition; sharpen its control, type, chart and brand vocabulary. No new direction roll.
 -->`,
           }}

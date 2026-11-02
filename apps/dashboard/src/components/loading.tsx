@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton as MeasuredSkeleton } from "skullet/react";
 import {
   Table,
   TableBody,
@@ -15,16 +15,18 @@ export function BreakdownLoading({ rows = 5 }: { rows?: number }) {
   return (
     <div role="status" aria-label="Loading breakdown" aria-busy="true">
       <span className="sr-only">Loading breakdown…</span>
-      <div className="breakdown-head" aria-hidden="true">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="h-3 w-12" />
-      </div>
-      {[72, 58, 42, 64, 35].slice(0, rows).map((width) => (
-        <div className="breakdown-row" key={width} aria-hidden="true">
-          <Skeleton className="h-3" style={{ width: `${width}%` }} />
-          <Skeleton className="ml-auto h-3 w-8" />
+      <MeasuredSkeleton loading>
+        <div className="breakdown-head">
+          <span>Event</span>
+          <span>Events · Share</span>
         </div>
-      ))}
+        {["a", "b", "c", "d", "e"].slice(0, rows).map((row) => (
+          <div className="breakdown-row" key={row}>
+            <span className="breakdown-label">Project activity</span>
+            <span className="breakdown-value">1,234</span>
+          </div>
+        ))}
+      </MeasuredSkeleton>
     </div>
   );
 }
@@ -39,15 +41,7 @@ function ChartLoading({ title }: { title: string }) {
       </CardHeader>
       <CardContent>
         <div className="series-chart chart-placeholder" aria-hidden="true">
-          <div className="chart-placeholder-label">
-            <Spinner />
-            Loading activity
-          </div>
-          <div className="chart-placeholder-axis">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Skeleton key={n} className="h-3 w-9" />
-            ))}
-          </div>
+          <Skeleton className="h-full w-full" />
         </div>
       </CardContent>
     </Card>
@@ -78,7 +72,9 @@ export function OverviewLoading({ labels, chart }: { labels: string[]; chart: Re
             <CardContent>
               <div className="metric-label">{label}</div>
               <div className="metric-value flex h-[1.4em] items-center">
-                <Skeleton className="h-[1em] w-24 max-w-full" />
+                <MeasuredSkeleton loading>
+                  <span>12,345</span>
+                </MeasuredSkeleton>
               </div>
               <div className="metric-placeholder-detail" aria-hidden="true">
                 <Skeleton className="h-[1.5em] w-32 max-w-full" />
@@ -114,7 +110,7 @@ export function ExploreLoading() {
       <Card className="event-card event-stream">
         <CardHeader>
           <CardTitle>Event stream</CardTitle>
-          <CardDescription>Newest first · event time in UTC</CardDescription>
+          <CardDescription>Newest first</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table className="stream-table" aria-hidden="true">
@@ -123,7 +119,7 @@ export function ExploreLoading() {
                 <TableHead className="stream-column-event">Event</TableHead>
                 <TableHead className="stream-column-context">Context</TableHead>
                 <TableHead className="stream-column-identity">Identity</TableHead>
-                <TableHead className="stream-column-time">Time (UTC)</TableHead>
+                <TableHead className="stream-column-time">Time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -149,8 +145,10 @@ export function ExploreLoading() {
 export function PageLoading({ label = "Loading page" }: { label?: string }) {
   return (
     <div className="route-loading" role="status" aria-label={label} aria-busy="true">
-      <Spinner aria-hidden="true" />
-      <span>{label}…</span>
+      <span className="sr-only">{label}…</span>
+      <MeasuredSkeleton loading>
+        <p>Loading your project analytics</p>
+      </MeasuredSkeleton>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useDisplayPreferences } from "./display-preferences";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -96,6 +97,8 @@ function ProductFields({
 }
 export function Settings() {
   const { product, reload } = useWorkspace();
+  const { timeZone, setTimeZone } = useDisplayPreferences();
+  const timeZones = Array.from(new Set(["UTC", timeZone, ...Intl.supportedValuesOf("timeZone")]));
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", retention_days: 30 });
   const [error, setError] = useState("");
@@ -174,6 +177,28 @@ export function Settings() {
           </DialogContent>
         </Dialog>
       </PageHeader>
+      <Card className="display-settings">
+        <CardHeader>
+          <CardTitle>Display</CardTitle>
+          <CardDescription>Preferences for this browser.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Field>
+            <FieldLabel htmlFor="event-timezone">Event timezone</FieldLabel>
+            <ValueSelect
+              id="event-timezone"
+              label="Event timezone"
+              value={timeZone}
+              onValueChange={setTimeZone}
+              options={timeZones.map((zone) => [zone, zone.replaceAll("_", " ")])}
+            />
+            <FieldDescription>
+              Used for event times and inspection. Charts and date ranges use UTC calendar buckets;
+              stored timestamps and exports remain UTC.
+            </FieldDescription>
+          </Field>
+        </CardContent>
+      </Card>
       {product ? (
         <ProductSettings key={product.id} product={product} />
       ) : (

@@ -12,7 +12,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarHeader,
@@ -182,10 +181,6 @@ export function WorkspaceSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <Separator />
-        <div className="sidebar-footer">
-          Privacy first <span>v0.1 · MIT</span>
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

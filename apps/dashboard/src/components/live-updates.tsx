@@ -88,23 +88,5 @@ function ChannelStatus({ productId, view, scopeKey, busy, onPending, onRefresh }
     }, delay);
     return () => clearTimeout(timer);
   }, [dirty, visible, busy, productId, view, onRefresh]);
-  const label = !visible ? "Paused" : status === "open" ? "Live" : "Reconnecting";
-  return (
-    <span
-      className="live-status"
-      data-live-state={label.toLowerCase()}
-      role="status"
-      aria-label={`Live updates: ${label.toLowerCase()}`}
-      title={
-        !visible
-          ? "Updates resume when this tab is visible"
-          : status === "open"
-            ? "Overview updates automatically; Explore keeps your current results until refreshed"
-            : "Reconnecting to live updates. You can still refresh manually."
-      }
-    >
-      <span className="live-dot" aria-hidden="true" />
-      <span className="live-label">{label}</span>
-    </span>
-  );
+  return null;
 }

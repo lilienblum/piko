@@ -1,3 +1,5 @@
+import { useDisplayPreferences } from "./display-preferences";
+import { displayTimestamp } from "@/lib/display-time";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -121,6 +123,7 @@ export function EventStream({
   onFilterProperty,
 }: EventStreamProps) {
   const { product } = useWorkspace();
+  const { timeZone } = useDisplayPreferences();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const focusId = useRef<string | null>(null);
@@ -192,14 +195,14 @@ export function EventStream({
                   title={new Date(event.timestamp).toISOString()}
                 >
                   {new Date(event.timestamp).toLocaleString("en-GB", {
-                    timeZone: "UTC",
+                    timeZone,
                     day: "numeric",
                     month: "short",
                     hour: "2-digit",
                     minute: "2-digit",
                     second: "2-digit",
                   })}{" "}
-                  UTC
+                  {timeZone}
                 </time>
               </div>
             </div>
@@ -235,7 +238,7 @@ export function EventStream({
       },
       {
         id: "time",
-        header: "Time (UTC)",
+        header: () => <span title={timeZone}>Time</span>,
         cell: ({ row }) => (
           <time
             className="stream-time"
@@ -243,11 +246,11 @@ export function EventStream({
             title={new Date(row.original.timestamp).toISOString()}
           >
             <span>
-              {new Date(row.original.timestamp).toLocaleTimeString("en-GB", { timeZone: "UTC" })}
+              {new Date(row.original.timestamp).toLocaleTimeString("en-GB", { timeZone })}
             </span>
             <span>
               {new Date(row.original.timestamp).toLocaleDateString("en-GB", {
-                timeZone: "UTC",
+                timeZone,
                 day: "numeric",
                 month: "short",
                 year: "numeric",
@@ -257,7 +260,7 @@ export function EventStream({
         ),
       },
     ],
-    [product?.sources],
+    [product?.sources, timeZone],
   );
   const table = useReactTable({
     data: events,
@@ -286,7 +289,7 @@ export function EventStream({
           <div className="card-heading">
             <div>
               <CardTitle>Event stream</CardTitle>
-              <CardDescription>Newest first · event time in UTC</CardDescription>
+              <CardDescription>Newest first</CardDescription>
             </div>
             <Badge variant="outline">{number(total)} events</Badge>
           </div>
@@ -499,6 +502,7 @@ function EventInspector({
   onFilter: EventStreamProps["onFilterProperty"];
 }) {
   const { product } = useWorkspace();
+  const { timeZone } = useDisplayPreferences();
   const [search, setSearch] = useState("");
   const [feedback, setFeedback] = useState<{ error: boolean; message: string }>();
   const properties = Object.entries(event.properties).sort(([a], [b]) => a.localeCompare(b));
@@ -612,8 +616,8 @@ function EventInspector({
             ],
             ["Source ID", event.source_id ?? "Not provided"],
             ["Client", event.source],
-            ["Event time (UTC)", new Date(event.timestamp).toISOString()],
-            ["Received at (UTC)", new Date(event.received_at).toISOString()],
+            [`Event time (${timeZone})`, displayTimestamp(event.timestamp, timeZone)],
+            [`Received at (${timeZone})`, displayTimestamp(event.received_at, timeZone)],
             ["Identity kind", event.identity_kind ?? "Not provided"],
             ["Actor ID", event.actor_id ?? "Not provided"],
             ["Session ID", event.session_id ?? "Not provided"],

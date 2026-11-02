@@ -100,6 +100,8 @@ test("date changes use stable placeholders and breakdown loading stays local", a
     const pending = page.getByRole("status", { name: "Loading overview", exact: true });
     await expect(pending).toBeVisible();
     await expect(pending.locator(".metric-card")).toHaveCount(4);
+    await expect(pending.locator(".metrics [skullet-loading]")).toHaveCount(4);
+    await expect(pending.locator("[skullet-bar]").first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Refresh analytics" })).toHaveAttribute(
       "aria-busy",
       "true",
@@ -353,7 +355,7 @@ test("server HTML includes real navigation and controls without a full-page skel
     const html = await response.text();
     expect(html).toContain('aria-label="Main navigation"');
     expect(html).toContain('aria-label="Select project"');
-    expect(html).toContain("Last 30 days");
+    if (route !== "/settings") expect(html).toContain("Last 30 days");
     expect(html).toContain('aria-label="Loading workspace"');
     expect(html).not.toContain('aria-label="Loading page"');
     expect(html).toContain('aria-label="Project sources"');

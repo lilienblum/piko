@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
 import type { ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -11,7 +12,6 @@ import { Link } from "@tanstack/react-router";
 import { AnalyticsChart } from "@/components/analytics-chart";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -117,9 +117,8 @@ export function SeriesChart({
               role="status"
               aria-label="Loading chart"
             >
-              <div className="chart-placeholder-label">
-                <Spinner /> Loading chart
-              </div>
+              <Skeleton className="h-full w-full" aria-hidden="true" />
+              <span className="sr-only">Loading chart</span>
             </div>
           ) : !data || emptyMessage ? (
             <div className="series-chart chart-message" role="status">

@@ -51,10 +51,12 @@ for (const route of ["/", "/explore", "/settings"]) {
         if (width >= 768)
           await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeVisible();
-        await expect(page.locator(".topbar")).toHaveCSS("min-height", "64px");
-        await expect(page.getByRole("combobox", { name: "Date range" })).toContainText(
-          "Last 30 days",
-        );
+        await expect(page.locator(".topbar")).toHaveCount(0);
+        await expect(page.locator(".page-content > .workspace-toolbar")).toBeVisible();
+        if (route !== "/settings")
+          await expect(page.getByRole("combobox", { name: "Date range" })).toContainText(
+            "Last 30 days",
+          );
         await expect(page.getByRole("status", { name: "Loading workspace" })).toBeVisible();
         await expect(page.getByRole("status", { name: "Loading workspace" })).toHaveCSS(
           "opacity",
@@ -62,25 +64,28 @@ for (const route of ["/", "/explore", "/settings"]) {
         );
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeDisabled();
         await expect(page.getByRole("button", { name: "Appearance" })).toBeDisabled();
-        await expect(page.getByRole("combobox", { name: "Date range" })).toBeDisabled();
+        if (route !== "/settings")
+          await expect(page.getByRole("combobox", { name: "Date range" })).toBeDisabled();
         await page.evaluate(() => document.fonts.ready);
         const shell = page.locator("#main-content");
         const before = await shell.boundingBox();
         const content = await page.locator(".page-content").boundingBox();
-        const toolbar = await page.locator(".topbar").elementHandle();
+        const toolbar = await page.locator(".workspace-toolbar").elementHandle();
         expect(before?.x).toBe(width < 768 ? 0 : collapsed ? 56 : 240);
         await page.screenshot({ path: test.info().outputPath("before-hydration.png") });
         release();
-        if ((await (await runtime).json()).live)
-          await expect(page.getByRole("status", { name: "Live updates: live" })).toBeVisible();
+        await runtime;
+        await expect(page.locator(".live-status")).toHaveCount(0);
         await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(
           project.name,
         );
-        await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+        if (route !== "/settings")
+          await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
         await expect(page.getByRole("status", { name: "Loading workspace" })).not.toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeEnabled();
         await expect(page.getByRole("button", { name: "Appearance" })).toBeEnabled();
-        await expect(page.getByRole("combobox", { name: "Date range" })).toBeEnabled();
+        if (route !== "/settings")
+          await expect(page.getByRole("combobox", { name: "Date range" })).toBeEnabled();
         await expect(page.getByRole("alert")).not.toBeVisible();
         const after = await shell.boundingBox();
         const loaded = await page.locator(".page-content").boundingBox();
