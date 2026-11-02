@@ -25,7 +25,9 @@ export function AllowedOriginsField({
   value,
   onChange,
   disabled,
+  website,
 }: {
+  website?: string | null;
   id: string;
   value: string;
   onChange: (value: string) => void;
@@ -44,6 +46,18 @@ export function AllowedOriginsField({
         spellCheck={false}
         placeholder="https://example.com, https://*.example.com"
       />
+      {website && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          disabled={disabled}
+          onClick={() => onChange(website)}
+        >
+          Use project website
+        </Button>
+      )}
       <FieldDescription>
         Optional, comma-separated. A wildcard allows subdomains, not the root domain. Leave blank
         for CLI, mobile, or server keys.

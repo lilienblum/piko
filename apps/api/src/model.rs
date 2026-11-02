@@ -98,6 +98,8 @@ impl Event {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Product {
+    pub website_url: Option<String>,
+    pub favicon_version: Option<String>,
     pub id: String,
     pub name: String,
     pub retention_days: i64,
@@ -140,11 +142,15 @@ impl SourceInput {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProductInput {
+    pub website_url: Option<String>,
     pub name: String,
     pub retention_days: i64,
 }
 impl ProductInput {
     pub fn validate(&self) -> ApiResult<()> {
+        if let Some(website) = &self.website_url {
+            crate::website::normalize(website)?;
+        }
         if self.name.trim().is_empty()
             || self.name.len() > 80
             || !(1..=3650).contains(&self.retention_days)

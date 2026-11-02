@@ -115,7 +115,7 @@ impl Store {
 pub fn product(db: &rusqlite::Connection, id: &str) -> ApiResult<Product> {
     let mut product = db
         .query_row(
-            "SELECT id,name,retention_days,created_at FROM products WHERE id=?",
+            "SELECT id,name,retention_days,created_at,website_url,favicon_version FROM products WHERE id=?",
             [id],
             row_product,
         )
@@ -132,11 +132,13 @@ fn row_product(r: &rusqlite::Row<'_>) -> rusqlite::Result<Product> {
         retention_days: r.get(2)?,
         created_at: r.get(3)?,
         sources: Vec::new(),
+        website_url: r.get(4)?,
+        favicon_version: r.get(5)?,
     })
 }
 pub fn products(db: &rusqlite::Connection) -> ApiResult<Vec<Product>> {
     let mut q = db
-        .prepare("SELECT id,name,retention_days,created_at FROM products ORDER BY created_at,id")
+        .prepare("SELECT id,name,retention_days,created_at,website_url,favicon_version FROM products ORDER BY created_at,id")
         .map_err(anyhow::Error::from)?;
     let mut products = q
         .query_map([], row_product)
@@ -154,15 +156,14 @@ pub fn save_product(
     input: ProductInput,
 ) -> ApiResult<Product> {
     input.validate()?;
-    let id = match id {
-        Some(id) => {
-            product(db, &id)?;
-            id
-        }
-        None => uuid::Uuid::new_v4().to_string(),
+    let previous = id.as_deref().map(|id| product(db, id)).transpose()?;
+    let website = match input.website_url.as_deref() {
+        Some(value) => crate::website::normalize(value)?,
+        None => previous.as_ref().and_then(|p| p.website_url.clone()),
     };
+    let id = id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let tx = db.unchecked_transaction().map_err(anyhow::Error::from)?;
-    tx.execute("INSERT INTO products(id,name,retention_days,created_at) VALUES (?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET name=?2,retention_days=?3",params![id,input.name.trim(),input.retention_days,chrono::Utc::now().to_rfc3339()]).map_err(anyhow::Error::from)?;
+    tx.execute("INSERT INTO products(id,name,retention_days,created_at,website_url) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET name=?2,retention_days=?3,website_url=?5,favicon=CASE WHEN website_url IS ?5 THEN favicon ELSE NULL END,favicon_version=CASE WHEN website_url IS ?5 THEN favicon_version ELSE NULL END",params![id,input.name.trim(),input.retention_days,chrono::Utc::now().to_rfc3339(),website]).map_err(anyhow::Error::from)?;
     tx.execute(
         "INSERT OR IGNORE INTO sources(id,product_id,name,created_at) VALUES (?1,?1,'Events',?2)",
         params![id, chrono::Utc::now().to_rfc3339()],
@@ -234,4 +235,19 @@ pub fn resolve_key(
     crate::origins::check(&allowed, origin)?;
     crate::sources::get(db, &id, &source_id)?;
     Ok((product(db, &id)?, source_id))
+}
+
+pub fn cache_favicon(
+    db: &rusqlite::Connection,
+    id: &str,
+    website: &str,
+    bytes: &[u8],
+) -> ApiResult<Product> {
+    let version = format!("{:x}", Sha256::digest(bytes));
+    db.execute(
+        "UPDATE products SET favicon=?,favicon_version=? WHERE id=? AND website_url=?",
+        params![bytes, version, id, website],
+    )
+    .map_err(anyhow::Error::from)?;
+    product(db, id)
 }

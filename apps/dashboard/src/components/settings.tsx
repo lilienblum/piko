@@ -59,7 +59,7 @@ function ProductFields({
   prefix,
   disabled = false,
 }: {
-  value: { name: string; retention_days: number };
+  value: { name: string; retention_days: number; website_url: string };
   onChange: (v: typeof value) => void;
   prefix: string;
   disabled?: boolean;
@@ -77,6 +77,23 @@ function ProductFields({
           placeholder="e.g. Orbit"
           onChange={(e) => onChange({ ...value, name: e.target.value })}
         />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor={`${prefix}-website`}>Website</FieldLabel>
+        <Input
+          id={`${prefix}-website`}
+          inputMode="url"
+          autoComplete="url"
+          disabled={disabled}
+          value={value.website_url}
+          maxLength={2048}
+          placeholder="example.com (optional)"
+          onChange={(e) => onChange({ ...value, website_url: e.target.value })}
+        />
+        <FieldDescription>
+          Optional. Piko fetches and stores the site icon on your server. Website addresses don’t
+          restrict keys automatically.
+        </FieldDescription>
       </Field>
       <Field>
         <FieldLabel htmlFor={`${prefix}-retention`}>Retention (days)</FieldLabel>
@@ -102,7 +119,7 @@ export function Settings() {
   const { timeZone, setTimeZone } = useDisplayPreferences();
   const timeZones = Array.from(new Set(["UTC", timeZone, ...Intl.supportedValuesOf("timeZone")]));
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({ name: "", retention_days: 30 });
+  const [draft, setDraft] = useState({ name: "", retention_days: 30, website_url: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<Product>();
@@ -117,7 +134,7 @@ export function Settings() {
       setCreatedProduct(saved);
       await reload(saved.id);
       setOpen(false);
-      setDraft({ name: "", retention_days: 30 });
+      setDraft({ name: "", retention_days: 30, website_url: "" });
       setCreatedProduct(undefined);
     } catch (e) {
       setError(
@@ -222,6 +239,7 @@ function ProductSettings({ product }: { product: Product }) {
   const keySource = product.sources?.find((source) => source.id === keySourceId);
   const [draft, setDraft] = useState({
     name: product.name,
+    website_url: product.website_url ?? "",
     retention_days: product.retention_days,
   });
   const [keyState, setKeyState] = useState<
@@ -316,7 +334,12 @@ function ProductSettings({ product }: { product: Product }) {
               onSubmit={(e) => {
                 e.preventDefault();
                 void action("save", async () => {
-                  await api(`/products/${product.id}`, "PATCH", draft);
+                  const saved = await api<Product>(`/products/${product.id}`, "PATCH", draft);
+                  setDraft({
+                    name: saved.name,
+                    retention_days: saved.retention_days,
+                    website_url: saved.website_url ?? "",
+                  });
                   setNotice("Project changes saved.");
                   try {
                     await reload();
@@ -329,6 +352,13 @@ function ProductSettings({ product }: { product: Product }) {
               }}
             >
               <ProductFields value={draft} onChange={setDraft} prefix="edit" disabled={busy} />
+              {product.website_url && (
+                <p className="quiet mt-3">
+                  {product.favicon_version
+                    ? "Website icon saved."
+                    : "No supported favicon found. Using the default project icon; save again to retry."}
+                </p>
+              )}
               <div className="settings-save">
                 <code title={product.id}>{product.id.slice(0, 8)}…</code>
                 <Button type="submit" disabled={busy} aria-busy={pending === "save"}>
@@ -499,6 +529,7 @@ function ProductSettings({ product }: { product: Product }) {
                 </Field>
                 <AllowedOriginsField
                   id="key-origins"
+                  website={product.website_url}
                   value={allowedOrigins}
                   onChange={setAllowedOrigins}
                   disabled={busy || keyState.status !== "ready"}

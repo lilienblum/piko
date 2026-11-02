@@ -1,3 +1,4 @@
+import { ProjectIcon } from "./project-icon";
 import {
   createContext,
   useCallback,
@@ -11,7 +12,7 @@ import {
 } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, Calendar03Icon, CubeIcon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Calendar03Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ValueSelect } from "./value-select";
 import { ThemeMenu } from "./theme-provider";
@@ -157,14 +158,14 @@ export function AppShell() {
       }
       className="product-select"
       contentClassName="min-w-56 max-w-[calc(100vw-32px)]"
-      icon={<HugeiconsIcon icon={CubeIcon} strokeWidth={2} aria-hidden="true" />}
+      icon={<ProjectIcon product={product} />}
       onValueChange={(value) => {
         clearDrilldown();
         setSelected(value);
         savePreference("piko:product", value);
         setNow(Date.now());
       }}
-      options={products.map((p) => [p.id, p.name])}
+      options={products.map((p) => [p.id, p.name, <ProjectIcon key={p.id} product={p} />])}
     />
   );
   return (

@@ -985,3 +985,99 @@ async fn origin_restrictions_are_enforced_before_writing_and_persist() {
     assert_eq!(result["summary"]["total"], 1);
     restarted.writer.stop().await;
 }
+
+#[tokio::test]
+async fn project_websites_and_cached_icons_persist_clear_and_stay_scoped() {
+    let f = Fixture::new(16);
+    let (id, _) = f.product("Website icon").await;
+    let (other, _) = f.product("No website").await;
+    let path = format!("/api/products/{id}");
+    let (status, product) = call(
+        &f.app,
+        "PATCH",
+        &path,
+        "",
+        json!({"name":"Website icon","retention_days":30,"website_url":"http://127.0.0.1/path"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(product["website_url"], "http://127.0.0.1");
+    assert!(product["favicon_version"].is_null());
+    let bytes = include_bytes!("../../../tests/fixtures/favicon.png");
+    let sql = f.state.store.sqlite().unwrap();
+    let cached = piko::store::cache_favicon(&sql, &id, "http://127.0.0.1", bytes).unwrap();
+    assert!(cached.favicon_version.is_some());
+    // A late fetch from an old site cannot replace the current icon.
+    let stale =
+        piko::store::cache_favicon(&sql, &id, "https://different.example", b"stale").unwrap();
+    assert_eq!(stale.favicon_version, cached.favicon_version);
+    drop(sql);
+    f.state.writer.stop().await;
+    let restarted = AppState::open(&config(f.dir.path(), 16)).unwrap();
+    let app = router(restarted.clone());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("{path}/favicon"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()["content-type"], "image/png");
+    assert_eq!(response.headers()["x-content-type-options"], "nosniff");
+    assert!(
+        response.headers()["content-security-policy"]
+            .to_str()
+            .unwrap()
+            .contains("sandbox")
+    );
+    assert_eq!(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .as_ref(),
+        bytes
+    );
+    let (status, _) = call(
+        &app,
+        "GET",
+        &format!("/api/products/{other}/favicon"),
+        "",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (_, preserved) = call(
+        &app,
+        "PATCH",
+        &path,
+        "",
+        json!({"name":"Renamed","retention_days":40}),
+    )
+    .await;
+    assert_eq!(
+        preserved["favicon_version"],
+        cached.favicon_version.unwrap()
+    );
+    let (status, _) = call(&app,"PATCH",&path,"",json!({"name":"Renamed","retention_days":40,"website_url":"https://user:secret@example.com"})).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (_, cleared) = call(
+        &app,
+        "PATCH",
+        &path,
+        "",
+        json!({"name":"Renamed","retention_days":40,"website_url":""}),
+    )
+    .await;
+    assert!(cleared["website_url"].is_null());
+    assert!(cleared["favicon_version"].is_null());
+    let (status, _) = call(&app, "GET", &format!("{path}/favicon"), "", Value::Null).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    restarted.writer.stop().await;
+}

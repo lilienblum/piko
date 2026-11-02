@@ -7,10 +7,10 @@ use rusqlite::{OptionalExtension, params};
 pub fn migrate(db: &mut rusqlite::Connection) -> anyhow::Result<()> {
     let version: i64 = db.query_row("PRAGMA user_version", [], |row| row.get(0))?;
     anyhow::ensure!(
-        version <= 4,
+        version <= 5,
         "Catalog schema is newer than this API supports"
     );
-    if version == 4 {
+    if version == 5 {
         return Ok(());
     }
     let tx = db.transaction()?;
@@ -41,7 +41,12 @@ pub fn migrate(db: &mut rusqlite::Connection) -> anyhow::Result<()> {
         ALTER TABLE products DROP COLUMN kind;
         PRAGMA user_version=3;")?;
     }
-    tx.execute_batch("ALTER TABLE ingestion_keys ADD COLUMN allowed_origins TEXT NOT NULL DEFAULT '[]'; PRAGMA user_version=4;")?;
+    if version < 4 {
+        tx.execute_batch(
+            "ALTER TABLE ingestion_keys ADD COLUMN allowed_origins TEXT NOT NULL DEFAULT '[]';",
+        )?;
+    }
+    tx.execute_batch("ALTER TABLE products ADD COLUMN website_url TEXT; ALTER TABLE products ADD COLUMN favicon BLOB; ALTER TABLE products ADD COLUMN favicon_version TEXT; PRAGMA user_version=5;")?;
     tx.commit()?;
     Ok(())
 }

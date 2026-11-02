@@ -9,6 +9,7 @@ pub mod runtime;
 pub mod sources;
 pub mod store;
 pub mod telemetry;
+pub mod website;
 use crate::{
     error::{ApiError, ApiResult},
     ingest::Writer,
@@ -20,7 +21,7 @@ use axum::{
     extract::{DefaultBodyLimit, Path, Request, State},
     http::{HeaderMap, StatusCode, header},
     middleware::{self, Next},
-    response::Response,
+    response::{IntoResponse, Response},
     routing::{delete, get, patch, post},
 };
 use serde::Deserialize;
@@ -34,6 +35,7 @@ pub struct AppState {
     pub writer: Writer,
     pub changes: changes::Changes,
     ingest_slots: Arc<tokio::sync::Semaphore>,
+    favicon_slots: Arc<tokio::sync::Semaphore>,
 }
 pub struct Config {
     pub data_dir: PathBuf,
@@ -54,6 +56,7 @@ impl AppState {
             store,
             writer,
             ingest_slots: Arc::new(tokio::sync::Semaphore::new(config.queue_capacity)),
+            favicon_slots: Arc::new(tokio::sync::Semaphore::new(2)),
         })
     }
 }
@@ -61,6 +64,7 @@ pub fn router(state: AppState) -> Router {
     let admin = Router::new()
         .route("/api/products", get(list_products).post(create_product))
         .route("/api/products/{id}", patch(update_product))
+        .route("/api/products/{id}/favicon", get(project_favicon))
         .route(
             "/api/products/{id}/sources",
             get(list_sources).post(create_source),
@@ -180,26 +184,71 @@ async fn ingest_events(
 async fn list_products(State(s): State<AppState>) -> ApiResult<Json<Vec<Product>>> {
     Ok(Json(s.store.state(store::products).await?))
 }
+async fn with_favicon(s: &AppState, product: Product) -> Product {
+    let Some(website) = product
+        .website_url
+        .clone()
+        .filter(|_| product.favicon_version.is_none())
+    else {
+        return product;
+    };
+    let Ok(_permit) = s.favicon_slots.try_acquire() else {
+        return product;
+    };
+    let Some(bytes) = website::fetch_icon(&website).await else {
+        return product;
+    };
+    let id = product.id.clone();
+    // A concurrent website edit must never receive the old site's icon.
+    s.store
+        .state(move |db| store::cache_favicon(db, &id, &website, &bytes))
+        .await
+        .unwrap_or(product)
+}
 async fn create_product(
     State(s): State<AppState>,
     Json(input): Json<ProductInput>,
 ) -> ApiResult<Json<Product>> {
-    Ok(Json(
-        s.store
-            .state(move |db| store::save_product(db, None, input))
-            .await?,
-    ))
+    let product = s
+        .store
+        .state(move |db| store::save_product(db, None, input))
+        .await?;
+    Ok(Json(with_favicon(&s, product).await))
 }
 async fn update_product(
     State(s): State<AppState>,
     Path(id): Path<String>,
     Json(input): Json<ProductInput>,
 ) -> ApiResult<Json<Product>> {
-    Ok(Json(
-        s.store
-            .state(move |db| store::save_product(db, Some(id), input))
-            .await?,
-    ))
+    let product = s
+        .store
+        .state(move |db| store::save_product(db, Some(id), input))
+        .await?;
+    Ok(Json(with_favicon(&s, product).await))
+}
+async fn project_favicon(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Response> {
+    use rusqlite::OptionalExtension;
+    let bytes = s
+        .store
+        .state(move |db| {
+            db.query_row("SELECT favicon FROM products WHERE id=?", [id], |row| {
+                row.get::<_, Option<Vec<u8>>>(0)
+            })
+            .optional()
+            .map_err(anyhow::Error::from)?
+            .flatten()
+            .ok_or_else(ApiError::missing)
+        })
+        .await?;
+    let kind = website::content_type(&bytes).ok_or_else(ApiError::missing)?;
+    Ok((
+        [
+            ("content-type", kind),
+            ("content-security-policy", "default-src 'none'; sandbox"),
+        ],
+        bytes,
+    )
+        .into_response())
 }
 async fn list_keys(
     State(s): State<AppState>,
