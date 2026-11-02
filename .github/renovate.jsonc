@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    // Recommended defaults, digest pinning, release age, and weekly lock maintenance.
+    "config:best-practices",
+    // One grouped PR for minor/patch updates; majors stay separate.
+    "group:allNonMajor",
+  ],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["before 6am on monday"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+  },
+  "labels": ["dependencies"],
+  "packageRules": [
+    // Keep major updates human-reviewed.
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+    },
+    // Refresh in-range Cargo updates with the full dependency graph.
+    {
+      "matchManagers": ["cargo"],
+      "rangeStrategy": "replace",
+    },
+    // Keep existing devDependency ranges; bun.lock provides reproducibility.
+    {
+      "matchDepTypes": ["devDependencies"],
+      "rangeStrategy": "auto",
+    },
+  ],
+}
