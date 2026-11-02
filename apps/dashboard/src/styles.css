@@ -1618,8 +1618,14 @@ h1 {
 .workspace-sources {
   min-height: 0;
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scroll-padding-block: 8px;
   border-top: 1px solid var(--sidebar-border);
+}
+.workspace-sources [data-slot="sidebar-group-label"] {
+  overflow: hidden;
 }
 .workspace-sources [data-slot="sidebar-menu-button"] {
   box-shadow: none;
@@ -1670,6 +1676,9 @@ h1 {
   .workspace-project
   [data-slot="select-icon"],
 :where([data-collapsible="icon"], html[data-sidebar-initial="collapsed"]) .source-selected-mark,
+:where([data-collapsible="icon"], html[data-sidebar-initial="collapsed"])
+  .workspace-source-placeholder
+  > :last-child,
 :where([data-collapsible="icon"], html[data-sidebar-initial="collapsed"]) .workspace-source-empty {
   display: none;
 }
