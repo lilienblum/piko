@@ -60,10 +60,10 @@ function Shell({ children }: { children: ReactNode }) {
           dangerouslySetInnerHTML={{
             __html: `<!--
 THESIS: Piko is a compact measurement tool with a graphic identity; evidence remains the main content.
-OWN-WORLD: One Kanagawa Wave palette: sumi-ink surfaces, warm Fuji text, Surimi Orange actions, Carp Yellow measurements, violet/aqua categories, and green outcomes. Preserve Geist, squared controls, and the upright three-bar mark.
+OWN-WORLD: One Kanagawa Wave palette: sumi-ink surfaces, warm Fuji text, Surimi Orange actions, Carp Yellow measurements, violet/aqua categories, and green outcomes. Geist, softly squared controls, inset fields, single-frame segments, and the upright three-bar mark.
 STORY: Choose project, source and dates; follow an event trend; inspect the evidence; manage collection. Identity stays optional.
 FIRST VIEWPORT: Keep the project/source rail and report controls. Overview uses six square analytical widgets; Explore keeps its query, chart, breakdown and event stream.
-FORM: User-selected Kanagawa Wave palette from the official rebelot/kanagawa.nvim source. One static dark theme with no selector or preference. Preserve the approved layouts and behavior.
+FORM: User-selected Kanagawa Wave palette from the official rebelot/kanagawa.nvim source. One static dark theme with no selector or preference. Rebuilt shadcn Base UI defaults: semantic state tokens, 6px controls, 12px cards, warm selection, and soft overlay shadows. Preserve the approved layouts and behavior; this is an existing-world component redesign, not a new surface concept.
 -->`,
           }}
         />
