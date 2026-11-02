@@ -2,12 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Cancel01Icon,
-  FilterHorizontalIcon,
-  PlayIcon,
-  RefreshIcon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon, FilterHorizontalIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,7 +71,7 @@ export function Explore() {
   );
 }
 function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
-  const { product, source, sourceId, range, refresh, refreshKey, hasUpdates } = useWorkspace();
+  const { product, source, sourceId, range, refresh, refreshKey } = useWorkspace();
   const initial: Spec = {
     ...defaultSpec,
     event: drilldown?.event ?? "",
@@ -309,10 +304,10 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                   <Button
                     type="submit"
                     aria-label="Run query"
-                    aria-busy={query.refreshing}
-                    disabled={query.refreshing}
+                    aria-busy={query.loading}
+                    disabled={query.loading}
                   >
-                    {query.refreshing ? (
+                    {query.loading ? (
                       <Spinner data-icon="inline-start" aria-hidden="true" />
                     ) : (
                       <HugeiconsIcon
@@ -407,29 +402,6 @@ function ExploreProduct({ drilldown }: { drilldown?: ExploreDrilldown }) {
                 </strong>
                 <span>across {number(data.summary.total)} matching events</span>
               </div>
-              <Button
-                variant={hasUpdates ? "secondary" : "outline"}
-                size="sm"
-                className="w-40 text-xs"
-                aria-label="Refresh results"
-                aria-busy={query.refreshing}
-                disabled={query.refreshing}
-                onClick={refresh}
-              >
-                {query.refreshing ? (
-                  <Spinner data-icon="inline-start" aria-hidden="true" />
-                ) : hasUpdates ? (
-                  <span className="live-dot" aria-hidden="true" />
-                ) : (
-                  <HugeiconsIcon
-                    icon={RefreshIcon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                    aria-hidden="true"
-                  />
-                )}
-                <span role="status">{hasUpdates ? "New data available" : "Refresh results"}</span>
-              </Button>
             </div>
             {data.summary.total === 0 ? (
               <NoEvents />

@@ -118,7 +118,7 @@ test("visitor chart excludes installation identities without shrinking overview 
     if (request.url().endsWith("/query")) queries.push(request.postDataJSON());
   });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+  await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("6");
   expect(new Set(queries.map((query) => JSON.stringify(query))).size).toBe(2);
   const visitors = chartResponse(page, "actors");
@@ -214,7 +214,7 @@ test("selection loading stays inside the chart and failed refresh keeps the exis
   await expect(page.locator(".activity-widget [data-slot='chart']")).toBeVisible();
   const plot = await page.locator(".activity-widget [data-slot='chart']").elementHandle();
   fail = true;
-  await page.getByRole("button", { name: "Refresh analytics" }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByRole("alert")).toContainText("Chart temporarily unavailable");
   expect(await plot?.evaluate((element) => element.isConnected)).toBe(true);
   expect(await page.locator(".activity-widget").boundingBox()).toEqual(bounds);
@@ -243,7 +243,7 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   await select(page, "Select project", products.tool.name);
   await select(page, "Chart metric", "p95 duration");
   await expect(page.locator(".activity-widget [data-slot='chart']")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+  await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.locator('.activity-widget .analytics-plot svg circle[r="2.5"]')).toHaveCount(1);
   const ticks = await page
@@ -269,7 +269,7 @@ test("calendar interval buttons query raw weekly and monthly aggregates and reta
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+  await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   const weekly = chartResponse(page, "count", "week");
   await page.getByRole("button", { name: "Weekly", exact: true }).click();
   const weeks = await result(weekly);
@@ -309,7 +309,7 @@ for (const width of [1440, 894, 390]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+    await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
     await expect(page.locator(".overview-widget")).toHaveCount(6);
     const bounds = await page.locator(".overview-widget").evaluateAll((widgets) =>
       widgets.map((widget) => {

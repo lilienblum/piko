@@ -82,7 +82,7 @@ for (const route of ["/", "/explore", "/settings"]) {
           project.name,
         );
         if (route !== "/settings")
-          await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+          await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
         await expect(page.getByRole("status", { name: "Loading workspace" })).not.toBeVisible();
         await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeEnabled();
         await expect(page.getByRole("button", { name: "Appearance" })).toHaveCount(0);

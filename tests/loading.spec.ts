@@ -101,10 +101,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
     await expect(pending.locator(".overview-widget")).toHaveCount(6);
     await expect(pending.locator(".widget-value [skullet-loading]")).toHaveCount(3);
     await expect(pending.locator("[skullet-bar]").first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Refresh analytics" })).toHaveAttribute(
-      "aria-busy",
-      "true",
-    );
+    await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "true");
     const pendingChart = await pending.locator(".activity-widget").boundingBox();
     const pendingMetric = await pending.locator(".overview-widget").first().boundingBox();
     if (!chart || !metric || !pendingChart || !pendingMetric)

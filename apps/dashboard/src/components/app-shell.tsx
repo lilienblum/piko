@@ -12,7 +12,7 @@ import {
 } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ValueSelect } from "./value-select";
@@ -23,7 +23,6 @@ import { api, type Product, type Source } from "@/lib/api";
 import { readPreference, savePreference } from "@/lib/preferences";
 import { ErrorState } from "./shared";
 import { PageLoading } from "./loading";
-import { Spinner } from "@/components/ui/spinner";
 import { LiveUpdates } from "./live-updates";
 
 type Context = {
@@ -35,7 +34,6 @@ type Context = {
   range: { from: string; to: string };
   refresh: () => void;
   refreshKey: number;
-  hasUpdates: boolean;
   setAnalyticsPending: (pending: boolean) => void;
 };
 const Workspace = createContext<Context | null>(null);
@@ -62,8 +60,11 @@ export function AppShell() {
   const [days, setDays] = useState(30);
   const [now, setNow] = useState(Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
-  const [hasUpdates, setHasUpdates] = useState(false);
-  const refreshBackground = useCallback(() => setNow(Date.now()), []);
+  const refreshBackground = useCallback(() => {
+    setNow(Date.now());
+    // Fixed-date drilldowns also need invalidation when late events arrive.
+    setRefreshKey((key) => key + 1);
+  }, []);
   const [error, setError] = useState("");
   const path = useLocation({ select: (l) => l.pathname });
   const [rangePath, setRangePath] = useState(path);
@@ -143,8 +144,7 @@ export function AppShell() {
   }, [days, now]);
   const range = drilldown ? { from: drilldown.from, to: drilldown.to } : defaultRange;
   const refresh = () => {
-    setNow(Date.now());
-    setRefreshKey((key) => key + 1);
+    refreshBackground();
     if (error) void reload().catch((e) => setError(e.message));
   };
   const label = path === "/explore" ? "Explore" : path === "/settings" ? "Settings" : "Overview";
@@ -179,7 +179,6 @@ export function AppShell() {
         range,
         refresh,
         refreshKey,
-        hasUpdates,
         setAnalyticsPending,
       }}
     >
@@ -213,12 +212,15 @@ export function AppShell() {
           <LiveUpdates
             productId={product?.id}
             view={path}
-            scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, refreshKey])}
+            scopeKey={JSON.stringify([product?.id, sourceId, days, drilldown, path])}
             busy={loading || analyticsPending}
-            onPending={setHasUpdates}
             onRefresh={refreshBackground}
           />
-          <div className="page-content" data-page={label.toLowerCase()}>
+          <div
+            className="page-content"
+            data-page={label.toLowerCase()}
+            aria-busy={loading || analyticsPending}
+          >
             <div className="workspace-toolbar">
               <div className="workspace-toolbar-navigation">
                 <SidebarTrigger disabled={!preferencesReady} />
@@ -253,20 +255,6 @@ export function AppShell() {
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Refresh analytics"
-                    onClick={refresh}
-                    disabled={loading || analyticsPending}
-                    aria-busy={loading || analyticsPending}
-                  >
-                    {loading || analyticsPending ? (
-                      <Spinner aria-hidden="true" />
-                    ) : (
-                      <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" />
-                    )}
-                  </Button>
                 </div>
               )}
             </div>

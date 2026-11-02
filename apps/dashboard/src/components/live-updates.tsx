@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useChangeChannel } from "@/lib/use-change-channel";
 import { parseChangeEnvelope } from "@/lib/change-envelope";
 
@@ -7,7 +7,6 @@ interface Props {
   view: string;
   scopeKey: string;
   busy: boolean;
-  onPending: (pending: boolean) => void;
   onRefresh: () => void;
 }
 
@@ -37,27 +36,22 @@ export function LiveUpdates(props: Props) {
       clearTimeout(timer);
     };
   }, []);
-  return enabled ? <ChannelStatus {...props} /> : null;
+  return <AutomaticUpdates {...props} live={enabled} />;
 }
 
-function ChannelStatus({ productId, view, scopeKey, busy, onPending, onRefresh }: Props) {
+function AutomaticUpdates({
+  productId,
+  view,
+  scopeKey,
+  busy,
+  onRefresh,
+  live,
+}: Props & { live: boolean }) {
   const [dirty, setDirty] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const previousStatus = useRef("connecting");
+  const [available, setAvailable] = useState(true);
   const lastRefresh = useRef(0);
   const previousScope = useRef(scopeKey);
-  const { status } = useChangeChannel((message) => {
-    if (message.type !== "changed") return;
-    const change = parseChangeEnvelope(message.data);
-    if (change && productId && (change.products === null || change.products.includes(productId)))
-      setDirty(true);
-  });
-  useEffect(() => {
-    // No replay: reconcile every connection, including changes between the initial
-    // query and first subscription. Explore offers a refresh without replacing results.
-    if (status === "open" && previousStatus.current !== "open") setDirty(true);
-    previousStatus.current = status;
-  }, [status]);
+  const markDirty = useCallback(() => setDirty(true), []);
   useEffect(() => {
     if (previousScope.current !== scopeKey) {
       previousScope.current = scopeKey;
@@ -65,20 +59,32 @@ function ChannelStatus({ productId, view, scopeKey, busy, onPending, onRefresh }
     }
   }, [scopeKey]);
   useEffect(() => {
-    const visibility = () => {
-      const shown = document.visibilityState === "visible";
-      setVisible(shown);
-      if (shown) setDirty(true);
+    const available = () => document.visibilityState === "visible" && navigator.onLine;
+    const resume = () => {
+      const ready = available();
+      setAvailable(ready);
+      if (ready) markDirty();
     };
-    setVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", visibility);
-    return () => document.removeEventListener("visibilitychange", visibility);
-  }, []);
+    setAvailable(available());
+    // Reconcile even without channels: ephemeral hints may be lost, or collection
+    // may be running in standalone mode. Hidden/offline tabs do no polling work.
+    const timer = setInterval(() => {
+      if (available()) markDirty();
+    }, 30_000);
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("focus", resume);
+    window.addEventListener("online", resume);
+    window.addEventListener("offline", resume);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("online", resume);
+      window.removeEventListener("offline", resume);
+    };
+  }, [markDirty]);
   useEffect(() => {
-    onPending(dirty && view === "/explore");
-  }, [dirty, view, onPending]);
-  useEffect(() => {
-    if (!dirty || !visible || busy || !productId || view !== "/") return;
+    if (!dirty || !available || busy || !productId || !["/", "/explore"].includes(view)) return;
     // At most one refresh in flight and one queued. Bursts share a short timer.
     const delay = Math.max(750, 1_500 - (Date.now() - lastRefresh.current));
     const timer = setTimeout(() => {
@@ -87,6 +93,22 @@ function ChannelStatus({ productId, view, scopeKey, busy, onPending, onRefresh }
       onRefresh();
     }, delay);
     return () => clearTimeout(timer);
-  }, [dirty, visible, busy, productId, view, onRefresh]);
+  }, [dirty, available, busy, productId, view, onRefresh]);
+  return live ? <ChangeSubscription productId={productId} onChange={markDirty} /> : null;
+}
+
+function ChangeSubscription({ productId, onChange }: { productId?: string; onChange: () => void }) {
+  const previousStatus = useRef("connecting");
+  const { status } = useChangeChannel((message) => {
+    if (message.type !== "changed") return;
+    const change = parseChangeEnvelope(message.data);
+    if (change && productId && (change.products === null || change.products.includes(productId)))
+      onChange();
+  });
+  useEffect(() => {
+    // No replay: reconcile every connection, including the initial subscription.
+    if (status === "open" && previousStatus.current !== "open") onChange();
+    previousStatus.current = status;
+  }, [status, onChange]);
   return null;
 }

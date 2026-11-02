@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { queryProduct, type QueryResult } from "./api";
+import { ApiError, queryProduct, type QueryResult } from "./api";
 export function useQuery(
   product: string | undefined,
   body: Record<string, unknown>,
@@ -19,20 +19,38 @@ export function useQuery(
   useEffect(() => {
     if (!product) return;
     const controller = new AbortController();
-    queryProduct(product, JSON.parse(key), controller.signal)
-      .then((data) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const load = async () => {
+      try {
+        const data = await queryProduct(product, JSON.parse(key), controller.signal);
         if (!controller.signal.aborted) setResult({ key: requestKey, scope, data });
-      })
-      .catch((error: Error) => {
-        if (!controller.signal.aborted)
-          setResult((previous) => ({
-            key: requestKey,
-            scope,
-            data: previous?.scope === scope ? previous.data : undefined,
-            error: error.message,
-          }));
-      });
-    return () => controller.abort();
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setResult((previous) => ({
+          key: requestKey,
+          scope,
+          data: previous?.scope === scope ? previous.data : undefined,
+          error: error instanceof Error ? error.message : "Could not load analytics",
+        }));
+        // Recover transient failures without a click. Scope changes cancel both
+        // requests and retries; the visible-tab reconciliation handles longer outages.
+        const transient =
+          !(error instanceof ApiError) || error.status >= 500 || error.status === 429;
+        if (transient && attempts < 3 && document.visibilityState === "visible" && navigator.onLine)
+          timer = setTimeout(
+            () => {
+              if (document.visibilityState === "visible" && navigator.onLine) void load();
+            },
+            1_000 * 2 ** attempts++,
+          );
+      }
+    };
+    void load();
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
   }, [product, key, requestKey, scope]);
   const current = result?.key === requestKey;
   const data = result?.scope === scope ? result.data : undefined;

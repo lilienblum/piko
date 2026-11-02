@@ -13,7 +13,7 @@ async function admin(path: string, body?: unknown) {
 async function openWorkspace(page: Page) {
   await page.goto("/");
   await expect(page.getByRole("combobox", { name: "Select project" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Refresh analytics", exact: true })).toBeEnabled();
+  await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
 }
 async function select(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
@@ -118,7 +118,7 @@ test("date range buttons support keyboard selection, persistence, and narrow lay
   page,
 }) => {
   await openWorkspace(page);
-  await expect(page.getByRole("button", { name: "Refresh analytics", exact: true })).toBeEnabled();
+  await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   const group = page.getByRole("group", { name: "Date range", exact: true });
   const seven = group.getByRole("button", { name: "Last 7 days", exact: true });
   const thirty = group.getByRole("button", { name: "Last 30 days", exact: true });
@@ -357,7 +357,7 @@ test("website breakdown links preserve product and dates across reload and histo
   await expect(page.getByRole("combobox", { name: "Select project" })).toContainText(web.name);
   await expect(page.getByText("across 16 matching events")).toBeVisible();
   const refresh = page.waitForRequest((r) => r.url().endsWith(`/products/${web.id}/query`));
-  await page.getByRole("button", { name: "Refresh analytics" }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   expect((await refresh).postDataJSON()).toMatchObject({ from: selection.from, to: selection.to });
   await page.getByRole("link", { name: "Clear selection", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();

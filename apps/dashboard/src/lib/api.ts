@@ -94,7 +94,13 @@ export async function queryProduct(
   body: Record<string, unknown>,
   signal: AbortSignal,
 ) {
-  const request = () => api<QueryResult>(`/products/${product}/query`, "POST", body, signal);
+  const request = () =>
+    api<QueryResult>(
+      `/products/${product}/query`,
+      "POST",
+      body,
+      AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+    );
   try {
     return await request();
   } catch (error) {

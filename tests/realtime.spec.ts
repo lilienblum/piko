@@ -37,7 +37,10 @@ function event(kind: "website" | "tool") {
       kind === "website" ? { path: "/live" } : { command: "build", success: true, duration_ms: 42 },
   };
 }
-async function send(product: Fixture, events: ReturnType<typeof event>[]) {
+async function send(
+  product: Fixture,
+  events: (ReturnType<typeof event> & { timestamp?: string })[],
+) {
   const response = await fetch(`${endpoint}/api/ingest`, {
     method: "POST",
     headers: { authorization: `Bearer ${product.key}`, "content-type": "application/json" },
@@ -93,19 +96,15 @@ test("committed website events refresh without replacing charts; retries and oth
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
 });
 
-test("Explore announces new CLI data while preserving pagination, draft, and inspection", async ({
+test("Explore updates CLI results automatically while preserving pagination, draft, and inspection", async ({
   page,
 }) => {
   const tool = await fixture("tool", 31);
   await open(page, tool, "/explore");
   await expect(page.getByText("across 31 matching events")).toBeVisible();
-  // Reconcile any changes missed before the initial connection opened.
-  if (await page.getByRole("button", { name: "Refresh results" }).isVisible()) {
-    await page.getByRole("button", { name: "Refresh results" }).click();
-    await expect(page.getByText("New data available", { exact: true })).toBeHidden();
-  }
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
+  await expect(page.locator(".event-card")).toHaveAttribute("aria-busy", "false");
   await page.getByRole("button", { name: "Filter", exact: true }).click();
   await page.getByLabel("Property", { exact: true }).fill("success");
   await page.getByLabel("Typed value").fill("true");
@@ -114,40 +113,21 @@ test("Explore announces new CLI data while preserving pagination, draft, and ins
   await expect(details).toBeVisible();
   const original = await details.textContent();
   const queryBox = await page.locator(".query-builder").boundingBox();
-  await ingest(tool, "tool");
-  await expect(page.getByText("New data available", { exact: true })).toBeVisible({
-    timeout: 10000,
-  });
-  await expect(page.getByText("Page 2 of 3")).toBeVisible();
-  await expect(page.getByText("across 31 matching events")).toBeVisible();
+  // Push the inspected record completely off the current offset page.
+  await ingest(tool, "tool", 20);
+  await expect(page.getByText("across 51 matching events")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("Page 2 of 4")).toBeVisible();
   expect(await details.textContent()).toBe(original);
   expect(await page.locator(".query-builder").boundingBox()).toEqual(queryBox);
+  await page.getByRole("button", { name: "Older event", exact: true }).click();
+  await expect(details).toContainText("Event 2 of 15 on this page");
   await page.keyboard.press("Escape");
   await expect(details).toBeHidden();
+  await expect(page.locator(".stream-inspect").first()).toBeFocused();
   await expect(page.getByLabel("Typed value")).toHaveValue("true");
-  await page.getByRole("button", { name: "Refresh results" }).scrollIntoViewIfNeeded();
-  const refreshBox = await page.locator(".query-builder").boundingBox();
-  const row = await page.locator(".event-card tbody tr").first().elementHandle();
-  let release = () => {};
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route("**/api/products/*/query", async (route) => {
-    await gate;
-    await route.continue();
-  });
-  try {
-    await page.getByRole("button", { name: "Refresh results" }).click();
-    await expect(page.getByRole("button", { name: "Refresh results" })).toBeDisabled();
-    expect(await row?.evaluate((element) => element.isConnected)).toBe(true);
-    expect(await page.locator(".query-builder").boundingBox()).toEqual(refreshBox);
-    await expect(page.getByText("Page 2 of 3")).toBeVisible();
-  } finally {
-    release();
-  }
-  await expect(page.getByText("across 32 matching events")).toBeVisible();
-  await expect(page.getByText("Page 2 of 3")).toBeVisible();
-  await expect(page.getByText("New data available", { exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: /Refresh results|Refresh analytics/ })).toHaveCount(
+    0,
+  );
 });
 
 test("reconnect catches up committed data after an interrupted SSE stream", async ({ page }) => {
@@ -282,9 +262,6 @@ test("Explore catches up changes between its initial query and first live connec
       )
       .toBe(true);
     release();
-    await expect(page.getByRole("button", { name: "Refresh results" })).toBeVisible();
-    await expect(page.getByText("across 1 matching events")).toBeVisible();
-    await page.getByRole("button", { name: "Refresh results" }).click();
     await expect(page.getByText("across 3 matching events")).toBeVisible();
   } finally {
     release();
@@ -306,4 +283,111 @@ test("a transient runtime capability error retries and enables live updates", as
   await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2", {
     timeout: 10000,
   });
+});
+
+for (const path of ["/", "/explore"]) {
+  test(`periodic reconciliation at ${path} works without channels and pauses when hidden`, async ({
+    page,
+  }) => {
+    const web = await fixture("website", 1);
+    await page.addInitScript((id) => localStorage.setItem("piko:product", id), web.id);
+    await page.route("**/_piko/runtime", (route) => route.fulfill({ json: { live: false } }));
+    await page.clock.install();
+    await page.goto(path);
+    const content = page
+      .locator(path === "/" ? ".activity-widget .widget-value" : ".explore-summary")
+      .first();
+    await expect(content).toContainText("1");
+    await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
+    let requests = 0;
+    page.on("request", (request) => {
+      if (request.url().endsWith(`/products/${web.id}/query`)) requests++;
+    });
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await ingest(web, "website", 2);
+    await page.clock.runFor(65_000);
+    expect(requests).toBe(0);
+    await expect(content).toContainText("1");
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.clock.runFor(2_000);
+    await expect(content).toContainText("3");
+    await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
+    await ingest(web, "website", 2);
+    await page.clock.runFor(32_000);
+    await expect(content).toContainText("5");
+  });
+}
+
+test("an online event catches up without a channel or a click", async ({ page }) => {
+  const tool = await fixture("tool", 1);
+  await page.addInitScript((id) => localStorage.setItem("piko:product", id), tool.id);
+  await page.route("**/_piko/runtime", (route) => route.fulfill({ json: { live: false } }));
+  await page.goto("/explore");
+  await expect(page.getByText("across 1 matching events")).toBeVisible();
+  await ingest(tool, "tool", 2);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(page.getByText("across 3 matching events")).toBeVisible();
+});
+
+test("event bursts queue one catch-up behind an in-flight query", async ({ page }) => {
+  const tool = await fixture("tool", 1);
+  await open(page, tool, "/explore");
+  await expect(page.getByText("across 1 matching events")).toBeVisible();
+  await page.waitForTimeout(2200);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requests = 0;
+  await page.route("**/api/products/*/query", async (route) => {
+    requests++;
+    await gate;
+    await route.continue();
+  });
+  try {
+    await ingest(tool, "tool");
+    await expect.poll(() => requests).toBe(1);
+    for (let index = 0; index < 3; index++) await ingest(tool, "tool");
+    await page.waitForTimeout(2200);
+    expect(requests).toBe(1);
+    await expect(page.getByRole("button", { name: "Run query", exact: true })).toBeEnabled();
+    await expect(page.getByText("across 1 matching events")).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.getByText("across 5 matching events")).toBeVisible({ timeout: 10000 });
+  expect(requests).toBe(2);
+});
+
+test("fixed-date Explore receives late events without expanding its date range", async ({
+  page,
+}) => {
+  const web = await fixture("website", 1);
+  const selection = {
+    productId: web.id,
+    from: new Date(Date.now() - 3600_000).toISOString(),
+    to: new Date().toISOString(),
+  };
+  const bodies: Record<string, unknown>[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith(`/products/${web.id}/query`)) bodies.push(request.postDataJSON());
+  });
+  await open(page, web, `/explore?drilldown=${encodeURIComponent(JSON.stringify(selection))}`);
+  await expect(page.getByText("across 1 matching events")).toBeVisible();
+  await send(web, [
+    { ...event("website"), timestamp: new Date(Date.now() - 60_000).toISOString() },
+  ]);
+  await expect(page.getByText("across 2 matching events")).toBeVisible({ timeout: 10000 });
+  expect(bodies.length).toBeGreaterThan(1);
+  for (const body of bodies) expect(body).toMatchObject({ from: selection.from, to: selection.to });
+  await expect(page.getByRole("button", { name: "Fixed dates", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });

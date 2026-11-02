@@ -125,13 +125,18 @@ export function EventStream({
   const { product } = useWorkspace();
   const { timeZone } = useDisplayPreferences();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // The inspector owns the page it opened from. Incoming events can update the
+  // table without changing its record, adjacent-event navigation, or property search.
+  const inspectionEvents = useRef<EventRow[]>([]);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const focusId = useRef<string | null>(null);
   const restoreFocus = useRef(true);
-  const selectedIndex = events.findIndex((event) => event.event_id === selectedId);
-  const selected = loading ? undefined : events[selectedIndex];
+  const selectedIndex = inspectionEvents.current.findIndex(
+    (event) => event.event_id === selectedId,
+  );
+  const selected = loading ? undefined : inspectionEvents.current[selectedIndex];
   function selectAdjacent(index: number) {
-    const next = events[index];
+    const next = inspectionEvents.current[index];
     if (next) {
       focusId.current = next.event_id;
       setSelectedId(next.event_id);
@@ -145,7 +150,7 @@ export function EventStream({
       {
         id: "event",
         header: "Event",
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
           const event = row.original;
           const icon =
             event.name === "page_view"
@@ -167,6 +172,7 @@ export function EventStream({
                 onClick={() => {
                   restoreFocus.current = true;
                   focusId.current = event.event_id;
+                  inspectionEvents.current = table.options.data;
                   setSelectedId(event.event_id);
                 }}
               >
@@ -382,14 +388,14 @@ export function EventStream({
                 ["30", "30 rows"],
                 ["50", "50 rows"],
               ]}
-              disabled={loading || refreshing}
+              disabled={loading}
               onValueChange={(value) => onPageSizeChange(Number(value))}
               className="stream-page-size"
             />
             <Button
               size="sm"
               variant="outline"
-              disabled={loading || refreshing || page === 0}
+              disabled={loading || page === 0}
               onClick={() => onPageChange(page - 1)}
             >
               <HugeiconsIcon
@@ -403,7 +409,7 @@ export function EventStream({
             <Button
               size="sm"
               variant="outline"
-              disabled={loading || refreshing || page + 1 >= pageCount}
+              disabled={loading || page + 1 >= pageCount}
               onClick={() => onPageChange(page + 1)}
             >
               Next
@@ -428,7 +434,9 @@ export function EventStream({
           showCloseButton={false}
           finalFocus={() =>
             restoreFocus.current && focusId.current
-              ? (buttons.current.get(focusId.current) ?? false)
+              ? (buttons.current.get(focusId.current) ??
+                document.querySelector<HTMLButtonElement>(".stream-inspect") ??
+                false)
               : false
           }
         >
@@ -454,7 +462,7 @@ export function EventStream({
             <>
               <div className="inspector-navigation">
                 <span aria-live="polite">
-                  Event {selectedIndex + 1} of {events.length} on this page
+                  Event {selectedIndex + 1} of {inspectionEvents.current.length} on this page
                 </span>
                 <div>
                   <Button
@@ -470,7 +478,7 @@ export function EventStream({
                     variant="outline"
                     size="icon-sm"
                     aria-label="Older event"
-                    disabled={selectedIndex + 1 === events.length}
+                    disabled={selectedIndex + 1 === inspectionEvents.current.length}
                     onClick={() => selectAdjacent(selectedIndex + 1)}
                   >
                     <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" />
