@@ -13,6 +13,7 @@ async function admin(path: string, body?: unknown) {
 async function openWorkspace(page: Page) {
   await page.goto("/");
   await expect(page.getByRole("combobox", { name: "Select project" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh analytics", exact: true })).toBeEnabled();
 }
 async function select(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();

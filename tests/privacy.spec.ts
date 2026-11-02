@@ -371,16 +371,30 @@ test("shutdown has one deadline for the whole queue and discards leftovers", asy
   const f = await fixture("timeoutMs:120", true);
   try {
     await open(page, f.server.url);
-    const elapsed = await page.evaluate(async () => {
-      for (let i = 0; i < 80; i++) window.tracker.track("queued");
-      const started = performance.now();
-      await window.tracker.shutdown();
-      return performance.now() - started;
+    const result = await page.evaluate(async () => {
+      // Observe starts in the browser: a cancelled request can reach the server after shutdown.
+      const originalFetch = window.fetch;
+      let attempts = 0;
+      window.fetch = new Proxy(originalFetch, {
+        apply(target, receiver, args) {
+          attempts++;
+          return Reflect.apply(target, receiver, args);
+        },
+      });
+      try {
+        for (let i = 0; i < 80; i++) window.tracker.track("queued");
+        const started = performance.now();
+        await window.tracker.shutdown();
+        const elapsed = performance.now() - started;
+        const beforeFlush = attempts;
+        await window.tracker.flush();
+        return { elapsed, beforeFlush, afterFlush: attempts };
+      } finally {
+        window.fetch = originalFetch;
+      }
     });
-    expect(elapsed).toBeLessThan(400);
-    const attempts = f.requests.length;
-    await page.evaluate(() => window.tracker.flush());
-    expect(f.requests).toHaveLength(attempts);
+    expect(result.elapsed).toBeLessThan(400);
+    expect(result.afterFlush).toBe(result.beforeFlush);
   } finally {
     f.release();
     await f.server.stop(true);
