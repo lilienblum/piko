@@ -41,6 +41,8 @@ test.beforeAll(async () => {
       retention_days: 180,
     });
     products[name] = product;
+    if (name === "website")
+      await admin(`/products/${product.id}/sources`, { name: "Unused mobile source" });
     const { key } = await admin(`/products/${product.id}/keys`, { label: "Chart fixture" });
     const events =
       name === "website"
@@ -335,13 +337,14 @@ for (const width of [1440, 894, 390]) {
     await expect(page.locator(".outcomes-widget [data-chart-kind='donut']")).toHaveCount(0);
     await expect(page.locator(".outcomes-widget")).toContainText("No success values received");
     await expect(page.locator(".audience-widget .widget-value")).toHaveText("3");
-    const donut = page.locator(".sources-widget svg.ts-chart");
-    await donut.press("Home");
-    await expect(page.locator(".sources-widget .ts-chart-tooltip")).toHaveAccessibleName(
-      /6 events/,
+    const sources = page.locator(".sources-widget");
+    await expect(sources.locator("[data-chart-kind='donut']")).toHaveCount(0);
+    await expect(sources.locator(".widget-value")).toHaveText("6");
+    await expect(sources).not.toContainText("100%");
+    await expect(sources.getByRole("link", { name: "Explore Events", exact: true })).toBeVisible();
+    await expect(sources.locator("footer")).toContainText(
+      "All matching events come from this source.",
     );
-    await donut.press("Escape");
-    await expect(page.locator(".sources-widget .ts-chart-tooltip")).toBeHidden();
   });
 }
 

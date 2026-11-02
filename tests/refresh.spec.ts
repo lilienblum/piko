@@ -70,7 +70,8 @@ test("automatic Overview update retains cards and chart without layout movement"
     );
   const before = await geometry();
   expect(cards).toHaveLength(6);
-  expect(charts.length).toBeGreaterThan(1);
+  expect(charts.length).toBeGreaterThan(0);
+  await expect(page.locator(".sources-widget .widget-value")).toHaveText("31");
   const release = await holdQuery(page);
   try {
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
@@ -78,6 +79,7 @@ test("automatic Overview update retains cards and chart without layout movement"
     for (const element of [...cards, ...charts])
       expect(await element.evaluate((element) => element.isConnected)).toBe(true);
     await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("31");
+    await expect(page.locator(".sources-widget .widget-value")).toHaveText("31");
     expect(await geometry()).toEqual(before);
     await page.screenshot({ path: test.info().outputPath("overview-refreshing.png") });
   } finally {

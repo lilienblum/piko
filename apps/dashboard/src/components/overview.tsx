@@ -11,6 +11,7 @@ import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-
 import { BreakdownRows } from "./shared";
 import { AnalyticsChart } from "./analytics-chart";
 import { ValueSelect } from "./value-select";
+import { SourceIcon } from "./source-icon";
 import { DonutChart, OverviewWidget, WidgetContent, WidgetValue } from "./overview-widgets";
 
 type ChartChoice = {
@@ -137,6 +138,8 @@ function ProductOverview() {
       ),
     [sources.data, product?.sources],
   );
+  const singleSource =
+    sourceSlices.length === 1 && sourceSlices[0].group ? sourceSlices[0] : undefined;
   const outcomes = useMemo(
     () =>
       s?.success_rate == null
@@ -268,9 +271,11 @@ function ProductOverview() {
             error={sources.error}
             retry={refresh}
             footer={
-              sources.data
-                ? `${number(sources.data.summary.total)} events in this range`
-                : "Share of events by source"
+              singleSource
+                ? "All matching events come from this source."
+                : sources.data
+                  ? `${number(sources.data.summary.total)} events in this range`
+                  : "Share of events by source"
             }
           >
             <WidgetContent
@@ -284,30 +289,53 @@ function ProductOverview() {
                     : undefined
               }
             >
-              <DonutChart
-                data={sourceSlices}
-                label="Events by source"
-                value={compactCount.format(sources.data?.summary.total ?? 0)}
-                detail="events"
-              />
+              {singleSource ? (
+                <div className="flex flex-1 items-center">
+                  <WidgetValue
+                    value={number(singleSource.value)}
+                    label={singleSource.value === 1 ? "event" : "events"}
+                    loading={false}
+                  />
+                </div>
+              ) : (
+                <DonutChart
+                  data={sourceSlices}
+                  label="Events by source"
+                  value={compactCount.format(sources.data?.summary.total ?? 0)}
+                  detail="events"
+                />
+              )}
               <div className="widget-legend">
                 {sourceSlices.map((slice) => {
                   const target = slice.group && drilldown("source_id", slice.group);
                   const content = (
                     <>
-                      <span className="legend-dot" style={{ background: slice.color }} />
+                      {singleSource ? (
+                        <SourceIcon
+                          name={slice.label}
+                          icon={
+                            product.sources.find((source) => source.id === slice.group?.label)?.icon
+                          }
+                        />
+                      ) : (
+                        <span className="legend-dot" style={{ background: slice.color }} />
+                      )}
                       <span className="legend-name" title={slice.label}>
                         {slice.label}
                       </span>
-                      <strong>{number(slice.value)}</strong>
-                      <span>
-                        {number((slice.value / (sources.data?.summary.total || 1)) * 100, 1)}%
-                      </span>
+                      {!singleSource && (
+                        <>
+                          <strong>{number(slice.value)}</strong>
+                          <span>
+                            {number((slice.value / (sources.data?.summary.total || 1)) * 100, 1)}%
+                          </span>
+                        </>
+                      )}
                     </>
                   );
                   return target ? (
                     <Link
-                      className="legend-row"
+                      className={singleSource ? "legend-row single-source-row" : "legend-row"}
                       key={slice.id}
                       to="/projects/$projectSlug/explore"
                       params={{ projectSlug: product.slug }}
@@ -317,7 +345,10 @@ function ProductOverview() {
                       {content}
                     </Link>
                   ) : (
-                    <div className="legend-row" key={slice.id}>
+                    <div
+                      className={singleSource ? "legend-row single-source-row" : "legend-row"}
+                      key={slice.id}
+                    >
                       {content}
                     </div>
                   );

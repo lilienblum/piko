@@ -2081,6 +2081,18 @@ html {
   height: 7px;
   border-radius: 2px;
 }
+.single-source-row {
+  grid-template-columns: 20px minmax(0, 1fr);
+  min-height: 36px;
+  font-size: 14px;
+}
+.sources-widget .single-source-row > svg {
+  width: 20px;
+  height: 20px;
+}
+.single-source-row > .legend-name {
+  text-align: left;
+}
 a.legend-row {
   text-decoration: none;
 }
