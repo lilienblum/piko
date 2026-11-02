@@ -1829,6 +1829,13 @@ html {
   width: 32px;
   height: 32px;
 }
+@media (min-width: 768px) {
+  :where([data-collapsible="icon"], html[data-sidebar-initial="collapsed"])
+    .workspace-brand-row
+    .brand-link {
+    display: none;
+  }
+}
 @media (max-height: 480px) {
   .workspace-brand-row {
     height: 48px;

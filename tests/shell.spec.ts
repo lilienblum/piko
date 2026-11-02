@@ -18,6 +18,14 @@ test.beforeAll(async () => {
   });
   expect(response.ok).toBe(true);
   project = await response.json();
+  for (let index = 1; index <= 6; index++) {
+    const source = await fetch(`${endpoint}/api/products/${project.id}/sources`, {
+      method: "POST",
+      headers: { "x-piko-admin": "1", "content-type": "application/json" },
+      body: JSON.stringify({ name: `Fixture source ${index}` }),
+    });
+    expect(source.ok).toBe(true);
+  }
 });
 
 for (const route of ["/", "/explore", "/settings"]) {
@@ -81,6 +89,9 @@ for (const route of ["/", "/explore", "/settings"]) {
         await page.evaluate(() => document.fonts.ready);
         if (width >= 768) await expectSourcesFit(page);
         const shell = page.locator("#main-content");
+        const toggleBefore = await page
+          .getByRole("button", { name: "Toggle Sidebar" })
+          .boundingBox();
         const before = await shell.boundingBox();
         const content = await page.locator(".page-content").boundingBox();
         const toolbar =
@@ -106,6 +117,9 @@ for (const route of ["/", "/explore", "/settings"]) {
             page.getByRole("button", { name: "Choose date range", exact: true }),
           ).toBeEnabled();
         await expect(page.getByRole("alert")).not.toBeVisible();
+        expect(await page.getByRole("button", { name: "Toggle Sidebar" }).boundingBox()).toEqual(
+          toggleBefore,
+        );
         const after = await shell.boundingBox();
         const loaded = await page.locator(".page-content").boundingBox();
         expect(after?.x).toBe(before?.x);

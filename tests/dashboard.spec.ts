@@ -262,11 +262,29 @@ test("sidebar collapses, persists and keeps navigation keyboard accessible", asy
   await openWorkspace(page);
   const sidebar = page.locator('[data-slot="sidebar"][data-state]');
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
-  await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+  const toggle = sidebar
+    .locator('[data-slot="sidebar-header"]')
+    .getByRole("button", { name: "Toggle Sidebar", exact: true });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("title", "Collapse sidebar");
+  const top = (await toggle.boundingBox())?.y;
+  await toggle.click();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
-  await expect(page.locator(".sidebar-footer")).not.toBeVisible();
+  await expect(toggle).toHaveAttribute("title", "Expand sidebar");
+  await expect(toggle).toBeInViewport();
+  expect((await toggle.boundingBox())?.y).toBe(top);
+  await expect(
+    sidebar.locator('[data-slot="sidebar-footer"] [data-slot="sidebar-trigger"]'),
+  ).toHaveCount(0);
   await page.reload();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+  await expect(toggle).toBeVisible();
+  expect((await toggle.boundingBox())?.y).toBe(top);
+  await toggle.press("Enter");
+  await expect(sidebar).toHaveAttribute("data-state", "expanded");
+  await toggle.press("Enter");
+  await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+  await expect(toggle).toBeFocused();
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Explore events" })).toBeVisible();
   const measure = page.getByRole("combobox", { name: "Measure", exact: true });

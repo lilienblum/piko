@@ -47,7 +47,7 @@ export function WorkspaceSidebar({
   navigationReady: boolean;
   onSourceChange: (id: string) => void;
 }) {
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, open } = useSidebar();
   const sources = [{ id: "", name: "All sources", icon: null }, ...(product?.sources ?? [])];
   return (
     <Sidebar collapsible="icon" className="workspace-sidebar">
@@ -64,7 +64,7 @@ export function WorkspaceSidebar({
               <span className="brand-word">piko</span>
             </span>
           </Link>
-          {isMobile && (
+          {isMobile ? (
             <Button
               variant="ghost"
               size="icon"
@@ -73,6 +73,13 @@ export function WorkspaceSidebar({
             >
               <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
             </Button>
+          ) : (
+            <SidebarTrigger
+              className="workspace-sidebar-toggle"
+              disabled={!navigationReady}
+              aria-expanded={navigationReady ? open : undefined}
+              title={open ? "Collapse sidebar" : "Expand sidebar"}
+            />
           )}
         </div>
         <div className="workspace-project" title={product?.name}>
@@ -186,11 +193,6 @@ export function WorkspaceSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarTrigger
-          className="workspace-sidebar-toggle"
-          disabled={!navigationReady}
-          title="Toggle sidebar"
-        />
       </SidebarFooter>
     </Sidebar>
   );
