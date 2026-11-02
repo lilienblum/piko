@@ -354,7 +354,7 @@ test("server HTML includes real navigation and controls without a full-page skel
     const html = await response.text();
     expect(html).toContain('aria-label="Main navigation"');
     expect(html).toContain('aria-label="Select project"');
-    if (route !== "/settings") expect(html).toContain("Last 30 days");
+    if (route !== "/settings") expect(html).toContain("Last 7 days");
     expect(html).toContain('aria-label="Loading workspace"');
     expect(html).not.toContain('aria-label="Loading page"');
     expect(html).toContain('aria-label="Project sources"');

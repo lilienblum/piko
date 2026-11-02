@@ -348,3 +348,8 @@ Bun formatting, typecheck, lint, all 50 unit tests, and the production build pas
 The project picker and newly created project selection now share one navigation path that starts with All sources and Last 30 days. It explicitly clears retained date parameters and drops Overview filters/chart choices, Explore queries and drafts, drilldowns, and pagination. Switching destinations within a project, direct report URLs, and Back/Forward retain their existing behavior.
 
 Bun formatting, typecheck, lint, all 50 unit tests, and the SDK/dashboard production build pass. All 8 URL-state browser tests pass, including three new regressions covering custom dates, calendar periods, legacy snapshots, source/event/property filters, query drafts, pagination, and history restoration. Tests verify both the visible results and unfiltered server query payloads. Manual preview inspection confirmed Today clears on switching from Orbit to Orbit CLI. Isolated test apps and temporary databases were removed. Backend tests were not rerun for this dashboard-only change.
+
+
+## Seven-day default — 2026-11-02
+
+Changed the initial reporting range and project-switch reset to Last 7 days, including server-rendered controls. Explicit date links and saved date preferences remain supported. Bun formatting, typecheck, lint, all 50 unit tests, and the production build pass. All 22 focused browser tests pass, covering SSR/hydration, keyboard date selection, persistence, URL state, project resets, and Back/Forward. Test apps and databases were cleaned up. Backend tests were not rerun for this dashboard-only change.

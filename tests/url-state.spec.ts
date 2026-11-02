@@ -234,9 +234,9 @@ for (const [label, dates] of Object.entries<Record<string, string>>({
     );
     await select(page, "Select project", project.name);
     await expect(page.locator(".activity-widget .widget-value")).toHaveText("31");
-    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "7" });
     await expect(page.getByRole("button", { name: "Choose date range" })).toContainText(
-      "Last 30 days",
+      "Last 7 days",
     );
     await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText("Events");
     await expect(page.getByRole("combobox", { name: "Breakdown" })).toContainText("Top events");
@@ -245,8 +245,8 @@ for (const [label, dates] of Object.entries<Record<string, string>>({
     expect(body.source_id).toBeUndefined();
     expect(body.event).toBeUndefined();
     expect(body.source).toBeUndefined();
-    expect(Date.parse(body.to) - Date.parse(body.from)).toBeGreaterThanOrEqual(29 * 86400000);
-    expect(Date.parse(body.to) - Date.parse(body.from)).toBeLessThanOrEqual(30 * 86400000);
+    expect(Date.parse(body.to) - Date.parse(body.from)).toBeGreaterThanOrEqual(6 * 86400000);
+    expect(Date.parse(body.to) - Date.parse(body.from)).toBeLessThanOrEqual(7 * 86400000);
     await page.goBack();
     await expect(page).toHaveURL(previous);
     await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText(
@@ -258,7 +258,7 @@ for (const [label, dates] of Object.entries<Record<string, string>>({
     });
     await page.goForward();
     await expect(page.locator(".activity-widget .widget-value")).toHaveText("31");
-    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+    expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "7" });
   });
 }
 
@@ -298,7 +298,7 @@ test("switching projects resets Explore queries, drafts, drilldowns and paginati
   await select(page, "Select project", project.name);
   await expect(page.getByText("across 31 matching events")).toBeVisible();
   expect(new URL(page.url()).pathname).toBe(`/projects/${project.slug}/explore`);
-  expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "30" });
+  expect(Object.fromEntries(params(page))).toEqual({ source: "all", days: "7" });
   expect((await request).postDataJSON()).toMatchObject({
     measure: "count",
     group_by: "name",

@@ -74,7 +74,7 @@ for (const route of ["/", "/explore", "/settings"]) {
         if (route !== "/settings")
           await expect(
             page.getByRole("button", { name: "Choose date range", exact: true }),
-          ).toContainText("Last 30 days");
+          ).toContainText("Last 7 days");
         await expect(page.getByRole("status", { name: "Loading workspace" })).toBeVisible();
         await expect(page.getByRole("status", { name: "Loading workspace" })).toHaveCSS(
           "opacity",

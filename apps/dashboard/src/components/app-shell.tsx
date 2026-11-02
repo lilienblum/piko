@@ -67,7 +67,7 @@ export function AppShell() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selected, setSelected] = useState("");
   const [sourceSelection, setSourceSelection] = useState<Record<string, string>>({});
-  const [savedDays, setSavedDays] = useState<7 | 30 | 90>(30);
+  const [savedDays, setSavedDays] = useState<7 | 30 | 90>(7);
   const [now, setNow] = useState(Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
   const refreshBackground = useCallback(() => {
@@ -84,7 +84,7 @@ export function AppShell() {
   const currentSearch = useSearch({ strict: false });
   const drilldown = view === "/explore" ? currentSearch.drilldown : undefined;
   const requestedProject = projectSlug ?? search.project;
-  const days = search.days ?? (requestedProject ? 30 : savedDays);
+  const days = search.days ?? (requestedProject ? 7 : savedDays);
   useEffect(() => {
     setSidebarOpen(readPreference("piko:sidebar") !== "collapsed");
     setSelected(readPreference("piko:product") ?? "");
@@ -122,7 +122,7 @@ export function AppShell() {
       ...workspaceTarget(view, project.slug),
       search: {
         source: "all",
-        days: 30,
+        days: 7,
         // Explicitly clear the dates retained by the root search middleware.
         period: undefined,
         snapshot: undefined,

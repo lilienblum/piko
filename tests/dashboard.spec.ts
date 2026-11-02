@@ -121,7 +121,7 @@ test("date picker supports keyboard selection, persistence, and narrow layouts",
   await openWorkspace(page);
   await expect(page.locator(".page-content")).toHaveAttribute("aria-busy", "false");
   const trigger = page.getByRole("button", { name: "Choose date range", exact: true });
-  await expect(trigger).toContainText("Last 30 days");
+  await expect(trigger).toContainText("Last 7 days");
   await trigger.click();
   const group = page.getByRole("menu", { name: "Date range", exact: true });
   const thirty = group.getByRole("menuitemradio", { name: "Last 30 days", exact: true });
