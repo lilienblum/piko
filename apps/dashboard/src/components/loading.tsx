@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Skeleton as MeasuredSkeleton } from "skullet/react";
@@ -60,35 +59,6 @@ function BreakdownCardLoading({ title, rows }: { title: string; rows?: number })
         <BreakdownLoading rows={rows} />
       </CardContent>
     </Card>
-  );
-}
-export function OverviewLoading({ labels, chart }: { labels: string[]; chart: ReactNode }) {
-  return (
-    <section role="status" aria-label="Loading overview" aria-busy="true">
-      <span className="sr-only">Loading analytics…</span>
-      <div className="metrics" data-columns={labels.length}>
-        {labels.map((label) => (
-          <Card className="metric-card" key={label}>
-            <CardContent>
-              <div className="metric-label">{label}</div>
-              <div className="metric-value flex h-[1.4em] items-center">
-                <MeasuredSkeleton loading>
-                  <span>12,345</span>
-                </MeasuredSkeleton>
-              </div>
-              <div className="metric-placeholder-detail" aria-hidden="true">
-                <Skeleton className="h-[1.5em] w-32 max-w-full" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {chart}
-      <div className="breakdowns overview-breakdowns">
-        <BreakdownCardLoading title="Top events" />
-        <BreakdownCardLoading title="Breakdown" />
-      </div>
-    </section>
   );
 }
 export function ExploreLoading() {

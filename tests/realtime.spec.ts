@@ -68,7 +68,7 @@ test("committed website events refresh without replacing charts; retries and oth
   const web = await fixture("website", 1);
   const other = await fixture("tool", 1);
   await open(page, web);
-  await expect(page.locator(".metric-value").first()).toHaveText("1");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("1");
   await page.waitForTimeout(2200); // Settle the initial connection reconciliation and coalescing window.
   let queries = 0;
   page.on("request", (request) => {
@@ -77,18 +77,20 @@ test("committed website events refresh without replacing charts; retries and oth
   await ingest(other, "tool");
   await page.waitForTimeout(2000);
   expect(queries).toBe(0);
-  const chart = await page.locator(".analytics-plot").first().elementHandle();
+  const chart = await page.locator(".activity-widget .analytics-plot").first().elementHandle();
   const item = event("website");
   const result = await send(web, [item]);
   expect(result.accepted).toBe(1);
-  await expect(page.locator(".metric-value").first()).toHaveText("2", { timeout: 10000 });
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2", {
+    timeout: 10000,
+  });
   expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
   const beforeRetry = queries;
   const retry = await send(web, [item]);
   expect(retry.duplicates).toBe(1);
   await page.waitForTimeout(2000);
   expect(queries).toBe(beforeRetry);
-  await expect(page.locator(".metric-value").first()).toHaveText("2");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
 });
 
 test("Explore announces new CLI data while preserving pagination, draft, and inspection", async ({
@@ -170,11 +172,13 @@ test("reconnect catches up committed data after an interrupted SSE stream", asyn
   });
   await page.addInitScript((id) => localStorage.setItem("piko:product", id), web.id);
   await page.goto("/");
-  await expect(page.locator(".metric-value").first()).toHaveText("1");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("1");
   await expect.poll(() => connections, { timeout: 10000 }).toBeGreaterThanOrEqual(2);
   await ingest(web, "website", 3);
   release();
-  await expect(page.locator(".metric-value").first()).toHaveText("4", { timeout: 15000 });
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("4", {
+    timeout: 15000,
+  });
 });
 
 test("public ingestion keys cannot publish channel refresh notifications", async ({ request }) => {
@@ -299,5 +303,7 @@ test("a transient runtime capability error retries and enables live updates", as
   await open(page, web);
   expect(attempts).toBeGreaterThanOrEqual(2);
   await ingest(web, "website");
-  await expect(page.locator(".metric-value").first()).toHaveText("2", { timeout: 10000 });
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2", {
+    timeout: 10000,
+  });
 });

@@ -54,10 +54,20 @@ test("manual Overview refresh retains cards and chart without layout movement", 
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".metric-value").first()).toHaveText("31");
-  const card = await page.locator(".metric-card").first().elementHandle();
-  const chart = await page.locator(".chart-card").elementHandle();
-  const before = await page.locator(".chart-card").boundingBox();
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("31");
+  const widgets = page.locator(".overview-widget");
+  const cards = await widgets.elementHandles();
+  const charts = await page.locator(".overview-widget svg.ts-chart").elementHandles();
+  const geometry = () =>
+    widgets.evaluateAll((elements) =>
+      elements.map((element) => {
+        const { x, y, width, height } = element.getBoundingClientRect();
+        return { x, y, width, height };
+      }),
+    );
+  const before = await geometry();
+  expect(cards).toHaveLength(6);
+  expect(charts.length).toBeGreaterThan(1);
   const release = await holdQuery(page);
   try {
     await page.getByRole("button", { name: "Refresh analytics" }).click();
@@ -65,10 +75,10 @@ test("manual Overview refresh retains cards and chart without layout movement", 
       "aria-busy",
       "true",
     );
-    expect(await card?.evaluate((element) => element.isConnected)).toBe(true);
-    expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
-    await expect(page.locator(".metric-value").first()).toHaveText("31");
-    expect(await page.locator(".chart-card").boundingBox()).toEqual(before);
+    for (const element of [...cards, ...charts])
+      expect(await element.evaluate((element) => element.isConnected)).toBe(true);
+    await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("31");
+    expect(await geometry()).toEqual(before);
     await page.screenshot({ path: test.info().outputPath("overview-refreshing.png") });
   } finally {
     release();
@@ -84,7 +94,7 @@ test("manual Explore refresh retains results, rows, and current pagination", asy
   await expect(page.locator(".event-card")).toHaveAttribute("aria-busy", "false");
   // Establish geometry after scrolling from the pagination footer to the refresh control.
   await page.getByRole("button", { name: "Refresh analytics" }).scrollIntoViewIfNeeded();
-  const chart = await page.locator(".chart-card").elementHandle();
+  const chart = await page.locator(":is(.activity-widget, .chart-card)").elementHandle();
   const stream = await page.locator(".event-card").elementHandle();
   const row = await page.locator(".event-card tbody tr").first().elementHandle();
   const before = await page.locator(".event-card").boundingBox();
@@ -112,9 +122,11 @@ test("manual Explore refresh retains results, rows, and current pagination", asy
 for (const path of ["/", "/explore"]) {
   test(`failed refresh at ${path} keeps known results and can retry`, async ({ page }) => {
     await page.goto(path);
-    const content = page.locator(path === "/" ? ".metric-value" : ".explore-summary").first();
+    const content = page
+      .locator(path === "/" ? ".activity-widget .widget-value" : ".explore-summary")
+      .first();
     await expect(content).toContainText("31");
-    const chart = await page.locator(".chart-card").elementHandle();
+    const chart = await page.locator(":is(.activity-widget, .chart-card)").elementHandle();
     const row =
       path === "/explore"
         ? await page.locator(".event-card tbody tr").first().elementHandle()

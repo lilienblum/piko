@@ -77,7 +77,7 @@ test("one project combines website and mobile sources with scoped keys, queries,
 
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
-  await expect(page.locator(".metric-value").first()).toHaveText("2");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
   await expect(page.getByRole("link", { name: "Explore iOS app", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Explore iOS app", exact: true }).click();
   await expect(page.getByText("across 1 matching events")).toBeVisible();
@@ -133,7 +133,7 @@ test("one project combines website and mobile sources with scoped keys, queries,
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Select source", "Mobile app");
-  await expect(page.locator(".metric-value")).toHaveCount(4);
+  await expect(page.locator(".overview-widget")).toHaveCount(6);
   await expect(page.getByText("No actor IDs received")).toBeVisible();
   await select(page, "Breakdown", "Screens");
   await page.screenshot({
@@ -249,9 +249,16 @@ test("automatic and pinned source icons survive renames without changing analyti
   await ingest(key, "custom_event", 20);
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await select(page, "Select source", "Orbit CLI");
-  await expect(page.locator(".metric-value").first()).toHaveText("2");
-  const metrics = await page.locator(".metric-label").allTextContents();
-  expect(metrics).toEqual(["Events", "Identified actors", "Success rate", "Average duration"]);
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
+  const metrics = await page.locator(".overview-widget h2").allTextContents();
+  expect(metrics).toEqual([
+    "Activity over time",
+    "Sources",
+    "Breakdown",
+    "Identified actors",
+    "Success rate",
+    "Duration",
+  ]);
   await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Edit source Orbit CLI", exact: true }).click();
@@ -261,11 +268,13 @@ test("automatic and pinned source icons survive renames without changing analyti
   await expect(dialog).not.toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page.locator(".workspace-source-name")).toContainText("Orbit iOS");
-  await expect(page.locator(".metric-value").first()).toHaveText("2");
-  expect(await page.locator(".metric-label").allTextContents()).toEqual(metrics);
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("2");
+  expect(await page.locator(".overview-widget h2").allTextContents()).toEqual(metrics);
   await expect(page.getByRole("link", { name: "Explore custom_event", exact: true })).toBeVisible();
   await select(page, "Chart metric", "Average duration");
   await expect(
-    page.getByText("No numeric durations received in this range.", { exact: true }),
+    page
+      .locator(".activity-widget")
+      .getByText("No numeric durations received in this range.", { exact: true }),
   ).toBeVisible();
 });

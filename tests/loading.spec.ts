@@ -85,28 +85,29 @@ test("workspace bootstrap keeps navigation visible with honest pending product s
   await expect(
     page.getByRole("status", { name: "Loading workspace", exact: true }),
   ).not.toBeVisible();
-  await expect(page.locator(".metric-value").first()).toHaveText("8");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("8");
 });
 
 test("date changes use stable placeholders and breakdown loading stays local", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".metric-value").first()).toHaveText("8");
-  const chart = await page.locator(".chart-card").boundingBox();
-  const metric = await page.locator(".metric-card").first().boundingBox();
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("8");
+  const chart = await page.locator(".activity-widget").boundingBox();
+  const metric = await page.locator(".overview-widget").first().boundingBox();
   const release = await hold(page, "**/api/products/*/query");
   try {
     await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
-    const pending = page.getByRole("status", { name: "Loading overview", exact: true });
+    const pending = page.locator(".overview-grid");
+    await expect(pending).toHaveAttribute("aria-busy", "true");
     await expect(pending).toBeVisible();
-    await expect(pending.locator(".metric-card")).toHaveCount(4);
-    await expect(pending.locator(".metrics [skullet-loading]")).toHaveCount(4);
+    await expect(pending.locator(".overview-widget")).toHaveCount(6);
+    await expect(pending.locator(".widget-value [skullet-loading]")).toHaveCount(3);
     await expect(pending.locator("[skullet-bar]").first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Refresh analytics" })).toHaveAttribute(
       "aria-busy",
       "true",
     );
-    const pendingChart = await pending.locator(".chart-card").boundingBox();
-    const pendingMetric = await pending.locator(".metric-card").first().boundingBox();
+    const pendingChart = await pending.locator(".activity-widget").boundingBox();
+    const pendingMetric = await pending.locator(".overview-widget").first().boundingBox();
     if (!chart || !metric || !pendingChart || !pendingMetric)
       throw new Error("Expected chart and metric geometry");
     expect(Math.abs(pendingChart.y - chart.y)).toBeLessThanOrEqual(12);
@@ -116,7 +117,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
   } finally {
     release();
   }
-  await expect(page.locator(".metric-value").first()).toHaveText("8");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("8");
   const releaseBreakdown = await hold(
     page,
     "**/api/products/*/query",
@@ -128,7 +129,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
     await expect(
       page.getByRole("status", { name: "Loading breakdown", exact: true }),
     ).toBeVisible();
-    await expect(page.locator(".metric-value").first()).toHaveText("8");
+    await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("8");
     await expect(
       page.getByRole("status", { name: "Loading overview", exact: true }),
     ).not.toBeVisible();

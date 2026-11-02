@@ -19,6 +19,8 @@ async function select(page: Page, label: string, option: string) {
 function chartResponse(page: Page, measure: string, bucket = "day") {
   return page.waitForResponse((response) => {
     if (!response.url().endsWith("/query") || response.request().method() !== "POST") return false;
+    // The client retries advertised query-capacity responses; observe the completed attempt.
+    if (response.status() === 503 && response.headers()["retry-after"]) return false;
     const body = response.request().postDataJSON();
     return body.page_size === 1 && body.measure === measure && body.bucket === bucket;
   });
@@ -117,7 +119,7 @@ test("visitor chart excludes installation identities without shrinking overview 
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
-  await expect(page.locator(".metric-value").first()).toHaveText("6");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("6");
   expect(new Set(queries.map((query) => JSON.stringify(query))).size).toBe(2);
   const visitors = chartResponse(page, "actors");
   await select(page, "Chart metric", "Unique visitors");
@@ -128,12 +130,14 @@ test("visitor chart excludes installation identities without shrinking overview 
     identity_kind: "visitor",
     page_size: 1,
   });
-  await expect(page.locator(".metric-value").first()).toHaveText("6");
+  await expect(page.locator(".activity-widget .widget-value")).toHaveText("2");
   await expect(page.locator(".breakdowns .breakdown-value").first()).toHaveText("6");
   const hourly = chartResponse(page, "actors", "hour");
   await page.getByRole("button", { name: "Hourly", exact: true }).click();
   expect((await result(hourly)).summary.value).toBe(2);
-  await expect(page.getByText("Visitors counted once per hour.")).toBeVisible();
+  await expect(
+    page.locator('.activity-widget svg[aria-label="Unique visitors by UTC hour"]'),
+  ).toBeVisible();
   await expect(page.locator(".chart-period-note")).toContainText("Last hour is partial");
   const wider = chartResponse(page, "actors");
   await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
@@ -150,7 +154,7 @@ test("CLI duration aggregates ignore strings and booleans, and product switches 
 }) => {
   await page.goto("/");
   await select(page, "Select project", products.tool.name);
-  await expect(page.locator(".metric-value").first()).toHaveText("6");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("6");
   const average = chartResponse(page, "avg");
   await select(page, "Chart metric", "Average duration");
   expect((await result(average)).summary.value).toBe(200);
@@ -164,7 +168,8 @@ test("CLI duration aggregates ignore strings and booleans, and product switches 
   await select(page, "Chart metric", "Active installations");
   expect((await result(installations)).summary.value).toBe(2);
   expect((await installations).request().postDataJSON().identity_kind).toBe("installation");
-  await expect(page.locator(".metric-value").first()).toHaveText("6");
+  await expect(page.locator(".activity-widget .widget-value")).toHaveText("2");
+  await expect(page.locator(".breakdown-widget footer")).toContainText("6 events");
   await select(page, "Select project", products.generic.name);
   await expect(page.getByRole("combobox", { name: "Chart metric" })).toContainText("Events");
   const actors = chartResponse(page, "actors");
@@ -177,9 +182,9 @@ test("selection loading stays inside the chart and failed refresh keeps the exis
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".metric-value").first()).toHaveText("6");
-  const chart = await page.locator(".chart-card").elementHandle();
-  const bounds = await page.locator(".chart-card").boundingBox();
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("6");
+  const chart = await page.locator(".activity-widget").elementHandle();
+  const bounds = await page.locator(".activity-widget").boundingBox();
   let release = () => {};
   const gate = new Promise<void>((resolve) => {
     release = resolve;
@@ -198,23 +203,23 @@ test("selection loading stays inside the chart and failed refresh keeps the exis
   try {
     await select(page, "Chart metric", "Unique visitors");
     await expect(page.getByRole("status", { name: "Loading chart", exact: true })).toBeVisible();
-    await expect(page.locator(".chart-card [data-slot='chart']")).toHaveCount(0);
-    await expect(page.locator(".metric-value").first()).toHaveText("6");
+    await expect(page.locator(".activity-widget [data-slot='chart']")).toHaveCount(0);
+    await expect(page.locator(".breakdown-widget footer")).toContainText("6 events");
     expect(await chart?.evaluate((element) => element.isConnected)).toBe(true);
-    expect(await page.locator(".chart-card").boundingBox()).toEqual(bounds);
+    expect(await page.locator(".activity-widget").boundingBox()).toEqual(bounds);
   } finally {
     hold = false;
     release();
   }
-  await expect(page.locator(".chart-card [data-slot='chart']")).toBeVisible();
-  const plot = await page.locator(".chart-card [data-slot='chart']").elementHandle();
+  await expect(page.locator(".activity-widget [data-slot='chart']")).toBeVisible();
+  const plot = await page.locator(".activity-widget [data-slot='chart']").elementHandle();
   fail = true;
   await page.getByRole("button", { name: "Refresh analytics" }).click();
   await expect(page.getByRole("alert")).toContainText("Chart temporarily unavailable");
   expect(await plot?.evaluate((element) => element.isConnected)).toBe(true);
-  expect(await page.locator(".chart-card").boundingBox()).toEqual(bounds);
+  expect(await page.locator(".activity-widget").boundingBox()).toEqual(bounds);
   const retried = chartResponse(page, "actors");
-  await page.getByRole("button", { name: "Retry chart", exact: true }).click();
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
   await result(retried);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
@@ -231,26 +236,30 @@ test("anonymous CLI data has honest empty states and narrow duration axes remain
   ).toBeVisible();
   await select(page, "Chart metric", "Average duration");
   await expect(
-    page.getByText("No numeric durations received in this range.", { exact: true }),
+    page
+      .locator(".activity-widget")
+      .getByText("No numeric durations received in this range.", { exact: true }),
   ).toBeVisible();
   await select(page, "Select project", products.tool.name);
   await select(page, "Chart metric", "p95 duration");
-  await expect(page.locator(".chart-card [data-slot='chart']")).toBeVisible();
+  await expect(page.locator(".activity-widget [data-slot='chart']")).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.locator('.analytics-plot svg circle[r="2.5"]')).toHaveCount(1);
-  const ticks = await page.locator(".analytics-plot svg text").evaluateAll((elements) =>
-    elements
-      .filter((element) => element.textContent?.endsWith(" ms"))
-      .map((element) => {
-        const svg = element.closest(".analytics-plot");
-        if (!svg) throw new Error("Expected axis tick inside chart");
-        return {
-          left: element.getBoundingClientRect().left,
-          plotLeft: svg.getBoundingClientRect().left,
-        };
-      }),
-  );
+  await expect(page.locator('.activity-widget .analytics-plot svg circle[r="2.5"]')).toHaveCount(1);
+  const ticks = await page
+    .locator(".activity-widget .analytics-plot svg text")
+    .evaluateAll((elements) =>
+      elements
+        .filter((element) => element.textContent?.endsWith(" ms"))
+        .map((element) => {
+          const svg = element.closest(".activity-widget .analytics-plot");
+          if (!svg) throw new Error("Expected axis tick inside chart");
+          return {
+            left: element.getBoundingClientRect().left,
+            plotLeft: svg.getBoundingClientRect().left,
+          };
+        }),
+    );
   expect(ticks.length).toBeGreaterThan(0);
   for (const tick of ticks) expect(tick.left).toBeGreaterThanOrEqual(tick.plotLeft);
   await page.screenshot({ path: test.info().outputPath("cli-chart-mobile.png") });
@@ -292,4 +301,63 @@ test("calendar interval buttons query raw weekly and monthly aggregates and reta
     "aria-pressed",
     "true",
   );
+});
+
+for (const width of [1440, 894, 390]) {
+  test(`Overview keeps six square widgets and contained content at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Refresh analytics" })).toBeEnabled();
+    await expect(page.locator(".overview-widget")).toHaveCount(6);
+    const bounds = await page.locator(".overview-widget").evaluateAll((widgets) =>
+      widgets.map((widget) => {
+        const rect = widget.getBoundingClientRect();
+        const body = widget.querySelector(".widget-body")?.getBoundingClientRect();
+        const footer = widget.querySelector(".widget-footer")?.getBoundingClientRect();
+        if (!body || !footer) throw new Error("Widget structure missing");
+        return {
+          width: rect.width,
+          height: rect.height,
+          bodyBottom: body.bottom,
+          footerTop: footer.top,
+        };
+      }),
+    );
+    for (const bound of bounds) {
+      expect(Math.abs(bound.width - bound.height)).toBeLessThan(2);
+      expect(bound.bodyBottom).toBeLessThanOrEqual(bound.footerTop);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await expect(page.locator(".outcomes-widget [data-chart-kind='donut']")).toHaveCount(0);
+    await expect(page.locator(".outcomes-widget")).toContainText("No success values received");
+    await expect(page.locator(".audience-widget .widget-value")).toHaveText("3");
+    const donut = page.locator(".sources-widget svg.ts-chart");
+    await donut.press("Home");
+    await expect(page.locator(".sources-widget .ts-chart-tooltip")).toHaveAccessibleName(
+      /6 events/,
+    );
+    await donut.press("Escape");
+    await expect(page.locator(".sources-widget .ts-chart-tooltip")).toBeHidden();
+  });
+}
+
+test("duration widget switches to the server p95 without treating missing or string durations as zero", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await select(page, "Select project", products.tool.name);
+  const widget = page.locator(".duration-widget");
+  await expect(widget.locator(".widget-value")).toHaveText("200 ms");
+  const p95 = chartResponse(page, "p95");
+  await widget.getByRole("button", { name: "p95", exact: true }).click();
+  expect((await result(p95)).summary.value).toBe(290);
+  await expect(widget.locator(".widget-value")).toHaveText("290 ms");
+  await expect(widget.locator(".series-chart")).toBeVisible();
+  await select(page, "Select project", products.anonymous.name);
+  await expect(widget.locator(".widget-value")).toHaveText("—");
+  await expect(widget.locator(".series-chart")).toHaveCount(0);
 });

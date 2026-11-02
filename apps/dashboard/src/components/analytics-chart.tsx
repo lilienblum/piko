@@ -26,17 +26,20 @@ export function AnalyticsChart({
   bucket,
   unit,
   range,
+  compact = false,
 }: {
   series: QueryResult["series"];
   label: string;
   bucket: TimeBucket;
   unit?: string;
+  compact?: boolean;
   range?: { from: string; to: string };
 }) {
   const from = range?.from;
   const to = range?.to;
   const definition = useMemo(() => {
-    const markers = Boolean(unit) || series.filter((point) => point.value !== null).length === 1;
+    const markers =
+      (!compact && Boolean(unit)) || series.filter((point) => point.value !== null).length === 1;
     return defineChart({
       svgAnimation: false,
       focus: "nearest-x",
@@ -126,7 +129,7 @@ export function AnalyticsChart({
                 line: false,
                 tickLabels: { fontSize: 12, opacity: 1 },
                 ticks: {
-                  count: 4,
+                  count: compact ? 3 : 4,
                   size: 0,
                   padding: 10,
                   format: (value) => `${number(value, 1)}${unit ? ` ${unit}` : ""}`,
@@ -144,7 +147,7 @@ export function AnalyticsChart({
         };
       },
     });
-  }, [series, label, bucket, unit, from, to]);
+  }, [series, label, bucket, unit, from, to, compact]);
   return (
     <div className="series-chart" data-slot="chart" data-chart-library="tanstack">
       <Chart

@@ -100,10 +100,10 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await select(page, "Select project", web.name);
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
   await expect(page.getByText("Top events", { exact: true }).first()).toBeVisible();
-  await expect(page.locator(".metric-value").first()).toHaveText("32");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   await select(page, "Select project", tool.name);
-  await expect(page.locator(".metrics").getByText("Events", { exact: true })).toBeVisible();
-  await expect(page.locator(".metric-value").nth(2)).toHaveText("50%");
+  await expect(page.locator(".activity-widget .widget-measure-label")).toBeVisible();
+  await expect(page.locator(".outcomes-widget .donut-total strong")).toHaveText("50%");
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await select(page, "Measure", "Numeric average");
   await page.getByRole("button", { name: "Run query" }).click();
@@ -188,7 +188,10 @@ test("create product, edit retention, create and revoke a key", async ({ page })
   await page.getByRole("tab", { name: "TypeScript" }).click();
   await expect(page.getByRole("tabpanel")).toContainText("await piko.send");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.getByText("No events in this range")).toBeVisible();
+  await expect(page.locator(".overview-widget")).toHaveCount(6);
+  for (const widget of await page.locator(".overview-widget").all())
+    await expect(widget).toContainText("No events in this range");
+  await expect(page.locator(".overview-widget svg.ts-chart")).toHaveCount(0);
 });
 test("mobile website and tool layouts do not overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -196,7 +199,7 @@ test("mobile website and tool layouts do not overflow", async ({ page }) => {
   for (const p of [web, tool]) {
     await select(page, "Select project", p.name);
     await expect(page.getByRole("heading", { name: p.name })).toBeVisible();
-    await expect(page.locator(".metric-value").first()).toHaveText("32");
+    await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
@@ -546,7 +549,10 @@ test("secondary breakdown choices show pending and retry states without stale ro
     await expect(page.getByRole("link", { name: "Explore Direct", exact: true })).not.toBeVisible();
     release();
     await expect(page.getByText("Temporary breakdown failure")).toBeVisible();
-    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    await page
+      .locator(".breakdown-widget")
+      .getByRole("button", { name: "Retry", exact: true })
+      .click();
     await expect(page.getByRole("link", { name: "Explore newsletter", exact: true })).toBeVisible();
     await expect(page.getByText("Temporary breakdown failure")).not.toBeVisible();
   } finally {
@@ -559,7 +565,7 @@ test("only validated Explore search can change the workspace context", async ({ 
   await select(page, "Select project", web.name);
   await page.goto("/?drilldown=true");
   await expect(page.getByRole("heading", { name: web.name })).toBeVisible();
-  await expect(page.locator(".metric-value").first()).toHaveText("32");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   const malformed = encodeURIComponent(
     JSON.stringify({ productId: tool.id, from: "bad", to: "bad" }),
   );
@@ -835,7 +841,7 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
   });
   await select(page, "Select project", tool.name);
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
-  await expect(page.locator(".metric-value").first()).toHaveText("32");
+  await expect(page.locator(".activity-widget .widget-value").first()).toHaveText("32");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await expect(page.locator('[data-slot="sidebar"][data-state]')).toHaveAttribute(
     "data-state",

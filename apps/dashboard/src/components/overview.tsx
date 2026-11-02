@@ -1,17 +1,16 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { bucketLabels, type TimeBucket } from "@/lib/time-buckets";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
-import { OverviewLoading, BreakdownLoading } from "./loading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { bucketLabels, partialBucketNote, type TimeBucket } from "@/lib/time-buckets";
 import { useQuery } from "@/lib/use-query";
 import { number, sourceGroups, type Group } from "@/lib/api";
+import { sourceDistribution } from "@/lib/overview-widgets";
 import type { ExploreDrilldown } from "@/lib/explore-search";
 import { useWorkspace, useAnalyticsPending, PageHeader, NoProduct } from "./app-shell";
-import { Breakdown, BreakdownRows, ErrorState, SeriesChart } from "./shared";
+import { BreakdownRows } from "./shared";
+import { AnalyticsChart } from "./analytics-chart";
 import { ValueSelect } from "./value-select";
+import { DonutChart, OverviewWidget, WidgetContent, WidgetValue } from "./overview-widgets";
 
 type ChartChoice = {
   id: string;
@@ -35,6 +34,7 @@ const chartChoices: ChartChoice[] = [
   { id: "p95", label: "p95 duration", measure: "p95", property: "duration_ms", unit: "ms" },
 ];
 const dimensions = [
+  ["name", "Top events"],
   ["source_id", "Sources"],
   ["source", "Clients"],
   ["property:path", "Pages"],
@@ -47,27 +47,40 @@ const dimensions = [
   ["property:os", "OS"],
   ["property:arch", "Architecture"],
 ] as const;
+
+const compactCount = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumSignificantDigits: 3,
+});
+
 export function Overview() {
   const { product, sourceId } = useWorkspace();
   return product ? <ProductOverview key={`${product.id}:${sourceId ?? "all"}`} /> : <NoProduct />;
 }
 function ProductOverview() {
   const { product, source, sourceId, range, refresh, refreshKey } = useWorkspace();
-  const [dimension, setDimension] = useState<string>("source_id");
-  const body = { ...range, source_id: sourceId, measure: "count", group_by: "name" };
-  const backgroundScope = JSON.stringify([range.from, body.group_by]);
-  const query = useQuery(product?.id, body, refreshKey, backgroundScope);
-  const secondary = useQuery(
-    product?.id,
-    { ...body, group_by: dimension },
-    refreshKey,
-    `${backgroundScope}:${dimension}`,
-  );
-  const choices = chartChoices;
+  const [dimension, setDimension] = useState<string>("name");
   const [chartMetric, setChartMetric] = useState("count");
   const [chartInterval, setChartInterval] = useState<TimeBucket>("day");
-  const [chartRetry, setChartRetry] = useState(0);
-  const choice = choices.find((option) => option.id === chartMetric) ?? choices[0];
+  const [durationMetric, setDurationMetric] = useState("avg");
+  const body = { ...range, source_id: sourceId, measure: "count", group_by: "name" };
+  const scope = JSON.stringify([range.from, sourceId]);
+  const query = useQuery(product?.id, body, refreshKey, scope);
+  const sources = useQuery(
+    product?.id,
+    { ...body, group_by: "source_id" },
+    refreshKey,
+    `${scope}:sources`,
+  );
+  const separateBreakdown = dimension !== "name" && dimension !== "source_id";
+  const secondary = useQuery(
+    separateBreakdown ? product?.id : undefined,
+    { ...body, group_by: dimension },
+    refreshKey,
+    `${scope}:${dimension}`,
+  );
+  const breakdown = dimension === "name" ? query : dimension === "source_id" ? sources : secondary;
+  const choice = chartChoices.find((option) => option.id === chartMetric) ?? chartChoices[0];
   const hourlyAvailable = Date.parse(range.to) - Date.parse(range.from) <= 31 * 86400000;
   const bucket = chartInterval === "hour" && !hourlyAvailable ? "day" : chartInterval;
   const separateChart = choice.id !== "count" || bucket !== "day";
@@ -81,12 +94,53 @@ function ProductOverview() {
       bucket,
       page_size: 1,
     },
-    `${refreshKey}:${chartRetry}`,
-    `${backgroundScope}:${choice.id}:${bucket}`,
+    refreshKey,
+    `${scope}:${choice.id}:${bucket}`,
   );
-  const chartResult = separateChart ? chartQuery : query;
+  const activity = separateChart ? chartQuery : query;
+  const s = query.data?.summary;
+  const hasDuration = s?.avg_duration != null;
+  const duration = useQuery(
+    hasDuration ? product?.id : undefined,
+    {
+      ...body,
+      measure: durationMetric,
+      property: "duration_ms",
+      bucket,
+      page_size: 1,
+    },
+    refreshKey,
+    `${scope}:duration:${durationMetric}:${bucket}`,
+  );
   useAnalyticsPending(
-    query.refreshing || secondary.refreshing || (separateChart && chartQuery.refreshing),
+    query.refreshing ||
+      sources.refreshing ||
+      (separateBreakdown && secondary.refreshing) ||
+      (separateChart && chartQuery.refreshing) ||
+      (hasDuration && duration.refreshing),
+  );
+  const sourceSlices = useMemo(
+    () =>
+      sourceDistribution(
+        sourceGroups(sources.data?.groups ?? [], product?.sources),
+        sources.data?.summary.total ?? 0,
+      ),
+    [sources.data, product?.sources],
+  );
+  const outcomes = useMemo(
+    () =>
+      s?.success_rate == null
+        ? []
+        : [
+            { id: "success", label: "Succeeded", value: s.success_rate, color: "var(--success)" },
+            {
+              id: "failure",
+              label: "Failed",
+              value: 100 - s.success_rate,
+              color: "var(--destructive)",
+            },
+          ],
+    [s?.success_rate],
   );
   if (!product) return <NoProduct />;
   const drilldown = (groupBy: string, group: Group): ExploreDrilldown | undefined => {
@@ -101,75 +155,41 @@ function ProductOverview() {
     if (groupBy.startsWith("property:"))
       return { ...context, filter: { property: groupBy.slice(9), value: group.label } };
   };
-  const refreshError = query.error || (secondary.data && secondary.error);
-  const s = query.data?.summary;
-  const metrics = [
+  const noEvents =
+    s?.total === 0
+      ? "No events in this range. Try another date range or connect a source in Settings."
+      : undefined;
+  const chartEmpty =
+    noEvents ??
+    (!activity.data
+      ? "Chart unavailable."
+      : choice.measure === "actors" && !activity.data.summary.value
+        ? `No ${choice.identity_kind === "visitor" ? "visitor" : choice.identity_kind === "installation" ? "installation" : "actor"} IDs received in this range.`
+        : choice.unit && activity.data.summary.value === null
+          ? "No numeric durations received in this range."
+          : undefined);
+  const actorGroups: Group[] = [
+    { label: "Visitors", value: s?.visitors ?? 0, count: s?.visitors ?? 0 },
+    { label: "Installations", value: s?.installations ?? 0, count: s?.installations ?? 0 },
     {
-      label: "Events",
-      value: number(s?.total),
-      detail: source ? "Events from this source" : "All sources, one project",
-    },
-    {
-      label: "Identified actors",
-      value: s?.total && !s.actors ? "—" : number(s?.actors),
-      detail: s?.total && !s.actors ? "No actor IDs received" : "Identity kinds counted separately",
-    },
-    {
-      label: "Success rate",
-      value: s?.success_rate == null ? "—" : `${number(s.success_rate, 1)}%`,
-      detail: "Events reporting a boolean success value",
-    },
-    {
-      label: "Average duration",
-      value: s?.avg_duration == null ? "—" : `${number(s.avg_duration)} ms`,
-      detail:
-        s?.p95_duration == null
-          ? "No numeric durations received"
-          : `p95 · ${number(s.p95_duration)} ms`,
+      label: "Other actors",
+      value: Math.max(0, (s?.actors ?? 0) - (s?.visitors ?? 0) - (s?.installations ?? 0)),
+      count: 0,
     },
   ];
-  const chart = (
-    <SeriesChart
-      data={chartResult.data}
-      title="Activity over time"
-      description={
-        choice.measure === "actors"
-          ? `${choice.identity_kind === "visitor" ? "Visitors" : choice.identity_kind === "installation" ? "Installations" : "Identities"} counted once per ${bucket}.`
-          : choice.unit
-            ? `${choice.measure === "p95" ? "95th-percentile" : "Average"} duration per ${bucket}, in milliseconds.`
-            : `${choice.label} per ${bucket}, including anonymous activity.`
-      }
-      label={choice.label}
-      bucket={bucket}
-      unit={choice.unit}
-      range={range}
-      pending={chartResult.loading}
-      error={separateChart ? chartQuery.error : undefined}
-      retry={() => setChartRetry((key) => key + 1)}
-      emptyMessage={
-        !chartResult.data
-          ? undefined
-          : s?.total === 0
-            ? "No events in this range. Try another date range or connect a source in Settings."
-            : choice.measure === "actors" && !chartResult.data.summary.value
-              ? choice.identity_kind === "visitor"
-                ? "No visitor IDs received in this range."
-                : choice.identity_kind === "installation"
-                  ? "No installation IDs received in this range."
-                  : "No actor IDs received in this range."
-              : choice.unit && chartResult.data.summary.value === null
-                ? "No numeric durations received in this range."
-                : undefined
-      }
-      controls={
-        <div className="chart-controls">
-          <ValueSelect
-            label="Chart metric"
-            disabled={query.loading}
-            value={choice.id}
-            onValueChange={setChartMetric}
-            options={choices.map((option) => [option.id, option.label])}
-          />
+  const dimensionLabel = dimensions.find(([value]) => value === dimension)?.[1] ?? "Top events";
+  const periodNote = `${bucketLabels[bucket]} · UTC${bucket === "week" ? " (Monday start)" : ""} · ${partialBucketNote(range, bucket)}`;
+  return (
+    <>
+      <PageHeader
+        title={source ? `${product.name} / ${source.name}` : product.name}
+        description="Usage, reach, and performance at a glance."
+      />
+      <div className="overview-dashboard">
+        <div className="overview-toolbar">
+          <span className="overview-toolbar-copy">
+            {source ? "Source snapshot" : "Project snapshot"}
+          </span>
           <ToggleGroup
             aria-label="Chart interval"
             variant="outline"
@@ -197,86 +217,266 @@ function ProductOverview() {
             ))}
           </ToggleGroup>
         </div>
-      }
-    />
-  );
-  return (
-    <>
-      <PageHeader
-        title={source ? `${product.name} / ${source.name}` : product.name}
-        description="Events, identities, and performance across your project."
-      />
-      {query.error && !query.data ? (
-        <ErrorState message={query.error} retry={refresh} />
-      ) : query.loading ? (
-        <OverviewLoading labels={metrics.map((metric) => metric.label)} chart={chart} />
-      ) : (
-        query.data && (
-          <>
-            {refreshError && <ErrorState message={refreshError} retry={refresh} />}
-            <div className="metrics" data-columns={metrics.length}>
-              {metrics.map((m) => (
-                <Card key={m.label} className="metric-card">
-                  <CardContent>
-                    <div className="metric-label">{m.label}</div>
-                    <div className="metric-value">{m.value}</div>
-                    <p>{m.detail}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            {chart}
-            <div className="breakdowns overview-breakdowns">
-              <Breakdown
-                title="Top events"
-                description="Events ranked by count"
-                groups={query.data.groups}
-                total={s?.total}
-                drilldown={(group) => drilldown(body.group_by, group)}
+        <div className="overview-grid" aria-busy={query.loading}>
+          <OverviewWidget
+            title="Activity over time"
+            className="activity-widget"
+            error={activity.error}
+            retry={refresh}
+            footer={<span className="chart-period-note">{periodNote}</span>}
+          >
+            <div className="widget-value-row">
+              <WidgetValue
+                value={`${number(activity.data?.summary.value, 0)}${choice.unit ? " ms" : ""}`}
+                label={choice.label}
+                loading={activity.loading}
               />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Breakdown</CardTitle>
-                  <CardDescription>Choose a dimension to look closer.</CardDescription>
-                  <ValueSelect
-                    label="Breakdown"
-                    value={dimension}
-                    onValueChange={setDimension}
-                    options={dimensions}
-                  />
-                </CardHeader>
-                <CardContent>
-                  {secondary.error && !secondary.data ? (
-                    <ErrorState message={secondary.error} retry={refresh} />
-                  ) : secondary.loading ? (
-                    <BreakdownLoading />
+              <ValueSelect
+                label="Chart metric"
+                disabled={query.loading}
+                value={choice.id}
+                onValueChange={setChartMetric}
+                options={chartChoices.map((option) => [option.id, option.label])}
+              />
+            </div>
+            <div className="widget-plot chart-plot" aria-busy={activity.loading}>
+              <WidgetContent label="chart" loading={activity.loading} empty={chartEmpty}>
+                <AnalyticsChart
+                  compact
+                  series={activity.data?.series ?? []}
+                  label={choice.label}
+                  bucket={bucket}
+                  unit={choice.unit}
+                  range={range}
+                />
+              </WidgetContent>
+            </div>
+          </OverviewWidget>
+          <OverviewWidget
+            title="Sources"
+            className="sources-widget"
+            error={sources.error}
+            retry={refresh}
+            footer={
+              sources.data
+                ? `${number(sources.data.summary.total)} events in this range`
+                : "Share of events by source"
+            }
+          >
+            <WidgetContent
+              label="sources"
+              loading={sources.loading}
+              empty={
+                !sources.data
+                  ? "Sources unavailable."
+                  : sources.data.summary.total === 0
+                    ? "No events in this range."
+                    : undefined
+              }
+            >
+              <DonutChart
+                data={sourceSlices}
+                label="Events by source"
+                value={compactCount.format(sources.data?.summary.total ?? 0)}
+                detail="events"
+              />
+              <div className="widget-legend">
+                {sourceSlices.map((slice) => {
+                  const target = slice.group && drilldown("source_id", slice.group);
+                  const content = (
+                    <>
+                      <span className="legend-dot" style={{ background: slice.color }} />
+                      <span className="legend-name" title={slice.label}>
+                        {slice.label}
+                      </span>
+                      <strong>{number(slice.value)}</strong>
+                      <span>
+                        {number((slice.value / (sources.data?.summary.total || 1)) * 100, 1)}%
+                      </span>
+                    </>
+                  );
+                  return target ? (
+                    <Link
+                      className="legend-row"
+                      key={slice.id}
+                      to="/explore"
+                      search={{ drilldown: target }}
+                      aria-label={`Explore ${slice.label}`}
+                    >
+                      {content}
+                    </Link>
                   ) : (
-                    <BreakdownRows
-                      title={dimensions.find(([value]) => value === dimension)?.[1] ?? "Sources"}
-                      groups={
-                        dimension === "source_id"
-                          ? sourceGroups(secondary.data?.groups ?? [], product.sources)
-                          : (secondary.data?.groups ?? [])
-                      }
-                      total={secondary.data?.summary.total}
-                      drilldown={(group) => drilldown(dimension, group)}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="legend-row" key={slice.id}>
+                      {content}
+                    </div>
+                  );
+                })}
+              </div>
+            </WidgetContent>
+          </OverviewWidget>
+          <OverviewWidget
+            title="Breakdown"
+            className="breakdown-widget"
+            controls={
+              <ValueSelect
+                label="Breakdown"
+                value={dimension}
+                onValueChange={setDimension}
+                options={dimensions}
+              />
+            }
+            error={breakdown.error}
+            retry={refresh}
+            footer={<span>{number(s?.total)} events in this range</span>}
+          >
+            <WidgetContent
+              label="breakdown"
+              loading={breakdown.loading}
+              empty={!breakdown.data ? "Breakdown unavailable." : noEvents}
+            >
+              <section className="widget-ranking breakdowns" aria-label={dimensionLabel}>
+                <BreakdownRows
+                  title={dimensionLabel}
+                  groups={
+                    dimension === "source_id"
+                      ? sourceGroups(breakdown.data?.groups ?? [], product.sources)
+                      : (breakdown.data?.groups ?? [])
+                  }
+                  total={breakdown.data?.summary.total}
+                  drilldown={(group) => drilldown(dimension, group)}
+                />
+              </section>
+            </WidgetContent>
+          </OverviewWidget>
+          <OverviewWidget
+            title="Identified actors"
+            className="audience-widget"
+            error={query.error}
+            retry={refresh}
+            footer="Identity kinds are counted separately. IDs are optional."
+          >
+            <WidgetValue
+              value={s?.total && !s.actors ? "—" : number(s?.actors)}
+              label="distinct identities"
+              loading={query.loading}
+              detail={s?.sessions ? `${number(s.sessions)} website sessions` : undefined}
+            />
+            <WidgetContent
+              label="identities"
+              loading={query.loading}
+              empty={
+                !query.data
+                  ? "Identities unavailable."
+                  : (noEvents ??
+                    (!s?.actors
+                      ? "No actor IDs received. Anonymous events still count toward activity."
+                      : undefined))
+              }
+            >
+              <div className="audience-bars">
+                <BreakdownRows title="Identity kind" groups={actorGroups} unit="Actors" />
+              </div>
+            </WidgetContent>
+          </OverviewWidget>
+          <OverviewWidget
+            title="Success rate"
+            className="outcomes-widget"
+            error={query.error}
+            retry={refresh}
+            footer="Among events reporting a boolean success value"
+          >
+            <WidgetContent
+              label="outcomes"
+              loading={query.loading}
+              empty={
+                !query.data
+                  ? "Outcomes unavailable."
+                  : (noEvents ??
+                    (s?.success_rate == null
+                      ? "No success values received. Send a boolean success property to measure outcomes."
+                      : undefined))
+              }
+            >
+              <DonutChart
+                data={outcomes}
+                label="Reported outcomes"
+                value={`${number(s?.success_rate, 1)}%`}
+                detail="succeeded"
+                percentage
+              />
+              <div className="widget-legend">
+                {outcomes.map((outcome) => (
+                  <div className="legend-row outcome-row" key={outcome.id}>
+                    <span className="legend-dot" style={{ background: outcome.color }} />
+                    <span className="legend-name">{outcome.label}</span>
+                    <strong>{number(outcome.value, 1)}%</strong>
+                  </div>
+                ))}
+              </div>
+            </WidgetContent>
+          </OverviewWidget>
+          <OverviewWidget
+            title="Duration"
+            className="duration-widget"
+            controls={
+              <ToggleGroup
+                aria-label="Duration measure"
+                variant="outline"
+                spacing={0}
+                value={[durationMetric]}
+                onValueChange={(values) => {
+                  if (values[0]) setDurationMetric(values[0]);
+                }}
+              >
+                <ToggleGroupItem value="avg">Average</ToggleGroupItem>
+                <ToggleGroupItem value="p95">p95</ToggleGroupItem>
+              </ToggleGroup>
+            }
+            error={duration.error ?? query.error}
+            retry={refresh}
+            footer={
+              hasDuration
+                ? `${durationMetric === "avg" ? `p95 · ${number(s?.p95_duration)} ms` : `Average · ${number(s?.avg_duration)} ms`} · ${bucketLabels[bucket].toLowerCase()} buckets`
+                : "Only numeric duration_ms values are included"
+            }
+          >
+            <WidgetValue
+              value={
+                s?.avg_duration == null
+                  ? "—"
+                  : `${number(durationMetric === "avg" ? s.avg_duration : s.p95_duration)} ms`
+              }
+              label={durationMetric === "avg" ? "Average duration" : "p95 duration"}
+              loading={query.loading}
+            />
+            <div className="widget-plot">
+              <WidgetContent
+                label="duration"
+                loading={query.loading || (hasDuration && duration.loading)}
+                empty={
+                  !query.data
+                    ? "Duration unavailable."
+                    : (noEvents ??
+                      (!hasDuration
+                        ? "No numeric durations received in this range."
+                        : !duration.data
+                          ? "Duration unavailable."
+                          : undefined))
+                }
+              >
+                <AnalyticsChart
+                  compact
+                  series={duration.data?.series ?? []}
+                  label={durationMetric === "avg" ? "Average duration" : "p95 duration"}
+                  bucket={bucket}
+                  unit="ms"
+                  range={range}
+                />
+              </WidgetContent>
             </div>
-            <div className="insight-note">
-              <span className="status-dot" />
-              {product.retention_days}-day retention<span>·</span>
-              No identity is inferred from IP addresses or user agents.
-              <Link to="/settings">
-                Manage collection
-                <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" />
-              </Link>
-            </div>
-          </>
-        )
-      )}
+          </OverviewWidget>
+        </div>
+      </div>
     </>
   );
 }
