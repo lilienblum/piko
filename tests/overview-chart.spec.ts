@@ -136,7 +136,7 @@ test("visitor chart excludes installation identities without shrinking overview 
   await expect(page.getByText("Visitors counted once per hour.")).toBeVisible();
   await expect(page.locator(".chart-period-note")).toContainText("Last hour is partial");
   const wider = chartResponse(page, "actors");
-  await select(page, "Date range", "Last 90 days");
+  await page.getByRole("button", { name: "Last 90 days", exact: true }).click();
   await result(wider);
   await expect(page.getByRole("button", { name: "Daily", exact: true })).toHaveAttribute(
     "aria-pressed",

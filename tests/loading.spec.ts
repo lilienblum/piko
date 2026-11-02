@@ -95,8 +95,7 @@ test("date changes use stable placeholders and breakdown loading stays local", a
   const metric = await page.locator(".metric-card").first().boundingBox();
   const release = await hold(page, "**/api/products/*/query");
   try {
-    await page.getByRole("combobox", { name: "Date range" }).click();
-    await page.getByRole("option", { name: "Last 7 days", exact: true }).click();
+    await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
     const pending = page.getByRole("status", { name: "Loading overview", exact: true });
     await expect(pending).toBeVisible();
     await expect(pending.locator(".metric-card")).toHaveCount(4);

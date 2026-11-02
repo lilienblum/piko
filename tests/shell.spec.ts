@@ -54,9 +54,9 @@ for (const route of ["/", "/explore", "/settings"]) {
         await expect(page.locator(".topbar")).toHaveCount(0);
         await expect(page.locator(".page-content > .workspace-toolbar")).toBeVisible();
         if (route !== "/settings")
-          await expect(page.getByRole("combobox", { name: "Date range" })).toContainText(
-            "Last 30 days",
-          );
+          await expect(
+            page.getByRole("button", { name: "Last 30 days", exact: true }),
+          ).toHaveAttribute("aria-pressed", "true");
         await expect(page.getByRole("status", { name: "Loading workspace" })).toBeVisible();
         await expect(page.getByRole("status", { name: "Loading workspace" })).toHaveCSS(
           "opacity",
@@ -66,7 +66,9 @@ for (const route of ["/", "/explore", "/settings"]) {
         if (width >= 768)
           await expect(page.getByRole("button", { name: "Appearance" })).toBeDisabled();
         if (route !== "/settings")
-          await expect(page.getByRole("combobox", { name: "Date range" })).toBeDisabled();
+          await expect(
+            page.getByRole("button", { name: "Last 30 days", exact: true }),
+          ).toBeDisabled();
         await page.evaluate(() => document.fonts.ready);
         const shell = page.locator("#main-content");
         const before = await shell.boundingBox();
@@ -90,7 +92,9 @@ for (const route of ["/", "/explore", "/settings"]) {
           page.locator("#main-content").getByRole("button", { name: "Appearance" }),
         ).toHaveCount(0);
         if (route !== "/settings")
-          await expect(page.getByRole("combobox", { name: "Date range" })).toBeEnabled();
+          await expect(
+            page.getByRole("button", { name: "Last 30 days", exact: true }),
+          ).toBeEnabled();
         await expect(page.getByRole("alert")).not.toBeVisible();
         const after = await shell.boundingBox();
         const loaded = await page.locator(".page-content").boundingBox();

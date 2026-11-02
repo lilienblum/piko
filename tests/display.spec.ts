@@ -36,7 +36,7 @@ test("event timezone persists across reload, changes event inspection, and leave
   await page.addInitScript((id) => localStorage.setItem("piko:product", id), project.id);
   await page.goto("/settings");
   await expect(page.locator(".topbar, .live-status, .sidebar-footer, .page-footer")).toHaveCount(0);
-  await expect(page.getByRole("combobox", { name: "Date range" })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Date range", exact: true })).toHaveCount(0);
   const zone = page.getByRole("combobox", { name: "Event timezone", exact: true });
   await zone.click();
   await page.getByRole("option", { name: "Asia/Tokyo", exact: true }).click();

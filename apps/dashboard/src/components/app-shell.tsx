@@ -12,8 +12,9 @@ import {
 } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, Calendar03Icon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ValueSelect } from "./value-select";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkspaceSidebar } from "./workspace-sidebar";
@@ -226,28 +227,32 @@ export function AppShell() {
               </div>
               {path !== "/settings" && (
                 <div className="workspace-toolbar-actions">
-                  <ValueSelect
-                    label="Date range"
+                  <ToggleGroup
+                    aria-label="Date range"
+                    variant="outline"
+                    spacing={0}
                     disabled={!preferencesReady}
-                    value={drilldown ? "linked" : String(days)}
-                    icon={
-                      <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} aria-hidden="true" />
-                    }
-                    className="date-select"
-                    onValueChange={(value) => {
-                      if (value === "linked") return;
+                    value={[drilldown ? "linked" : String(days)]}
+                    onValueChange={(values) => {
+                      const value = values[0];
+                      if (!value || value === "linked") return;
                       clearDrilldown();
                       setDays(Number(value));
                       savePreference("piko:days", value);
                       setNow(Date.now());
                     }}
-                    options={[
-                      ...(drilldown ? [["linked", "Fixed dates"] as const] : []),
-                      ["7", "Last 7 days"],
-                      ["30", "Last 30 days"],
-                      ["90", "Last 90 days"],
-                    ]}
-                  />
+                  >
+                    {drilldown && <ToggleGroupItem value="linked">Fixed dates</ToggleGroupItem>}
+                    {[7, 30, 90].map((days) => (
+                      <ToggleGroupItem
+                        key={days}
+                        value={String(days)}
+                        aria-label={`Last ${days} days`}
+                      >
+                        {days}d
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
                   <Button
                     variant="ghost"
                     size="icon"

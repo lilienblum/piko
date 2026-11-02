@@ -116,9 +116,41 @@ test("website and tool overviews, numeric query, filtering and server pagination
   await page.getByRole("button", { name: "Run query" }).click();
   await expect(page.locator(".explore-summary strong")).toHaveText("250 ms");
   await expect(page.getByText("across 16 matching events")).toBeVisible();
-  await select(page, "Date range", "Last 7 days");
+  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("Page 1 of 2")).toBeVisible();
   expect(errors).toEqual([]);
+});
+test("date range buttons support keyboard selection, persistence, and narrow layouts", async ({
+  page,
+}) => {
+  await openWorkspace(page);
+  await expect(page.getByRole("button", { name: "Refresh analytics", exact: true })).toBeEnabled();
+  const group = page.getByRole("group", { name: "Date range", exact: true });
+  const seven = group.getByRole("button", { name: "Last 7 days", exact: true });
+  const thirty = group.getByRole("button", { name: "Last 30 days", exact: true });
+  const ninety = group.getByRole("button", { name: "Last 90 days", exact: true });
+  await expect(thirty).toBeEnabled();
+  await thirty.click();
+  await expect(thirty).toHaveAttribute("aria-pressed", "true");
+  await thirty.press("ArrowRight");
+  await expect(ninety).toBeFocused();
+  const request = page.waitForRequest((r) => r.url().endsWith("/query"));
+  await ninety.press("Space");
+  const range = (await request).postDataJSON();
+  const duration = (Date.parse(range.to) - Date.parse(range.from)) / 86400000;
+  expect(duration).toBeGreaterThanOrEqual(89);
+  expect(duration).toBeLessThanOrEqual(90);
+  await expect(ninety).toHaveAttribute("aria-pressed", "true");
+  await expect(group.locator('[aria-pressed="true"]')).toHaveCount(1);
+  await page.reload();
+  await expect(ninety).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(ninety).toHaveAttribute("aria-pressed", "true");
+  await page.setViewportSize({ width: 320, height: 844 });
+  await seven.click();
+  await expect(seven).toHaveAttribute("aria-pressed", "true");
+  expect((await seven.boundingBox())?.height).toBeGreaterThanOrEqual(40);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test("create product, edit retention, create and revoke a key", async ({ page }) => {
   await openWorkspace(page);
@@ -331,7 +363,10 @@ test("website breakdown links preserve product and dates across reload and histo
     filters: [{ property: "path", op: "eq", value: "/docs" }],
   });
   await expect(page.getByText("across 16 matching events")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Date range" })).toContainText("Fixed dates");
+  await expect(page.getByRole("button", { name: "Fixed dates", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByLabel("Typed value")).toHaveValue('"/docs"');
   await page.screenshot({ path: test.info().outputPath("website-drilldown.png"), fullPage: true });
   await page.evaluate((id) => localStorage.setItem("piko:product", id), tool.id);
@@ -375,7 +410,7 @@ test("breakdown choices drill into referrers and campaigns, with missing values 
   await expect(page.getByRole("link", { name: "Explore Not provided" })).toHaveCount(0);
   await page.getByRole("link", { name: "Explore launch", exact: true }).click();
   await expect(page.getByText("across 16 matching events")).toBeVisible();
-  await select(page, "Date range", "Last 7 days");
+  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByText("across 32 matching events")).toBeVisible();
   expect(new URL(page.url()).searchParams.has("drilldown")).toBe(false);
   await page.goBack();
@@ -796,7 +831,7 @@ test("workspace stays usable when browser storage and cookies are blocked", asyn
     timeout: 3000,
   });
   await select(page, "Select project", tool.name);
-  await select(page, "Date range", "Last 7 days");
+  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.locator(".metric-value").first()).toHaveText("32");
   await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
   await expect(page.locator('[data-slot="sidebar"][data-state]')).toHaveAttribute(
